@@ -1,15 +1,19 @@
 {
   "name": "ennacx/php-simple-curl",
   "description": "PHP cURL Simple Wrapper",
+  "keywords": [],
+  "type": "library",
   "version": "1.0.0",
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "SimpleCurl\\": "src/"
+      "Ennacx\\SimpleCurl\\": "src/"
     }
   },
   "require": {
-    "php": "^8.3",
+    "php": "^8.3"
+  },
+  "require-dev": {
     "phpunit/phpunit": "^11.4"
   },
   "scripts": {

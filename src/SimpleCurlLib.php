@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace SimpleCurl;
+namespace Ennacx\SimpleCurl;
 
 use CurlHandle;
 use InvalidArgumentException;
