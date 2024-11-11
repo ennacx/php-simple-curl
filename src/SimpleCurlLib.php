@@ -15,42 +15,6 @@ use Stringable;
  */
 final class SimpleCurlLib {
 
-    /** @var int cURL HTTP GETモード */
-    public const int GET = 1;
-
-    /** @var int cURL HTTP POSTモード */
-    public const int POST = 2;
-
-    /** @var int cURL HTTP PUTモード */
-    public const int PUT = 3;
-
-    /** @var int cURL HTTP DELETEモード */
-    public const int DELETE = 4;
-
-    /** @var int 認証無し */
-    public const int AUTH_NONE = CURLAUTH_NONE;
-
-    /** @var int 最適な認証方法の選択 */
-    public const int AUTH_AUTO = CURLAUTH_ANY;
-
-    /** @var int BASIC認証以外の最適な認証方法の選択 */
-    public const int AUTH_SAFE = CURLAUTH_ANYSAFE;
-
-    /** @var int BASIC認証 */
-    public const int AUTH_BASIC = CURLAUTH_BASIC;
-
-    /** @var int ダイジェスト認証 */
-    public const int AUTH_DIGEST = CURLAUTH_DIGEST;
-
-    /** @var int GSS-API認証 (SASL, Kerberos etc SSO) */
-    public const int AUTH_GSS = CURLAUTH_GSSNEGOTIATE;
-
-    /** @var int Windows NT LAN Manager認証 */
-    public const int AUTH_NTLM = CURLAUTH_NTLM;
-
-    /** @var int AWS Signature Version 4 */
-    public const int AUTH_AWSSIG4 = CURLAUTH_AWS_SIGV4;
-
     /** @var CurlHandle cURLハンドラー */
     private CurlHandle $ch;
 
@@ -81,14 +45,14 @@ final class SimpleCurlLib {
     /**
      * cURLをシンプルに使用出来るようにラップしたライブラリ
      *
-     * @param  string|null $url            URL
-     * @param  int|null    $method         メソッド
-     * @param  boolean     $hostVerify     SSL_VERIFYHOST
-     * @param  boolean     $certVerify     SSL_VERIFYPEER
-     * @param  boolean     $returnTransfer Return transfer
+     * @param  string|null$url            URL
+     * @param  MethodEnum $method         メソッド
+     * @param  boolean    $hostVerify     SSL_VERIFYHOST
+     * @param  boolean    $certVerify     SSL_VERIFYPEER
+     * @param  boolean    $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, ?int $method = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, MethodEnum $method = MethodEnum::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
@@ -102,19 +66,20 @@ final class SimpleCurlLib {
 
         $this->ch = $temp;
 
-        // 何も指定しなければGETメソッド
-        if($method !== null){
-            switch($method){
-                case self::POST:
-                    curl_setopt($this->ch, CURLOPT_POST, true);
-                    break;
-                case self::PUT:
-                    curl_setopt($this->ch, CURLOPT_PUT, true);
-                    break;
-                case self::DELETE:
-                    curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-                    break;
-            }
+        // メソッド設定
+        switch($method){
+            case MethodEnum::GET:
+                // NOP
+                break;
+            case MethodEnum::POST:
+                curl_setopt($this->ch, CURLOPT_POST, true);
+                break;
+            case MethodEnum::PUT:
+                curl_setopt($this->ch, CURLOPT_PUT, true);
+                break;
+            case MethodEnum::DELETE:
+                curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+                break;
         }
 
         // HOSTの検証
@@ -225,16 +190,16 @@ final class SimpleCurlLib {
     /**
      * 認証情報の設定
      *
-     * @param  int         $method
+     * @param  AuthEnum    $method
      * @param  string|null $user
      * @param  string|null $pass
      * @return self
      */
-    public function setAuthentication(int $method, ?string $user = null, ?string $pass = null): self {
+    public function setAuthentication(AuthEnum $method, ?string $user = null, ?string $pass = null): self {
 
-        curl_setopt($this->ch, CURLOPT_HTTPAUTH, $method);
+        curl_setopt($this->ch, CURLOPT_HTTPAUTH, $method->toCurlConst());
 
-        if($method !== CURLAUTH_NONE && $user !== null && $pass !== null){
+        if($method !== AuthEnum::AUTH_NONE && $user !== null && $pass !== null){
             curl_setopt($this->ch, CURLOPT_USERPWD, "{$user}:{$pass}");
         }
 
