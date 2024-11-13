@@ -216,6 +216,8 @@ final class SimpleCurlLib {
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
 
         if(!empty($user) && !empty($pass)){
+            curl_setopt($this->ch, CURLOPT_HTTPAUTH, AuthEnum::AUTH_BASIC->toCurlConst());
+
             $this->addHeader(['Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))]);
         }
 
@@ -225,10 +227,10 @@ final class SimpleCurlLib {
     /**
      * Bearerトークンの設定
      *
-     * @param  string $token
+     * @param  string|null $token
      * @return self
      */
-    public function setBearerToken(string $token): self {
+    public function setBearerToken(?string $token = null): self {
 
         if(!empty($token)){
             $this->addHeader(['Authorization' => "Bearer {$token}"]);
@@ -283,14 +285,14 @@ final class SimpleCurlLib {
      * @param  boolean $jsonEncode POST内容をJSON化するか
      * @param  int     $jsonFlags  $jsonEncodeがtrueの場合のJSONフラグ値
      * @return self
-     * @throws InvalidArgumentException
+     * @throws RuntimeException
      */
     public function setPostFields(mixed $fields, bool $jsonEncode = false, int $jsonFlags = 0): self {
 
         if($jsonEncode){
             $fields = json_encode($fields, $jsonFlags);
             if($fields === false){
-                throw new InvalidArgumentException('JSON encode failed.');
+                throw new RuntimeException('JSON encode failed.');
             }
         }
 
