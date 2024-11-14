@@ -13,6 +13,7 @@ use Stringable;
  */
 final class SimpleCurlLib {
 
+	/** @var CurlError[] 実行時にエラーとなった場合のリトライ可能とするエラーコード群 */
 	private const CURL_EXEC_CONTINUABLE_ERRORS = [
 		CurlError::COULDNT_RESOLVE_HOST,
 		CurlError::COULDNT_CONNECT,
@@ -460,11 +461,14 @@ final class SimpleCurlLib {
      * cURL実行
      *
      * @param  int     $retries リトライ回数
-     * @param  boolean $throws  例外スロー
+     * @param  boolean $throws  True: throw exception / False: return void
      * @return void
      * @throws RuntimeException
      */
-    public function exec(int $retries = 5, bool $throws = true): void {
+    public function exec(int $retries = 5, bool $throws = false): void {
+
+		// コード番号変換
+		$continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
 
         /**
          * cURLのレスポンスメタ情報をセットするサブファンクション
@@ -500,9 +504,9 @@ final class SimpleCurlLib {
 
 				// cURL失敗時はエラー情報を格納
 				if($curlResult === false){
-					$this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
-					if(!in_array($this->_errEnum, self::CURL_EXEC_CONTINUABLE_ERRORS, true) || $retries === 0){
-						$this->_errMsg = curl_error($this->ch);
+					if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
+						$this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
+						$this->_errMsg  = curl_error($this->ch);
 
 						if($throws)
 							throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $this->_errEnum->value, $this->_errMsg));
@@ -510,9 +514,10 @@ final class SimpleCurlLib {
 							return;
 					}
 				} else{
-					$this->_errEnum = null;
-					$this->_errMsg  = null;
+					$this->_errEnum = CurlError::OK;
+					$this->_errMsg  = '';
 
+					// レスポンスメタ情報のセット
 					$getInfoFunc();
 
 					break;
@@ -522,9 +527,10 @@ final class SimpleCurlLib {
 			else if(!empty($curlResult)){
 				$this->_result = true;
 
-				$this->_errEnum = null;
-				$this->_errMsg  = null;
+				$this->_errEnum = CurlError::OK;
+				$this->_errMsg  = '';
 
+				// レスポンスメタ情報のセット
 				$getInfoFunc();
 
 				// ヘッダー情報とボディー情報を分割
@@ -572,19 +578,19 @@ final class SimpleCurlLib {
     /**
      * cURLエラー番号
      *
-     * @return CurlError
+     * @return CurlError|null null時はexec未実行
      */
-    public function getErrEnum(): CurlError {
-        return $this->_errEnum ?? CurlError::OK;
+    public function getErrEnum(): ?CurlError {
+        return $this->_errEnum;
     }
 
     /**
      * cURLエラーメッセージ
      *
-     * @return string
+     * @return string|null null時はexec未実行
      */
-    public function getErrMsg(): string {
-        return $this->_errMsg ?? '';
+    public function getErrMsg(): ?string {
+        return $this->_errMsg;
     }
 
     /**
