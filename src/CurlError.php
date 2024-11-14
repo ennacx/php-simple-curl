@@ -5,6 +5,8 @@ namespace Ennacx\SimpleCurl;
 
 /**
  * cURLエラー番号
+ *
+ * @see https://curl.se/libcurl/c/libcurl-errors.html
  */
 enum CurlError: int implements FromValueImpl {
 

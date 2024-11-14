@@ -10,12 +10,10 @@ use Stringable;
 
 /**
  * cURLをシンプルに使用出来るようにラップしたライブラリ
- *
- * @version 1.0.0
  */
 final class SimpleCurlLib {
 
-	private const retriableErrorCodes = [
+	private const CURL_EXEC_CONTINUABLE_ERRORS = [
 		CurlError::COULDNT_RESOLVE_HOST,
 		CurlError::COULDNT_CONNECT,
 		CurlError::HTTP_RETURNED_ERROR,
@@ -56,13 +54,13 @@ final class SimpleCurlLib {
      * cURLをシンプルに使用出来るようにラップしたライブラリ
      *
      * @param  string|null $url            URL
-     * @param  Method      $method         メソッド
+     * @param  CurlMethod  $method         メソッド
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
      * @param  boolean     $certVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, Method $method = Method::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
@@ -78,16 +76,16 @@ final class SimpleCurlLib {
 
         // メソッド設定
         switch($method){
-            case Method::GET:
+            case CurlMethod::GET:
                 // NOP
                 break;
-            case Method::POST:
+            case CurlMethod::POST:
                 curl_setopt($this->ch, CURLOPT_POST, true);
                 break;
-            case Method::PUT:
+            case CurlMethod::PUT:
                 curl_setopt($this->ch, CURLOPT_PUT, true);
                 break;
-            case Method::DELETE:
+            case CurlMethod::DELETE:
                 curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
                 break;
         }
@@ -503,7 +501,7 @@ final class SimpleCurlLib {
 				// cURL失敗時はエラー情報を格納
 				if($curlResult === false){
 					$this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
-					if(!in_array($this->_errEnum, self::retriableErrorCodes, true) || $retries === 0){
+					if(!in_array($this->_errEnum, self::CURL_EXEC_CONTINUABLE_ERRORS, true) || $retries === 0){
 						$this->_errMsg = curl_error($this->ch);
 
 						if($throws)

@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl;
 /**
  * HTTPメソッド
  */
-enum Method {
+enum CurlMethod {
 
     /** HTTP GETモード */
     case GET;
