@@ -6,18 +6,40 @@ namespace Ennacx\SimpleCurl;
 /**
  * HTTPステータスコード
  */
-class HttpStatusCode {
+enum HttpStatusCode: int {
 
-	public const OK                  = 200;
-	public const CREATED             = 201;
-	public const ACCEPTED            = 202;
-	public const NO_CONTENT          = 204;
-	public const BAD_REQUEST         = 400;
-	public const UNAUTHORIZED        = 401;
-	public const FORBIDDEN           = 403;
-	public const NOT_FOUND           = 404;
-	public const SERVER_ERROR        = 500;
-	public const BAD_GATEWAY         = 502;
-	public const SERVICE_UNAVAILABLE = 503;
-	public const GATEWAY_TIMEOUT     = 504;
+	case OK                  = 200;
+	case CREATED             = 201;
+	case ACCEPTED            = 202;
+	case NO_CONTENT          = 204;
+	case BAD_REQUEST         = 400;
+	case UNAUTHORIZED        = 401;
+	case FORBIDDEN           = 403;
+	case NOT_FOUND           = 404;
+	case SERVER_ERROR        = 500;
+	case BAD_GATEWAY         = 502;
+	case SERVICE_UNAVAILABLE = 503;
+	case GATEWAY_TIMEOUT     = 504;
+
+	public static function fromValue(int $value): self {
+		return self::from($value);
+	}
+
+	public function getKeyword(): string {
+
+		return match($this){
+			self::OK                  => 'OK',
+			self::CREATED             => 'Created',
+			self::ACCEPTED            => 'Accepted',
+			self::NO_CONTENT          => 'No content',
+			self::BAD_REQUEST         => 'Bad request',
+			self::UNAUTHORIZED        => 'Unauthorized',
+			self::FORBIDDEN           => 'Forbidden',
+			self::NOT_FOUND           => 'Not found',
+			self::SERVER_ERROR        => 'Internal server error',
+			self::BAD_GATEWAY         => 'Bad gateway',
+			self::SERVICE_UNAVAILABLE => 'Service unavailable',
+			self::GATEWAY_TIMEOUT     => 'Gateway timeout'
+		};
+	}
 }

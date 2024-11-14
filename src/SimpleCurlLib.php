@@ -45,14 +45,14 @@ final class SimpleCurlLib {
     /**
      * cURLをシンプルに使用出来るようにラップしたライブラリ
      *
-     * @param  string|null$url            URL
-     * @param  MethodEnum $method         メソッド
-     * @param  boolean    $hostVerify     SSL_VERIFYHOST
-     * @param  boolean    $certVerify     SSL_VERIFYPEER
-     * @param  boolean    $returnTransfer Return transfer
+     * @param  string|null $url            URL
+     * @param  Method      $method         メソッド
+     * @param  boolean     $hostVerify     SSL_VERIFYHOST
+     * @param  boolean     $certVerify     SSL_VERIFYPEER
+     * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, MethodEnum $method = MethodEnum::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, Method $method = Method::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
@@ -68,16 +68,16 @@ final class SimpleCurlLib {
 
         // メソッド設定
         switch($method){
-            case MethodEnum::GET:
+            case Method::GET:
                 // NOP
                 break;
-            case MethodEnum::POST:
+            case Method::POST:
                 curl_setopt($this->ch, CURLOPT_POST, true);
                 break;
-            case MethodEnum::PUT:
+            case Method::PUT:
                 curl_setopt($this->ch, CURLOPT_PUT, true);
                 break;
-            case MethodEnum::DELETE:
+            case Method::DELETE:
                 curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
                 break;
         }
@@ -190,16 +190,16 @@ final class SimpleCurlLib {
     /**
      * 認証情報の設定
      *
-     * @param  AuthEnum    $method
+     * @param  CurlAuth    $method
      * @param  string|null $user
      * @param  string|null $pass
      * @return self
      */
-    public function setAuthentication(AuthEnum $method, ?string $user = null, ?string $pass = null): self {
+    public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
 
         curl_setopt($this->ch, CURLOPT_HTTPAUTH, $method->toCurlConst());
 
-        if($method !== AuthEnum::AUTH_NONE && $user !== null && $pass !== null){
+        if($method !== CurlAuth::NONE && $user !== null && $pass !== null){
             curl_setopt($this->ch, CURLOPT_USERPWD, "{$user}:{$pass}");
         }
 
@@ -216,7 +216,7 @@ final class SimpleCurlLib {
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
 
         if(!empty($user) && !empty($pass)){
-            curl_setopt($this->ch, CURLOPT_HTTPAUTH, AuthEnum::AUTH_BASIC->toCurlConst());
+            curl_setopt($this->ch, CURLOPT_HTTPAUTH, CurlAuth::BASIC->toCurlConst());
 
             $this->addHeader(['Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))]);
         }

@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl;
 
-enum MethodEnum {
+/**
+ * HTTPメソッド
+ */
+enum Method {
 
     /** HTTP GETモード */
     case GET;
