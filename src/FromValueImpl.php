@@ -5,5 +5,5 @@ namespace Ennacx\SimpleCurl;
 
 interface FromValueImpl {
 
-	public static function fromValue(int $value): self;
+    public static function fromValue(int $value): self;
 }

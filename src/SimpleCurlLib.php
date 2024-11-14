@@ -13,16 +13,16 @@ use Stringable;
  */
 final class SimpleCurlLib {
 
-	/** @var CurlError[] 実行時にエラーとなった場合のリトライ可能とするエラーコード群 */
-	private const CURL_EXEC_CONTINUABLE_ERRORS = [
-		CurlError::COULDNT_RESOLVE_HOST,
-		CurlError::COULDNT_CONNECT,
-		CurlError::HTTP_RETURNED_ERROR,
-		CurlError::READ_ERROR,
-		CurlError::OPERATION_TIMEDOUT,
-		CurlError::HTTP_POST_ERROR,
-		CurlError::SSL_CONNECT_ERROR,
-	];
+    /** @var CurlError[] 実行時にエラーとなった場合のリトライ可能とするエラーコード群 */
+    private const CURL_EXEC_CONTINUABLE_ERRORS = [
+        CurlError::COULDNT_RESOLVE_HOST,
+        CurlError::COULDNT_CONNECT,
+        CurlError::HTTP_RETURNED_ERROR,
+        CurlError::READ_ERROR,
+        CurlError::OPERATION_TIMEDOUT,
+        CurlError::HTTP_POST_ERROR,
+        CurlError::SSL_CONNECT_ERROR,
+    ];
 
     /** @var CurlHandle cURLハンドラー */
     private CurlHandle $ch;
@@ -467,8 +467,8 @@ final class SimpleCurlLib {
      */
     public function exec(int $retries = 5, bool $throws = false): void {
 
-		// コード番号変換
-		$continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
+        // コード番号変換
+        $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
 
         /**
          * cURLのレスポンスメタ情報をセットするサブファンクション
@@ -488,64 +488,64 @@ final class SimpleCurlLib {
             curl_setopt($this->ch, CURLOPT_HTTPHEADER, $strHeaders);
         }
 
-		while($retries--){
-			// cURLリクエスト実行
-			$curlResult = curl_exec($this->ch);
+        while($retries--){
+            // cURLリクエスト実行
+            $curlResult = curl_exec($this->ch);
 
-			// cURL実行フラグ
-			$this->_executed = true;
+            // cURL実行フラグ
+            $this->_executed = true;
 
-			// ReturnTransfer無効時、またはcURL失敗時
-			if(is_bool($curlResult)){
-				$this->_result = $curlResult;
+            // ReturnTransfer無効時、またはcURL失敗時
+            if(is_bool($curlResult)){
+                $this->_result = $curlResult;
 
-				$this->_responseHeader = null;
-				$this->_responseBody   = null;
+                $this->_responseHeader = null;
+                $this->_responseBody   = null;
 
-				// cURL失敗時はエラー情報を格納
-				if($curlResult === false){
-					if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
-						$this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
-						$this->_errMsg  = curl_error($this->ch);
+                // cURL失敗時はエラー情報を格納
+                if($curlResult === false){
+                    if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
+                        $this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
+                        $this->_errMsg  = curl_error($this->ch);
 
-						if($throws)
-							throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $this->_errEnum->value, $this->_errMsg));
-						else
-							return;
-					}
-				} else{
-					$this->_errEnum = CurlError::OK;
-					$this->_errMsg  = '';
+                        if($throws)
+                            throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $this->_errEnum->value, $this->_errMsg));
+                        else
+                            return;
+                    }
+                } else{
+                    $this->_errEnum = CurlError::OK;
+                    $this->_errMsg  = '';
 
-					// レスポンスメタ情報のセット
-					$getInfoFunc();
+                    // レスポンスメタ情報のセット
+                    $getInfoFunc();
 
-					break;
-				}
-			}
-			// ReturnTransfer有効、且つcURL成功時
-			else if(!empty($curlResult)){
-				$this->_result = true;
+                    break;
+                }
+            }
+            // ReturnTransfer有効、且つcURL成功時
+            else if(!empty($curlResult)){
+                $this->_result = true;
 
-				$this->_errEnum = CurlError::OK;
-				$this->_errMsg  = '';
+                $this->_errEnum = CurlError::OK;
+                $this->_errMsg  = '';
 
-				// レスポンスメタ情報のセット
-				$getInfoFunc();
+                // レスポンスメタ情報のセット
+                $getInfoFunc();
 
-				// ヘッダー情報とボディー情報を分割
-				if(isset($this->_infoRaw['header_size'])){
-					$this->_responseHeader = trim(substr($curlResult, 0, $this->_infoRaw['header_size']));
-					$this->_responseBody   = substr($curlResult, $this->_infoRaw['header_size']);
-				} else{
-					$this->_responseHeader = null;
-					$this->_responseBody   = $curlResult;
-				}
-				unset($temp);
+                // ヘッダー情報とボディー情報を分割
+                if(isset($this->_infoRaw['header_size'])){
+                    $this->_responseHeader = trim(substr($curlResult, 0, $this->_infoRaw['header_size']));
+                    $this->_responseBody   = substr($curlResult, $this->_infoRaw['header_size']);
+                } else{
+                    $this->_responseHeader = null;
+                    $this->_responseBody   = $curlResult;
+                }
+                unset($temp);
 
-				break;
-			}
-		}
+                break;
+            }
+        }
     }
 
     /**
