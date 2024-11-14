@@ -27,6 +27,12 @@ final class SimpleCurlLib {
     /** @var CurlHandle cURLハンドラー */
     private CurlHandle $ch;
 
+    /** @var CurlMethod cURLメソッド */
+    private CurlMethod $method;
+
+    /** @var string|null ラベル */
+    private ?string $label = null;
+
     /** @var array<string, string> HTTPヘッダー */
     private array $_headers = [];
 
@@ -56,12 +62,13 @@ final class SimpleCurlLib {
      *
      * @param  string|null $url            URL
      * @param  CurlMethod  $method         メソッド
+     * @param  string|null $label          ラベル
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
      * @param  boolean     $certVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $label = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
@@ -76,7 +83,8 @@ final class SimpleCurlLib {
         $this->ch = $temp;
 
         // メソッド設定
-        switch($method){
+        $this->method = $method;
+        switch($this->method){
             case CurlMethod::GET:
                 // NOP
                 break;
@@ -91,6 +99,9 @@ final class SimpleCurlLib {
                 break;
         }
 
+        // ラベル
+        $this->label = $label;
+
         // HOSTの検証
         curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
         // 証明書の検証
@@ -104,6 +115,17 @@ final class SimpleCurlLib {
      * デストラクタ
      */
     public function __destruct(){
+
+        $this->close();
+        unset($this->ch);
+    }
+
+    /**
+     * cURLセッションを閉じる
+     *
+     * @return void
+     */
+    public function close(): void {
 
         if(isset($this->ch)){
             curl_close($this->ch);
@@ -335,6 +357,33 @@ final class SimpleCurlLib {
         }
 
         return $this;
+    }
+
+    /**
+     * cURLハンドラー取得
+     *
+     * @return CurlHandle
+     */
+    public function getHandler(): CurlHandle {
+        return $this->ch;
+    }
+
+    /**
+     * cURLメソッド取得
+     *
+     * @return CurlMethod
+     */
+    public function getMethod(): CurlMethod {
+        return $this->method;
+    }
+
+    /**
+     * ラベル取得
+     *
+     * @return string|null
+     */
+    public function getLabel(): ?string {
+        return $this->label;
     }
 
     /**
