@@ -15,6 +15,16 @@ use Stringable;
  */
 final class SimpleCurlLib {
 
+	private const retriableErrorCodes = [
+		CurlError::COULDNT_RESOLVE_HOST,
+		CurlError::COULDNT_CONNECT,
+		CurlError::HTTP_RETURNED_ERROR,
+		CurlError::READ_ERROR,
+		CurlError::OPERATION_TIMEDOUT,
+		CurlError::HTTP_POST_ERROR,
+		CurlError::SSL_CONNECT_ERROR,
+	];
+
     /** @var CurlHandle cURLハンドラー */
     private CurlHandle $ch;
 
@@ -36,8 +46,8 @@ final class SimpleCurlLib {
     /** @var array|null cURL結果生データ */
     private ?array $_infoRaw = null;
 
-    /** @var int|null cURLエラー番号 */
-    private ?int $_errNo = null;
+    /** @var CurlError|null cURLエラーEnum */
+    private ?CurlError $_errEnum = null;
 
     /** @var string|null cURLエラーメッセージ */
     private ?string $_errMsg = null;
@@ -285,14 +295,14 @@ final class SimpleCurlLib {
      * @param  boolean $jsonEncode POST内容をJSON化するか
      * @param  int     $jsonFlags  $jsonEncodeがtrueの場合のJSONフラグ値
      * @return self
-     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function setPostFields(mixed $fields, bool $jsonEncode = false, int $jsonFlags = 0): self {
 
         if($jsonEncode){
             $fields = json_encode($fields, $jsonFlags);
             if($fields === false){
-                throw new RuntimeException('JSON encode failed.');
+                throw new InvalidArgumentException('JSON encode failed.');
             }
         }
 
@@ -451,9 +461,12 @@ final class SimpleCurlLib {
     /**
      * cURL実行
      *
+     * @param  int     $retries リトライ回数
+     * @param  boolean $throws  例外スロー
      * @return void
+     * @throws RuntimeException
      */
-    public function exec(): void {
+    public function exec(int $retries = 5, bool $throws = true): void {
 
         /**
          * cURLのレスポンスメタ情報をセットするサブファンクション
@@ -473,49 +486,62 @@ final class SimpleCurlLib {
             curl_setopt($this->ch, CURLOPT_HTTPHEADER, $strHeaders);
         }
 
-        // cURLリクエスト実行
-        $curlResult = curl_exec($this->ch);
+		while($retries--){
+			// cURLリクエスト実行
+			$curlResult = curl_exec($this->ch);
 
-        // cURL実行フラグ
-        $this->_executed = true;
+			// cURL実行フラグ
+			$this->_executed = true;
 
-        // ReturnTransfer無効時、またはcURL失敗時
-        if(is_bool($curlResult)){
-            $this->_result = $curlResult;
+			// ReturnTransfer無効時、またはcURL失敗時
+			if(is_bool($curlResult)){
+				$this->_result = $curlResult;
 
-            $this->_responseHeader = null;
-            $this->_responseBody   = null;
+				$this->_responseHeader = null;
+				$this->_responseBody   = null;
 
-            // cURL失敗時はエラー情報を格納
-            if($curlResult === false){
-                $this->_errNo  = curl_errno($this->ch);
-                $this->_errMsg = curl_error($this->ch);
-            } else{
-                $this->_errNo  = null;
-                $this->_errMsg = null;
+				// cURL失敗時はエラー情報を格納
+				if($curlResult === false){
+					$this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
+					if(!in_array($this->_errEnum, self::retriableErrorCodes, true) || $retries === 0){
+						$this->_errMsg = curl_error($this->ch);
 
-                $getInfoFunc();
-            }
-        }
-        // ReturnTransfer有効、且つcURL成功時
-        else if(!empty($curlResult)){
-            $this->_result = true;
+						if($throws)
+							throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $this->_errEnum->value, $this->_errMsg));
+						else
+							return;
+					}
+				} else{
+					$this->_errEnum = null;
+					$this->_errMsg  = null;
 
-            $this->_errNo  = null;
-            $this->_errMsg = null;
+					$getInfoFunc();
 
-            $getInfoFunc();
+					break;
+				}
+			}
+			// ReturnTransfer有効、且つcURL成功時
+			else if(!empty($curlResult)){
+				$this->_result = true;
 
-            // ヘッダー情報とボディー情報を分割
-            if(isset($this->_infoRaw['header_size'])){
-                $this->_responseHeader = trim(substr($curlResult, 0, $this->_infoRaw['header_size']));
-                $this->_responseBody   = substr($curlResult, $this->_infoRaw['header_size']);
-            } else{
-                $this->_responseHeader = null;
-                $this->_responseBody   = $curlResult;
-            }
-            unset($temp);
-        }
+				$this->_errEnum = null;
+				$this->_errMsg  = null;
+
+				$getInfoFunc();
+
+				// ヘッダー情報とボディー情報を分割
+				if(isset($this->_infoRaw['header_size'])){
+					$this->_responseHeader = trim(substr($curlResult, 0, $this->_infoRaw['header_size']));
+					$this->_responseBody   = substr($curlResult, $this->_infoRaw['header_size']);
+				} else{
+					$this->_responseHeader = null;
+					$this->_responseBody   = $curlResult;
+				}
+				unset($temp);
+
+				break;
+			}
+		}
     }
 
     /**
@@ -548,10 +574,10 @@ final class SimpleCurlLib {
     /**
      * cURLエラー番号
      *
-     * @return int
+     * @return CurlError
      */
-    public function getErrNo(): int {
-        return $this->_errNo ?? 0;
+    public function getErrEnum(): CurlError {
+        return $this->_errEnum ?? CurlError::OK;
     }
 
     /**

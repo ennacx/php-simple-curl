@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl;
 /**
  * HTTPステータスコード
  */
-enum HttpStatusCode: int {
+enum HttpStatusCode: int implements FromValueImpl {
 
 	case OK                  = 200;
 	case CREATED             = 201;
