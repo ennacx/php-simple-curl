@@ -1,12 +1,23 @@
 <?php
 declare(strict_types=1);
 
-namespace Ennacx\SimpleCurl;
+namespace Ennacx\SimpleCurl\Entity;
+
+use Ennacx\SimpleCurl\Enum\CurlError;
 
 /**
  * exec()メソッド後のcURL各結果
+ *
+ * @property mixed content_type
+ * @property mixed character_set
+ * @property mixed latency
+ * @property mixed http_status_code
+ * @property mixed redirect_count
+ * @property mixed content_size
+ * @property mixed upload_speed
+ * @property mixed download_speed
  */
-class ResponseEntity {
+class ResponseEntity extends AbstEntity {
 
     /** @var string SimpleCurlLibのID */
     public string $id;
@@ -33,131 +44,31 @@ class ResponseEntity {
     private ?array $_infoRaw = null;
 
     /**
-     * Content-Type (Raw)
+     * cURLレスポンス内容を使いやすくした実体クラス
      *
-     * @return string|null
+     * @param array $curlInfo
      */
-    public function getContentTypeRaw(): ?string {
+    public function __construct(array $curlInfo = []){
 
-        $temp = $this->_getFromInfoRaw('content_type');
-
-        return ($temp !== null) ? $temp : null;
+        if(!empty($curlInfo)){
+            $this->_infoRaw = $curlInfo;
+        }
     }
 
     /**
-     * Content-Type
+     * エンティティーが保持しているダイナミックプロパティの他にcURLの情報から取得出来れば取得
      *
-     * @return string|null
+     * @param  string $name
+     * @return mixed
      */
-    public function getContentType(): ?string {
+    public function &__get(string $name): mixed{
 
-        $temp = $this->getContentTypeRaw();
-
-        if($temp === null){
-            return null;
+        $value = parent::__get($name);
+        if($value === null){
+            $value = $this->_getFromInfoRaw($name);
         }
 
-        $result = preg_match('/^(?<type>.+)\s*;.*/', $temp, $matches);
-
-        if(!$result || !isset($matches['type'])){
-            return null;
-        }
-
-        return trim($matches['type']);
-    }
-
-    /**
-     * Character-Set
-     *
-     * @return string|null
-     */
-    public function getCharacterSet(): ?string {
-
-        $temp = $this->getContentTypeRaw();
-
-        if($temp === null){
-            return null;
-        }
-
-        $result = preg_match('/.*;\s*charset\s*=\s*(?<charset>.+)\s*$/', $temp, $matches);
-
-        if(!$result || !isset($matches['charset'])){
-            return null;
-        }
-
-        return trim($matches['charset']);
-    }
-
-    /**
-     * cURLでのリクエスト～レスポンスまでの時間 (sec)
-     *
-     * @return float|null
-     */
-    public function getLatency(): ?float {
-
-        $temp = $this->_getFromInfoRaw('total_time');
-
-        return ($temp !== null) ? floatval($temp) : null;
-    }
-
-    /**
-     * HTTPステータスコード
-     *
-     * @return int|null
-     */
-    public function getHttpStatusCode(): ?int {
-
-        $temp = $this->_getFromInfoRaw('http_code');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * 実際のリダイレクト回数
-     *
-     * @return int|null
-     */
-    public function getRedirectCount(): ?int {
-
-        $temp = $this->_getFromInfoRaw('redirect_count');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * Content-Length
-     *
-     * @return int|null
-     */
-    public function getContentSize(): ?int {
-
-        $temp = $this->_getFromInfoRaw('size_download');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * アップロード速度 (byte/sec)
-     *
-     * @return int|null
-     */
-    public function getUploadSpeed(): ?int {
-
-        $temp = $this->_getFromInfoRaw('speed_upload');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * ダウンロード速度 (byte/sec)
-     *
-     * @return int|null
-     */
-    public function getDownloadSpeed(): ?int {
-
-        $temp = $this->_getFromInfoRaw('speed_download');
-
-        return ($temp !== null) ? intval($temp) : null;
+        return $value;
     }
 
     /**
@@ -180,6 +91,122 @@ class ResponseEntity {
     }
 
     /**
+     * Content-Type
+     *
+     * @return string|null
+     */
+    protected function _getContentType(): ?string {
+
+        $temp = $this->_getContentTypeRaw();
+
+        if($temp === null){
+            return null;
+        }
+
+        $result = preg_match('/^(?<type>.+)\s*;.*/', $temp, $matches);
+
+        if(!$result || !isset($matches['type'])){
+            return null;
+        }
+
+        return trim($matches['type']);
+    }
+
+    /**
+     * Character-Set
+     *
+     * @return string|null
+     */
+    protected function _getCharacterSet(): ?string {
+
+        $temp = $this->_getContentTypeRaw();
+
+        if($temp === null){
+            return null;
+        }
+
+        $result = preg_match('/.*;\s*charset\s*=\s*(?<charset>.+)\s*$/', $temp, $matches);
+
+        if(!$result || !isset($matches['charset'])){
+            return null;
+        }
+
+        return trim($matches['charset']);
+    }
+
+    /**
+     * cURLでのリクエスト～レスポンスまでの時間 (sec)
+     *
+     * @return float|null
+     */
+    protected function _getLatency(): ?float {
+
+        $temp = $this->_getFromInfoRaw('total_time');
+
+        return ($temp !== null) ? floatval($temp) : null;
+    }
+
+    /**
+     * HTTPステータスコード
+     *
+     * @return int|null
+     */
+    protected function _getHttpStatusCode(): ?int {
+
+        $temp = $this->_getFromInfoRaw('http_code');
+
+        return ($temp !== null) ? intval($temp) : null;
+    }
+
+    /**
+     * 実際のリダイレクト回数
+     *
+     * @return int|null
+     */
+    protected function _getRedirectCount(): ?int {
+
+        $temp = $this->_getFromInfoRaw('redirect_count');
+
+        return ($temp !== null) ? intval($temp) : null;
+    }
+
+    /**
+     * Content-Length
+     *
+     * @return int|null
+     */
+    protected function _getContentSize(): ?int {
+
+        $temp = $this->_getFromInfoRaw('size_download');
+
+        return ($temp !== null) ? intval($temp) : null;
+    }
+
+    /**
+     * アップロード速度 (byte/sec)
+     *
+     * @return int|null
+     */
+    protected function _getUploadSpeed(): ?int {
+
+        $temp = $this->_getFromInfoRaw('speed_upload');
+
+        return ($temp !== null) ? intval($temp) : null;
+    }
+
+    /**
+     * ダウンロード速度 (byte/sec)
+     *
+     * @return int|null
+     */
+    protected function _getDownloadSpeed(): ?int {
+
+        $temp = $this->_getFromInfoRaw('speed_download');
+
+        return ($temp !== null) ? intval($temp) : null;
+    }
+
+    /**
      * info配列からデータ取得
      *
      * @link https://www.php.net/manual/ja/function.curl-getinfo.php
@@ -196,5 +223,17 @@ class ResponseEntity {
 
         // キーにnullを指定した場合は全取得
         return ($key !== null) ? $this->_infoRaw[$key] : $this->_infoRaw;
+    }
+
+    /**
+     * Content-Type (Raw)
+     *
+     * @return string|null
+     */
+    private function _getContentTypeRaw(): ?string {
+
+        $temp = $this->_getFromInfoRaw('content_type');
+
+        return ($temp !== null) ? $temp : null;
     }
 }

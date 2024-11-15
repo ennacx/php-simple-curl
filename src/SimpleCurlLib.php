@@ -4,6 +4,11 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl;
 
 use CurlHandle;
+use Ennacx\SimpleCurl\Entity\ResponseEntity;
+use Ennacx\SimpleCurl\Enum\CurlAuth;
+use Ennacx\SimpleCurl\Enum\CurlError;
+use Ennacx\SimpleCurl\Enum\CurlMethod;
+use Ennacx\SimpleCurl\Static\Utils;
 use InvalidArgumentException;
 use RuntimeException;
 use Stringable;
@@ -655,5 +660,10 @@ final class SimpleCurlLib {
         $temp = strtolower($v);
 
         return ($spaceAllRemove) ? str_replace(' ', '', $temp) : trim($temp);
+    }
+
+
+    public function test(?string $a){
+        $this->id = $a;
     }
 }

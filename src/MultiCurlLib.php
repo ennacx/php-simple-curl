@@ -4,6 +4,9 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl;
 
 use CurlMultiHandle;
+use Ennacx\SimpleCurl\Entity\ResponseEntity;
+use Ennacx\SimpleCurl\Enum\CurlError;
+use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use InvalidArgumentException;
 use RuntimeException;
 

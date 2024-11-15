@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ennacx\SimpleCurl;
+namespace Ennacx\SimpleCurl\Static;
 
 use Random\RandomException;
 use RuntimeException;
