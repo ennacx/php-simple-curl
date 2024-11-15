@@ -8,14 +8,55 @@ use Ennacx\SimpleCurl\Enum\CurlError;
 /**
  * exec()メソッド後のcURL各結果
  *
- * @property mixed content_type
+ * @property mixed content_type (subtract character-set)
  * @property mixed character_set
  * @property mixed latency
  * @property mixed http_status_code
  * @property mixed redirect_count
  * @property mixed content_size
- * @property mixed upload_speed
- * @property mixed download_speed
+ * @property mixed upload_speed (alias for 'speed_upload')
+ * @property mixed download_speed (alias for 'speed_download')
+ *
+ * @property mixed url
+ * @property mixed http_code
+ * @property mixed header_size
+ * @property mixed request_size
+ * @property mixed filetime
+ * @property mixed ssl_verify_result
+ * @property mixed total_time
+ * @property mixed namelookup_time
+ * @property mixed connect_time
+ * @property mixed pretransfer_time
+ * @property mixed size_upload
+ * @property mixed size_download
+ * @property mixed speed_download
+ * @property mixed speed_upload
+ * @property mixed download_content_length
+ * @property mixed upload_content_length
+ * @property mixed starttransfer_time
+ * @property mixed redirect_time
+ * @property mixed redirect_url
+ * @property mixed primary_ip
+ * @property mixed certinfo
+ * @property mixed primary_port
+ * @property mixed local_ip
+ * @property mixed local_port
+ * @property mixed http_version
+ * @property mixed protocol
+ * @property mixed ssl_verifyresult
+ * @property mixed scheme
+ * @property mixed appconnect_time_us
+ * @property mixed connect_time_us
+ * @property mixed namelookup_time_us
+ * @property mixed pretransfer_time_us
+ * @property mixed redirect_time_us
+ * @property mixed starttransfer_time_us
+ * @property mixed total_time_us
+ * @property mixed effective_method
+ * @property mixed capath
+ * @property mixed cainfo
+ *
+ * @see https://www.php.net/manual/ja/function.curl-getinfo.php
  */
 class ResponseEntity extends AbstEntity {
 
@@ -154,18 +195,6 @@ class ResponseEntity extends AbstEntity {
     protected function _getHttpStatusCode(): ?int {
 
         $temp = $this->_getFromInfoRaw('http_code');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * 実際のリダイレクト回数
-     *
-     * @return int|null
-     */
-    protected function _getRedirectCount(): ?int {
-
-        $temp = $this->_getFromInfoRaw('redirect_count');
 
         return ($temp !== null) ? intval($temp) : null;
     }
