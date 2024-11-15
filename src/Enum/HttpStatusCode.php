@@ -54,6 +54,10 @@ enum HttpStatusCode: int implements FromValueImpl {
     case BAD_GATEWAY           = 502;
     case SERVICE_UNAVAILABLE   = 503;
     case GATEWAY_TIMEOUT       = 504;
+    case HTTP_VER_NOT_SUPPORT  = 505;
+    case VARIANT_NEGOTIATES    = 506;
+    case NOT_EXTENDED          = 510;
+    case NETWORK_AUTH_REQUIRED = 511;
 
     public static function fromValue(int $value): self {
         return self::from($value);
@@ -105,7 +109,11 @@ enum HttpStatusCode: int implements FromValueImpl {
             self::SERVER_ERROR          => 'Internal server error',
             self::BAD_GATEWAY           => 'Bad gateway',
             self::SERVICE_UNAVAILABLE   => 'Service unavailable',
-            self::GATEWAY_TIMEOUT       => 'Gateway timeout'
+            self::GATEWAY_TIMEOUT       => 'Gateway timeout',
+            self::HTTP_VER_NOT_SUPPORT  => 'HTTP version not supported',
+            self::VARIANT_NEGOTIATES    => 'Variant also negotiates',
+            self::NOT_EXTENDED          => 'Not extended',
+            self::NETWORK_AUTH_REQUIRED => 'Network authentication required'
         };
     }
 }
