@@ -15,7 +15,7 @@ final class MultiCurlLib {
     /** @var array<string, SimpleCurlLib> 並行実行するcURL群 */
     private array $channels = [];
 
-    private int $timeoutSec = 10;
+    private float $timeoutSec = 3.0;
 
     /**
      * 並列cURLをシンプルに使用出来るようにラップしたライブラリ
@@ -29,15 +29,11 @@ final class MultiCurlLib {
 
         $temp = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
         foreach($temp as $idx => $channel){
-            $label = $channel->getLabel();
-            if($label !== null){
-                if(!array_key_exists($label, $this->channels)){
-                    $this->channels[$label] = $channel;
-                } else{
-                    throw new InvalidArgumentException(sprintf('Channel label \'%s\' is duplicated.', $label));
-                }
+            $id = $channel->getId();
+            if(!array_key_exists($id, $this->channels)){
+                $this->channels[$id] = $channel;
             } else{
-                throw new InvalidArgumentException(sprintf('The label for channel index \'%d\' is required.', $idx));
+                throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
             }
         }
     }
@@ -67,20 +63,20 @@ final class MultiCurlLib {
      * チャネル追加
      *
      * @param  SimpleCurlLib $channel   追加チャネル
-     * @param  boolean       $overwrite ラベル重複時の上書き
      * @return $this
      * @throws InvalidArgumentException
      */
-    public function addChannel(SimpleCurlLib $channel, bool $overwrite = false): self {
+    public function addChannel(SimpleCurlLib $channel): self {
 
-        $label = $channel->getLabel();
-        if($label === null){
-            throw new InvalidArgumentException('The label for channel is required.');
-        } else if(array_key_exists($label, $this->channels) && !$overwrite){
-            throw new InvalidArgumentException(sprintf('Channel label \'%s\' is duplicated.', $label));
+        $id = $channel->getId();
+        if(array_key_exists($id, $this->channels)){
+            throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
         }
 
-        $this->channels[$label] = $channel;
+        // ReturnTransferを強制有効
+        $channel->setReturnTransfer(true);
+
+        $this->channels[$id] = $channel;
 
         return $this;
     }
@@ -111,9 +107,9 @@ final class MultiCurlLib {
     /**
      * マルチcURL実行
      *
-     * @return void
+     * @return MultiResponseEntity[]
      */
-    public function exec(): void {
+    public function exec(): array {
 
         if(count($this->channels) === 0){
             throw new InvalidArgumentException('No channels were found');
@@ -126,36 +122,50 @@ final class MultiCurlLib {
          * @return int
          */
         $executor = function(?int &$running): int {
+
             if(!isset($running))
-                $running = CURLM_CALL_MULTI_PERFORM;
+                $running = MultiCurlError::CALL_MULTI_PERFORM->value;
 
             do{
                 $result = curl_multi_exec($this->cmh, $running);
-            } while($result === CURLM_CALL_MULTI_PERFORM);
+            } while($result === MultiCurlError::CALL_MULTI_PERFORM->value);
 
             return $result;
         };
 
+        $curlInfoRaw = [];
         foreach($this->channels as $label => $channel){
+            $curlInfoRaw[] = [
+                'id'      => $channel->getId(),
+                'handler' => $channel->getHandler(),
+                'url'     => $channel->getUrl()
+            ];
+
+            // マルチハンドラーにcURLハンドラーを実装
             curl_multi_add_handle($this->cmh, $channel->getHandler());
         }
+        $curlInfoHandler = array_column($curlInfoRaw, 'handler', 'id');
+        $curlInfoUrl     = array_column($curlInfoRaw, 'url', 'id');
 
         $result = $executor($running);
 
-        if(!$running || $result !== CURLM_OK){
+        if(!$running || $result !== MultiCurlError::OK->value){
             throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
         }
+
+        $ret = [];
 
         // select前に全ての処理が終わっていたりすると複数の結果が入っていることがあるのでループが必要
         do switch(curl_multi_select($this->cmh, $this->timeoutSec)){
             // selectに失敗
             case -1:
-                //ちょっと待ってから
+                // ちょっと待ってから
                 usleep(10);
 
-                // リトライ
+                //
                 $executor($running);
 
+                // リトライ
                 continue 2;
 
             // タイムアウト
@@ -169,25 +179,52 @@ final class MultiCurlLib {
                 $result = $executor($running);
 
                 do if($raised = curl_multi_info_read($this->cmh, $remains)){
-                    $curlHandle = $raised['handle'];
+                    // 結果が返ってきたハンドラー
+                    $ch = $raised['handle'];
 
-                    // 変化のあったcurlハンドラを取得する
-                    $info = curl_getinfo($curlHandle);
-                    echo "{$info['url']}: {$info['http_code']}\n";
+                    $responseEntity = new MultiResponseEntity();
 
-                    $response = curl_multi_getcontent($curlHandle);
+                    $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
+                    $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
-                    // エラー 404などが返ってきている
-                    if($response === false){
-                        echo 'ERROR!!!', PHP_EOL;
+                    // 変化のあったcurlハンドラーを取得する
+                    $info = curl_getinfo($ch);
+
+                    $curlResult = curl_multi_getcontent($ch);
+
+                    // ReturnTransfer無効時、またはcURL失敗時
+                    if($curlResult === null){
+                        $responseEntity->result = false;
+
+                        $responseEntity->responseHeader = null;
+                        $responseEntity->responseBody   = null;
+
+                        $responseEntity->errorEnum    = CurlError::fromValue(curl_errno($ch));
+                        $responseEntity->errorMessage = curl_error($ch);
                     }
-                    // 正常にレスポンス取得
+                    // ReturnTransfer有効、且つcURL成功時
                     else{
-                        echo $response, PHP_EOL;
+                        $responseEntity->result = true;
+
+                        $responseEntity->errorEnum    = CurlError::OK;
+                        $responseEntity->errorMessage = '';
+
+                        // ヘッダー情報とボディー情報を分割
+                        if(isset($info['header_size'])){
+                            $responseEntity->responseHeader = trim(substr($curlResult, 0, $info['header_size']));
+                            $responseEntity->responseBody   = substr($curlResult, $info['header_size']);
+                        } else{
+                            $responseEntity->responseHeader = null;
+                            $responseEntity->responseBody   = $curlResult;
+                        }
                     }
 
-                    curl_multi_remove_handle($this->cmh, $curlHandle);
+                    $ret[] = $responseEntity;
+
+                    curl_multi_remove_handle($this->cmh, $ch);
                 } while($remains);
         } while($running);
+
+        return $ret;
     }
 }

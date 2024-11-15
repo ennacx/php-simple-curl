@@ -89,6 +89,19 @@ enum CurlError: int implements FromValueImpl {
     case RTSP_SESSION_ERROR = 86;
     case FTP_BAD_FILE_LIST = 87;
     case CHUNK_FAILED = 88;
+    case NO_CONNECTION_AVAILABLE = 89;
+    case SSL_PINNED_PUBKEY_NOT_MATCH = 90;
+    case SSL_INVALID_CERT_STATUS = 91;
+    case HTTP2_STREAM = 92;
+    case RECURSIVE_API_CALL = 93;
+    case AUTH_ERROR = 94;
+    case HTTP3 = 95;
+    case QUIC_CONNECT_ERROR = 96;
+    case PROXY = 97;
+    case SSL_CLIENT_CERT = 98;
+    case UNRECOVERABLE_POLL = 99;
+    case TOO_LARGE = 100;
+    case ECH_REQUIRED = 101;
 
     public static function fromValue(int $value): self {
         return self::from($value);

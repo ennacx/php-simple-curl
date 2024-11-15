@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl;
 
 use CurlHandle;
 use InvalidArgumentException;
+use Random\RandomException;
 use RuntimeException;
 use Stringable;
 
@@ -27,11 +28,14 @@ final class SimpleCurlLib {
     /** @var CurlHandle cURLハンドラー */
     private CurlHandle $ch;
 
+    /** @var string ID */
+    private string $id;
+
+    /** @var string|null URL */
+    private ?string $url = null;
+
     /** @var CurlMethod cURLメソッド */
     private CurlMethod $method;
-
-    /** @var string|null ラベル */
-    private ?string $label = null;
 
     /** @var array<string, string> HTTPヘッダー */
     private array $_headers = [];
@@ -62,25 +66,31 @@ final class SimpleCurlLib {
      *
      * @param  string|null $url            URL
      * @param  CurlMethod  $method         メソッド
-     * @param  string|null $label          ラベル
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
      * @param  boolean     $certVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $label = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
         }
 
-        $temp = curl_init($url);
+        $this->url = $url;
+        $temp = curl_init($this->url);
 
         if($temp === false){
             throw new RuntimeException('cURL initialize failed.');
         }
 
         $this->ch = $temp;
+
+        try{
+            $this->id = Utils::generateUUID();
+        } catch(RandomException $e){
+            throw new RuntimeException('Object-ID generate failed.');
+        }
 
         // メソッド設定
         $this->method = $method;
@@ -98,9 +108,6 @@ final class SimpleCurlLib {
                 curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
                 break;
         }
-
-        // ラベル
-        $this->label = $label;
 
         // HOSTの検証
         curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
@@ -149,7 +156,8 @@ final class SimpleCurlLib {
      */
     public function setUrl(string $url): self {
 
-        curl_setopt($this->ch, CURLOPT_URL, $url);
+        $this->url = $url;
+        curl_setopt($this->ch, CURLOPT_URL, $this->url);
 
         return $this;
     }
@@ -166,7 +174,7 @@ final class SimpleCurlLib {
         $value = $this->_trimLower($contentType, true);
 
         if($charset !== null){
-            $value.= ';charset='. $this->_trimLower($charset, true);
+            $value.= sprintf(';charset=%s', $this->_trimLower($charset, true));
         }
 
         $this->addHeader(['Content-Type' => $value]);
@@ -369,21 +377,30 @@ final class SimpleCurlLib {
     }
 
     /**
+     * ID取得
+     *
+     * @return string
+     */
+    public function getId(): string {
+        return $this->id;
+    }
+
+    /**
+     * URL取得
+     *
+     * @return string|null
+     */
+    public function getUrl(): ?string {
+        return $this->url;
+    }
+
+    /**
      * cURLメソッド取得
      *
      * @return CurlMethod
      */
     public function getMethod(): CurlMethod {
         return $this->method;
-    }
-
-    /**
-     * ラベル取得
-     *
-     * @return string|null
-     */
-    public function getLabel(): ?string {
-        return $this->label;
     }
 
     /**
