@@ -5,7 +5,6 @@ namespace Ennacx\SimpleCurl;
 
 use CurlHandle;
 use InvalidArgumentException;
-use Random\RandomException;
 use RuntimeException;
 use Stringable;
 
@@ -43,27 +42,6 @@ final class SimpleCurlLib {
     /** @var boolean 成否問わず、execしたかのフラグ */
     private bool $_executed = false;
 
-    /** @var boolean cURL成功可否 */
-    private bool $_result = false;
-
-    /** @var float|null 合計時間 (秒) */
-    private ?float $totalTime = null;
-
-    /** @var string|null cURLレスポンスヘッダー */
-    private ?string $_responseHeader = null;
-
-    /** @var string|null cURLレスポンスボディ */
-    private ?string $_responseBody = null;
-
-    /** @var array|null cURL結果生データ */
-    private ?array $_infoRaw = null;
-
-    /** @var CurlError|null cURLエラーEnum */
-    private ?CurlError $_errEnum = null;
-
-    /** @var string|null cURLエラーメッセージ */
-    private ?string $_errMsg = null;
-
     /**
      * cURLをシンプルに使用出来るようにラップしたライブラリ
      *
@@ -91,7 +69,7 @@ final class SimpleCurlLib {
 
         try{
             $this->id = Utils::generateUUID();
-        } catch(RandomException $e){
+        } catch(RuntimeException){
             throw new RuntimeException('Object-ID generate failed.');
         }
 
@@ -149,6 +127,33 @@ final class SimpleCurlLib {
      */
     public function resetOption(): void {
         curl_reset($this->ch);
+    }
+
+    /**
+     * ID取得
+     *
+     * @return string
+     */
+    public function getId(): string {
+        return $this->id;
+    }
+
+    /**
+     * URL取得
+     *
+     * @return string|null
+     */
+    public function getUrl(): ?string {
+        return $this->url;
+    }
+
+    /**
+     * cURLメソッド取得
+     *
+     * @return CurlMethod
+     */
+    public function getMethod(): CurlMethod {
+        return $this->method;
     }
 
     /**
@@ -380,42 +385,6 @@ final class SimpleCurlLib {
     }
 
     /**
-     * ID取得
-     *
-     * @return string
-     */
-    public function getId(): string {
-        return $this->id;
-    }
-
-    /**
-     * URL取得
-     *
-     * @return string|null
-     */
-    public function getUrl(): ?string {
-        return $this->url;
-    }
-
-    /**
-     * cURLメソッド取得
-     *
-     * @return CurlMethod
-     */
-    public function getMethod(): CurlMethod {
-        return $this->method;
-    }
-
-    /**
-     * 合計時間の取得 (秒)
-     *
-     * @return float|null
-     */
-    public function getTotalTime(): ?float {
-        return $this->totalTime;
-    }
-
-    /**
      * ヘッダー情報の取得
      *
      * @param  string|null     $separate
@@ -540,10 +509,10 @@ final class SimpleCurlLib {
      *
      * @param  int     $retries リトライ回数
      * @param  boolean $throws  True: throw exception / False: return void
-     * @return void
+     * @return ResponseEntity
      * @throws RuntimeException
      */
-    public function exec(int $retries = 5, bool $throws = false): void {
+    public function exec(int $retries = 5, bool $throws = false): ResponseEntity {
 
         // コード番号変換
         $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
@@ -551,12 +520,13 @@ final class SimpleCurlLib {
         /**
          * cURLのレスポンスメタ情報をセットするサブファンクション
          *
+         * @param  ResponseEntity $entity
          * @return void
          */
-        $getInfoFunc = function(): void {
+        $getInfoFunc = function(ResponseEntity $entity): void {
             $temp = curl_getinfo($this->ch);
             if(is_array($temp)){
-                $this->_infoRaw = $temp;
+                $entity->setInfo($temp);
             }
         };
 
@@ -566,6 +536,9 @@ final class SimpleCurlLib {
             curl_setopt($this->ch, CURLOPT_HTTPHEADER, $strHeaders);
         }
 
+        // 返却用エンティティー作成
+        $responseEntity = new ResponseEntity();
+
         while($retries--){
             // cURLリクエスト実行
             $curlResult = curl_exec($this->ch);
@@ -573,249 +546,71 @@ final class SimpleCurlLib {
             // cURL実行フラグ
             $this->_executed = true;
 
+            $responseEntity->id  = $this->id;
+            $responseEntity->url = $this->url;
+
             // ReturnTransfer無効時、またはcURL失敗時
             if(is_bool($curlResult)){
-                $this->_result = $curlResult;
+                $responseEntity->result = $curlResult;
 
-                $this->_responseHeader = null;
-                $this->_responseBody   = null;
+                $responseEntity->responseHeader = null;
+                $responseEntity->responseBody   = null;
 
                 // cURL失敗時はエラー情報を格納
                 if($curlResult === false){
                     if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
-                        $this->_errEnum = CurlError::fromValue(curl_errno($this->ch));
-                        $this->_errMsg  = curl_error($this->ch);
+                        $responseEntity->errorEnum    = CurlError::fromValue(curl_errno($this->ch));
+                        $responseEntity->errorMessage = curl_error($this->ch);
 
                         if($throws)
-                            throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $this->_errEnum->value, $this->_errMsg));
+                            throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $responseEntity->errorEnum->value, $responseEntity->errorMessage));
                         else
-                            return;
+                            return $responseEntity;
                     }
                 } else{
-                    $this->_errEnum = CurlError::OK;
-                    $this->_errMsg  = '';
+                    $responseEntity->errorEnum    = CurlError::OK;
+                    $responseEntity->errorMessage = '';
 
                     // レスポンスメタ情報のセット
-                    $getInfoFunc();
+                    $getInfoFunc($responseEntity);
 
                     break;
                 }
             }
             // ReturnTransfer有効、且つcURL成功時
             else if(!empty($curlResult)){
-                $this->_result = true;
+                $responseEntity->result = true;
 
-                $this->_errEnum = CurlError::OK;
-                $this->_errMsg  = '';
+                $responseEntity->errorEnum    = CurlError::OK;
+                $responseEntity->errorMessage = '';
 
                 // レスポンスメタ情報のセット
-                $getInfoFunc();
+                $getInfoFunc($responseEntity);
 
                 // ヘッダー情報とボディー情報を分割
-                if(isset($this->_infoRaw['header_size'])){
-                    $this->_responseHeader = trim(substr($curlResult, 0, $this->_infoRaw['header_size']));
-                    $this->_responseBody   = substr($curlResult, $this->_infoRaw['header_size']);
+                $headerSize = $responseEntity->getInfo()['header_size'] ?? null;
+                if($headerSize !== null){
+                    $responseEntity->responseHeader = trim(substr($curlResult, 0, $headerSize));
+                    $responseEntity->responseBody   = substr($curlResult, $headerSize);
                 } else{
-                    $this->_responseHeader = null;
-                    $this->_responseBody   = $curlResult;
+                    $responseEntity->responseHeader = null;
+                    $responseEntity->responseBody   = $curlResult;
                 }
-
-                // 合計時間
-                $this->totalTime = $this->_infoRaw['total_time'];
 
                 break;
             }
-        }
-    }
-
-    /**
-     * cURL成功可否
-     *
-     * @return boolean
-     */
-    public function getResult(): bool {
-        return $this->_result;
-    }
-
-    /**
-     * レスポンスヘッダー ( ```setReturnTransfer()``` で ```true``` を設定した場合のみ)
-     *
-     * @return string|null
-     */
-    public function getResponseHeader(): ?string {
-        return $this->_responseHeader;
-    }
-
-    /**
-     * レスポンスボディー ( ```setReturnTransfer()``` で ```true``` を設定した場合のみ)
-     *
-     * @return string|null
-     */
-    public function getResponseBody(): ?string {
-        return $this->_responseBody;
-    }
-
-    /**
-     * cURLエラー番号
-     *
-     * @return CurlError|null null時はexec未実行
-     */
-    public function getErrEnum(): ?CurlError {
-        return $this->_errEnum;
-    }
-
-    /**
-     * cURLエラーメッセージ
-     *
-     * @return string|null null時はexec未実行
-     */
-    public function getErrMsg(): ?string {
-        return $this->_errMsg;
-    }
-
-    /**
-     * cURLでのリクエスト～レスポンスまでの時間
-     *
-     * @param  boolean $getMicroSec true:マイクロ秒数 / false:秒数
-     * @return int|null
-     */
-    public function getLatency(bool $getMicroSec = false): ?int {
-
-        if($getMicroSec){
-            $temp = curl_getinfo($this->ch, CURLINFO_TOTAL_TIME_T);
-            if(!is_numeric($temp)){
-                $temp = null;
+            // 理論上ここには入らない
+            else{
+                throw new RuntimeException('Unknown error.');
             }
-        } else{
-            $temp = $this->_getFromInfoRaw('total_time');
         }
 
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * HTTPステータスコード
-     *
-     * @return int|null
-     */
-    public function getHttpStatusCode(): ?int {
-
-        $temp = $this->_getFromInfoRaw('http_code');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * 実際のリダイレクト回数
-     *
-     * @return int|null
-     */
-    public function getRedirectCount(): ?int {
-
-        $temp = $this->_getFromInfoRaw('redirect_count');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * Content-Type
-     *
-     * @return string|null
-     */
-    public function getContentType(): ?string {
-
-        $temp = $this->getContentTypeRaw();
-
-        if($temp === null){
-            return null;
+        // 最終確認
+        if(!$this->_executed){
+            throw new InvalidArgumentException('cURL finished without being executed.');
         }
 
-        $result = preg_match('/^(?<type>.+)\s*;.*/', $temp, $matches);
-
-        if(!$result || !isset($matches['type'])){
-            return null;
-        }
-
-        return trim($matches['type']);
-    }
-
-    /**
-     * Character-Set
-     *
-     * @return string|null
-     */
-    public function getCharacterSet(): ?string {
-
-        $temp = $this->getContentTypeRaw();
-
-        if($temp === null){
-            return null;
-        }
-
-        $result = preg_match('/.*;\s*charset\s*=\s*(?<charset>.+)\s*$/', $temp, $matches);
-
-        if(!$result || !isset($matches['charset'])){
-            return null;
-        }
-
-        return trim($matches['charset']);
-    }
-
-    /**
-     * Content-Type (Raw)
-     *
-     * @return string|null
-     */
-    public function getContentTypeRaw(): ?string {
-
-        $temp = $this->_getFromInfoRaw('content_type');
-
-        return ($temp !== null) ? $temp : null;
-    }
-
-    /**
-     * Content-Length
-     *
-     * @return int|null
-     */
-    public function getContentSize(): ?int {
-
-        $temp = $this->_getFromInfoRaw('size_download');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * アップロード速度 (byte/sec)
-     *
-     * @return int|null
-     */
-    public function getUploadSpeed(): ?int {
-
-        $temp = $this->_getFromInfoRaw('speed_upload');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * ダウンロード速度 (byte/sec)
-     *
-     * @return int|null
-     */
-    public function getDownloadSpeed(): ?int {
-
-        $temp = $this->_getFromInfoRaw('speed_download');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * curl_getinfo()の一括取得
-     *
-     * @return array|null
-     */
-    public function getInfo(): ?array {
-        return $this->_getFromInfoRaw(null);
+        return $responseEntity;
     }
 
     /**
@@ -846,25 +641,6 @@ final class SimpleCurlLib {
         }
 
         return ($separate !== null) ? implode($separate, $ret) : $ret;
-    }
-
-    /**
-     * info配列からデータ取得
-     *
-     * @link https://www.php.net/manual/ja/function.curl-getinfo.php
-     *
-     * @param  string|null $key null時は全取得
-     * @return mixed
-     */
-    private function _getFromInfoRaw(?string $key): mixed {
-
-        // 未実行時や指定キーが存在しない場合は無視
-        if(!$this->_executed || ($key !== null && !array_key_exists($key, $this->_infoRaw))){
-            return null;
-        }
-
-        // キーにnullを指定した場合は全取得
-        return ($key !== null) ? $this->_infoRaw[$key] : $this->_infoRaw;
     }
 
     /**

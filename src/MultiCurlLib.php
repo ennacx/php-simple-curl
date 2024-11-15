@@ -107,7 +107,7 @@ final class MultiCurlLib {
     /**
      * マルチcURL実行
      *
-     * @return MultiResponseEntity[]
+     * @return ResponseEntity[]
      */
     public function exec(): array {
 
@@ -162,15 +162,13 @@ final class MultiCurlLib {
                 // ちょっと待ってから
                 usleep(10);
 
-                //
+                // 再実行
                 $executor($running);
 
-                // リトライ
                 continue 2;
 
             // タイムアウト
             case 0:
-                // リトライ
                 continue 2;
 
             // どれかが成功 or 失敗
@@ -182,16 +180,13 @@ final class MultiCurlLib {
                     // 結果が返ってきたハンドラー
                     $ch = $raised['handle'];
 
-                    $responseEntity = new MultiResponseEntity();
+                    $responseEntity = new ResponseEntity();
 
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
                     // 変化のあったcurlハンドラーを取得する
-                    $info = curl_getinfo($ch);
-
-                    // 合計時間のセット
-                    $responseEntity->totalTime = $info['total_time'];
+                    $responseEntity->setInfo(curl_getinfo($ch));
 
                     $curlResult = curl_multi_getcontent($ch);
 
@@ -213,9 +208,10 @@ final class MultiCurlLib {
                         $responseEntity->errorMessage = '';
 
                         // ヘッダー情報とボディー情報を分割
-                        if(isset($info['header_size'])){
-                            $responseEntity->responseHeader = trim(substr($curlResult, 0, $info['header_size']));
-                            $responseEntity->responseBody   = substr($curlResult, $info['header_size']);
+                        $headerSize = $responseEntity->getInfo()['header_size'] ?? null;
+                        if($headerSize !== null){
+                            $responseEntity->responseHeader = trim(substr($curlResult, 0, $headerSize));
+                            $responseEntity->responseBody   = substr($curlResult, $headerSize);
                         } else{
                             $responseEntity->responseHeader = null;
                             $responseEntity->responseBody   = $curlResult;
