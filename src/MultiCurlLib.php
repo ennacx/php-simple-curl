@@ -190,6 +190,9 @@ final class MultiCurlLib {
                     // 変化のあったcurlハンドラーを取得する
                     $info = curl_getinfo($ch);
 
+                    // 合計時間のセット
+                    $responseEntity->totalTime = $info['total_time'];
+
                     $curlResult = curl_multi_getcontent($ch);
 
                     // ReturnTransfer無効時、またはcURL失敗時

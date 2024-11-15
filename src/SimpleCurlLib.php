@@ -46,6 +46,9 @@ final class SimpleCurlLib {
     /** @var boolean cURL成功可否 */
     private bool $_result = false;
 
+    /** @var float|null 合計時間 (秒) */
+    private ?float $totalTime = null;
+
     /** @var string|null cURLレスポンスヘッダー */
     private ?string $_responseHeader = null;
 
@@ -404,6 +407,15 @@ final class SimpleCurlLib {
     }
 
     /**
+     * 合計時間の取得 (秒)
+     *
+     * @return float|null
+     */
+    public function getTotalTime(): ?float {
+        return $this->totalTime;
+    }
+
+    /**
      * ヘッダー情報の取得
      *
      * @param  string|null     $separate
@@ -607,7 +619,9 @@ final class SimpleCurlLib {
                     $this->_responseHeader = null;
                     $this->_responseBody   = $curlResult;
                 }
-                unset($temp);
+
+                // 合計時間
+                $this->totalTime = $this->_infoRaw['total_time'];
 
                 break;
             }
