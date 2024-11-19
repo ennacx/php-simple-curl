@@ -48,6 +48,9 @@ final class SimpleCurlLib {
     /** @var array<string, string> HTTPヘッダー */
     private array $_headers = [];
 
+    /** @var string|null Cookieデータ保存パス */
+    private ?string $_cookieFilePath = null;
+
     /** @var boolean 成否問わず、execしたかのフラグ */
     private bool $_executed = false;
 
@@ -56,12 +59,13 @@ final class SimpleCurlLib {
      *
      * @param  string|null $url            URL
      * @param  CurlMethod  $method         メソッド
+     * @param  string|null $cookiePath     Cookie使用時のファイルパス
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
      * @param  boolean     $certVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $cookiePath = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
@@ -99,6 +103,10 @@ final class SimpleCurlLib {
                 break;
         }
 
+        // Cookie
+        if($cookiePath !== null)
+            $this->setCookieFile($cookiePath);
+
         // HOSTの検証
         curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
         // 証明書の検証
@@ -127,6 +135,15 @@ final class SimpleCurlLib {
         if(isset($this->ch)){
             curl_close($this->ch);
         }
+    }
+
+    /**
+     * eURL実行確認
+     *
+     * @return boolean True: 実行済 / False: 未実行
+     */
+    public function isExecuted(): bool {
+        return $this->_executed;
     }
 
     /**
@@ -200,6 +217,21 @@ final class SimpleCurlLib {
     }
 
     /**
+     * プロキシ接続設定
+     *
+     * @param  string $proxyAddr IP-Address or URL
+     * @param  int    $port      Proxy port number
+     * @return $this
+     */
+    public function setProxy(string $proxyAddr, int $port = 3128): self {
+
+        curl_setopt($this->ch, CURLOPT_PROXY, $proxyAddr);
+        curl_setopt($this->ch, CURLOPT_PROXYPORT, $port);
+
+        return $this;
+    }
+
+    /**
      * Acceptを設定
      *
      * @param  string $acceptType ('application/json', 'text/html' etc...)
@@ -222,10 +254,9 @@ final class SimpleCurlLib {
 
         curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, $flag);
 
-        if($flag){
-            // ヘッダー取得
+        // ReturnTransfer有効時はヘッダー情報も合わせて取得するよう設定
+        if($flag)
             curl_setopt($this->ch, CURLOPT_HEADER, true);
-        }
 
         return $this;
     }
@@ -303,6 +334,19 @@ final class SimpleCurlLib {
     }
 
     /**
+     * Cookie保存ファイルパスの設定
+     *
+     * @param  string $cookieFilePath
+     * @return self
+     */
+    public function setCookieFile(string $cookieFilePath): self {
+
+        $this->_cookieFilePath = $cookieFilePath;
+
+        return $this;
+    }
+
+    /**
      * リダイレクト回数の上限を設定
      *
      * @param int $count リダイレクト回数
@@ -314,9 +358,8 @@ final class SimpleCurlLib {
      */
     public function setMaxRedirectCount(int $count): self {
 
-        if($count < 0){
+        if($count < 0)
             $count = -1;
-        }
 
         $this->setFollowLocation(true);
         curl_setopt($this->ch, CURLOPT_MAXREDIRS, $count);
@@ -523,12 +566,12 @@ final class SimpleCurlLib {
     /**
      * cURL実行
      *
-     * @param  int     $retries リトライ回数
-     * @param  boolean $throws  True: throw exception / False: return void
+     * @param  int     $retries 実行失敗時のリトライ回数
+     * @param  boolean $throw   True: throw exception / False: return void
      * @return ResponseEntity
      * @throws RuntimeException
      */
-    public function exec(int $retries = 5, bool $throws = false): ResponseEntity {
+    public function exec(int $retries = 5, bool $throw = false): ResponseEntity {
 
         // コード番号変換
         $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
@@ -550,6 +593,14 @@ final class SimpleCurlLib {
         $strHeaders = $this->_headerReformation();
         if(!empty($strHeaders)){
             curl_setopt($this->ch, CURLOPT_HTTPHEADER, $strHeaders);
+        }
+
+        // Cookie使用時の設定
+        if($this->_cookieFilePath !== null){
+            // 保存用
+            curl_setopt($this->ch, CURLOPT_COOKIEJAR, $this->_cookieFilePath);
+            // 取得用
+            curl_setopt($this->ch, CURLOPT_COOKIEFILE, $this->_cookieFilePath);
         }
 
         // 返却用エンティティー作成
@@ -581,7 +632,7 @@ final class SimpleCurlLib {
                         $responseEntity->errorEnum    = CurlError::fromValue(curl_errno($this->ch));
                         $responseEntity->errorMessage = curl_error($this->ch);
 
-                        if($throws)
+                        if($throw)
                             throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $responseEntity->errorEnum->value, $responseEntity->errorMessage));
                         else
                             return $responseEntity;
