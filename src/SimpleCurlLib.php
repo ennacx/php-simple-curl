@@ -229,12 +229,19 @@ final class SimpleCurlLib {
     /**
      * Locationヘッダーの内容を辿るか
      *
-     * @param  boolean $flag
+     * @param  boolean $follow        True: ロケーションを辿る / False: 辿らない
+     * @param  int     $redirectCount ```$follow = true の時``` 最大リダイレクト回数
+     * @param  boolean $autoReferer   ```$follow = true の時``` True: ヘッダのリファラ情報を自動付与する / False: 付与しない
      * @return self
      */
-    public function setFollowLocation(bool $flag): self {
+    public function setFollowLocation(bool $follow, int $redirectCount = 10, bool $autoReferer = true): self {
 
-        curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, $flag);
+        curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, $follow);
+
+        if($follow){
+            curl_setopt($this->ch, CURLOPT_MAXREDIRS, $redirectCount);
+            curl_setopt($this->ch, CURLOPT_AUTOREFERER, $autoReferer);
+        }
 
         return $this;
     }
@@ -242,9 +249,9 @@ final class SimpleCurlLib {
     /**
      * 認証情報の設定
      *
-     * @param  CurlAuth    $method
-     * @param  string|null $user
-     * @param  string|null $pass
+     * @param  CurlAuth    $method 認証メソッド
+     * @param  string|null $user   ユーザーID
+     * @param  string|null $pass   パスワード
      * @return self
      */
     public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
@@ -261,8 +268,8 @@ final class SimpleCurlLib {
     /**
      * BASIC認証情報の設定
      *
-     * @param  string|null $user
-     * @param  string|null $pass
+     * @param  string|null $user ユーザーID
+     * @param  string|null $pass パスワード
      * @return self
      */
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
@@ -279,7 +286,7 @@ final class SimpleCurlLib {
     /**
      * Bearerトークンの設定
      *
-     * @param  string|null $token
+     * @param  string|null $token トークン
      * @return self
      */
     public function setBearerToken(?string $token = null): self {
@@ -294,7 +301,7 @@ final class SimpleCurlLib {
     /**
      * リダイレクト回数の上限を設定
      *
-     * @param int $count
+     * @param int $count リダイレクト回数
      *              ```
      *              負値でリダイレクトループの無視
      *              0: リダイレクト拒否
