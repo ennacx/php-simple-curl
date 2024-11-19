@@ -33,8 +33,10 @@ final class MultiCurlLib {
         $temp = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
         foreach($temp as $idx => $channel){
             $id = $channel->getId();
-            if(!array_key_exists($id, $this->channels)){
+            if(!empty($id) && !array_key_exists($id, $this->channels)){
                 $this->channels[$id] = $channel;
+            } else if(empty($id)){
+                throw new InvalidArgumentException(sprintf('Channel-ID at index %d is empty.', $idx));
             } else{
                 throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
             }
@@ -87,11 +89,11 @@ final class MultiCurlLib {
     /**
      * 登録済みのチャネルを取得
      *
-     * @param  string $label
+     * @param  string $channelId
      * @return SimpleCurlLib|null
      */
-    public function getChannel(string $label): ?SimpleCurlLib {
-        return (array_key_exists($label, $this->channels)) ? $this->channels[$label] : null;
+    public function getChannel(string $channelId): ?SimpleCurlLib {
+        return (array_key_exists($channelId, $this->channels)) ? $this->channels[$channelId] : null;
     }
 
     /**
@@ -105,6 +107,15 @@ final class MultiCurlLib {
         if(array_key_exists($label, $this->channels)){
             unset($this->channels[$label]);
         }
+    }
+
+    /**
+     * 登録済みチャネルのID群を取得
+     *
+     * @return string[]
+     */
+    public function getChannelIds(): array {
+        return array_keys($this->channels);
     }
 
     /**
