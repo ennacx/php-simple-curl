@@ -204,10 +204,10 @@ final class MultiCurlLib {
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
+                    $curlResult = curl_multi_getcontent($ch);
+
                     // cURLのレスポンスメタ情報をセット
                     $this->setCurlInfoMeta($ch, $responseEntity);
-
-                    $curlResult = curl_multi_getcontent($ch);
 
                     // ReturnTransfer無効時、またはcURL失敗時
                     if($curlResult === null){

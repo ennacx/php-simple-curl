@@ -28,18 +28,20 @@ trait CurlLibTrait {
     /**
      * ヘッダー情報とボディー情報に分割してセット
      *
-     * @param  string         $curlResult
+     * @param  string|bool    $curlResult
      * @param  ResponseEntity $entity
      * @return void
      */
-    public function divideContent(string $curlResult, ResponseEntity $entity): void {
+    public function divideContent(string|bool $curlResult, ResponseEntity $entity): void {
 
-        if($entity->header_size !== null){
-            $entity->responseHeader = trim(substr($curlResult, 0, $entity->header_size));
-            $entity->responseBody   = substr($curlResult, $entity->header_size);
-        } else{
-            $entity->responseHeader = null;
-            $entity->responseBody   = $curlResult;
+        if(is_string($curlResult)){
+            if($entity->header_size !== null){
+                $entity->responseHeader = trim(substr($curlResult, 0, $entity->header_size));
+                $entity->responseBody   = substr($curlResult, $entity->header_size);
+            } else{
+                $entity->responseHeader = null;
+                $entity->responseBody   = $curlResult;
+            }
         }
     }
 }

@@ -565,6 +565,9 @@ final class SimpleCurlLib {
             $responseEntity->id  = $this->id;
             $responseEntity->url = $this->url;
 
+            // レスポンスメタ情報のセット
+            $this->setCurlInfoMeta($this->ch, $responseEntity);
+
             // ReturnTransfer無効時、またはcURL失敗時
             if(is_bool($curlResult)){
                 $responseEntity->result = $curlResult;
@@ -584,9 +587,6 @@ final class SimpleCurlLib {
                             return $responseEntity;
                     }
                 } else{
-                    // レスポンスメタ情報のセット
-                    $this->setCurlInfoMeta($this->ch, $responseEntity);
-
                     $responseEntity->errorEnum    = CurlError::OK;
                     $responseEntity->errorMessage = '';
 
@@ -599,9 +599,6 @@ final class SimpleCurlLib {
 
                 $responseEntity->errorEnum    = CurlError::OK;
                 $responseEntity->errorMessage = '';
-
-                // レスポンスメタ情報のセット
-                $this->setCurlInfoMeta($this->ch, $responseEntity);
 
                 // ヘッダー情報とボディー情報に分割
                 $this->divideContent($curlResult, $responseEntity);
