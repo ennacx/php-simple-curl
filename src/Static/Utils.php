@@ -9,50 +9,52 @@ use RuntimeException;
 class Utils {
 
     /**
-     * キャメルケースをスネークケースに変換
-     *  ex.) camelCaseString → camel_case_string
+     * CamelCaseString to snake_case_string
+     *
+     * ```
+     * "camelCaseString" -> "camel_case_string"
+     * ```
      *
      * @param  string|null $str
      * @return string|null
      */
     public static function snakize(?string $str): ?string {
 
-        if($str === null){
+        if($str === null)
             return null;
-        }
 
-        // 正規表現
         $snakeStr = strtolower(preg_replace('/[A-Z]/', "_$0", $str));
 
         return ltrim($snakeStr, '_');
     }
 
     /**
-     * スネークケースをキャメルケースに変換
-     *  (ex.) snake_case_string → "snakeCaseString" or "SnakeCaseString"
+     * snake_case_string to CamelCaseString
+     *
+     * ```
+     * "snake_case_string" -> "snakeCaseString" or "SnakeCaseString"
+     * ```
      *
      * @param  string|null  $str     対象文字列
-     * @param  boolean      $isLower キャメルタイプ (true: lowerCamel, false: UpperCamel / default: true)
+     * @param  boolean      $isLower True: lowerCamel / False: UpperCamel
      * @return string|null
      */
     public static function camelize(?string $str, bool $isLower = true): ?string {
 
-        if($str === null){
+        if($str === null)
             return null;
-        }
 
         $camelStr = preg_replace_callback('/(^|_)(.)/', fn(array $v): string => ucfirst($v[2]), $str);
 
-        // lowerCamelの場合は頭文字を小文字にして返却
         return ($isLower) ? lcfirst($camelStr) : $camelStr;
     }
 
     /**
      * UUID生成
      *
-     * @see    https://www.ietf.org/rfc/rfc4122.txt
-     * @return string RFC 4122 UUID
+     * @return string RFC4122 UUID
      * @throws RuntimeException
+     * @see    https://www.ietf.org/rfc/rfc4122.txt
      */
     public static function generateUUID(): string {
 
