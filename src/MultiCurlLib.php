@@ -7,10 +7,14 @@ use CurlMultiHandle;
 use Ennacx\SimpleCurl\Entity\ResponseEntity;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
+use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
 use RuntimeException;
 
 final class MultiCurlLib {
+
+    /* Lib共通使用トレイト */
+    use CurlLibTrait;
 
     /** @var CurlMultiHandle マルチcURLハンドラー */
     private CurlMultiHandle $cmh;
@@ -200,7 +204,8 @@ final class MultiCurlLib {
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
-                    $responseEntity->setInfo(curl_getinfo($ch));
+                    // cURLのレスポンスメタ情報をセット
+                    $this->setCurlInfoMeta($ch, $responseEntity);
 
                     $curlResult = curl_multi_getcontent($ch);
 
@@ -218,18 +223,11 @@ final class MultiCurlLib {
                     else{
                         $responseEntity->result = true;
 
+                        // ヘッダー情報とボディー情報に分割
+                        $this->divideContent($curlResult, $responseEntity);
+
                         $responseEntity->errorEnum    = CurlError::OK;
                         $responseEntity->errorMessage = '';
-
-                        // ヘッダー情報とボディー情報を分割
-                        $headerSize = $responseEntity->getInfo()['header_size'] ?? null;
-                        if($headerSize !== null){
-                            $responseEntity->responseHeader = trim(substr($curlResult, 0, $headerSize));
-                            $responseEntity->responseBody   = substr($curlResult, $headerSize);
-                        } else{
-                            $responseEntity->responseHeader = null;
-                            $responseEntity->responseBody   = $curlResult;
-                        }
                     }
 
                     $ret[$responseEntity->id] = $responseEntity;

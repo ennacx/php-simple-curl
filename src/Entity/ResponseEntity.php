@@ -106,7 +106,7 @@ class ResponseEntity extends AbstEntity {
 
         $value = parent::__get($name);
         if($value === null){
-            $value = $this->_getFromInfoRaw($name);
+            $value = $this->getFromInfoRaw($name);
         }
 
         return $value;
@@ -118,7 +118,7 @@ class ResponseEntity extends AbstEntity {
      * @return array|null
      */
     public function getInfo(): ?array {
-        return $this->_getFromInfoRaw(null);
+        return $this->getFromInfoRaw(null);
     }
 
     /**
@@ -138,7 +138,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getContentType(): ?string {
 
-        $temp = $this->_getContentTypeRaw();
+        $temp = $this->getContentTypeRaw();
 
         if($temp === null){
             return null;
@@ -160,7 +160,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getCharacterSet(): ?string {
 
-        $temp = $this->_getContentTypeRaw();
+        $temp = $this->getContentTypeRaw();
 
         if($temp === null){
             return null;
@@ -182,7 +182,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getLatency(): ?float {
 
-        $temp = $this->_getFromInfoRaw('total_time');
+        $temp = $this->getFromInfoRaw('total_time');
 
         return ($temp !== null) ? floatval($temp) : null;
     }
@@ -194,7 +194,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getHttpStatusCode(): ?int {
 
-        $temp = $this->_getFromInfoRaw('http_code');
+        $temp = $this->getFromInfoRaw('http_code');
 
         return ($temp !== null) ? intval($temp) : null;
     }
@@ -206,7 +206,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getContentSize(): ?int {
 
-        $temp = $this->_getFromInfoRaw('size_download');
+        $temp = $this->getFromInfoRaw('size_download');
 
         return ($temp !== null) ? intval($temp) : null;
     }
@@ -218,7 +218,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getUploadSpeed(): ?int {
 
-        $temp = $this->_getFromInfoRaw('speed_upload');
+        $temp = $this->getFromInfoRaw('speed_upload');
 
         return ($temp !== null) ? intval($temp) : null;
     }
@@ -230,7 +230,7 @@ class ResponseEntity extends AbstEntity {
      */
     protected function _getDownloadSpeed(): ?int {
 
-        $temp = $this->_getFromInfoRaw('speed_download');
+        $temp = $this->getFromInfoRaw('speed_download');
 
         return ($temp !== null) ? intval($temp) : null;
     }
@@ -243,7 +243,7 @@ class ResponseEntity extends AbstEntity {
      * @param  string|null $key null時は全取得
      * @return mixed
      */
-    private function _getFromInfoRaw(?string $key): mixed {
+    private function getFromInfoRaw(?string $key): mixed {
 
         // 未実行時や指定キーが存在しない場合は無視
         if($this->_infoRaw === null || ($key !== null && !array_key_exists($key, $this->_infoRaw))){
@@ -259,9 +259,9 @@ class ResponseEntity extends AbstEntity {
      *
      * @return string|null
      */
-    private function _getContentTypeRaw(): ?string {
+    private function getContentTypeRaw(): ?string {
 
-        $temp = $this->_getFromInfoRaw('content_type');
+        $temp = $this->getFromInfoRaw('content_type');
 
         return ($temp !== null) ? $temp : null;
     }

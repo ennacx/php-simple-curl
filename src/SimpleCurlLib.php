@@ -9,6 +9,7 @@ use Ennacx\SimpleCurl\Enum\CurlAuth;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Static\Utils;
+use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
 use RuntimeException;
 use Stringable;
@@ -17,6 +18,9 @@ use Stringable;
  * cURLをシンプルに使用出来るようにラップしたライブラリ
  */
 final class SimpleCurlLib {
+
+    /* Lib共通使用トレイト */
+    use CurlLibTrait;
 
     /** @var CurlError[] 実行時にエラーとなった場合のリトライ可能とするエラーコード群 */
     private const CURL_EXEC_CONTINUABLE_ERRORS = [
@@ -535,7 +539,7 @@ final class SimpleCurlLib {
          * @param  ResponseEntity $entity
          * @return void
          */
-        $getInfoFunc = function(ResponseEntity $entity): void {
+        $setInfoFunc = function(ResponseEntity $entity): void {
             $temp = curl_getinfo($this->ch);
             if(is_array($temp)){
                 $entity->setInfo($temp);
@@ -580,11 +584,11 @@ final class SimpleCurlLib {
                             return $responseEntity;
                     }
                 } else{
+                    // レスポンスメタ情報のセット
+                    $this->setCurlInfoMeta($this->ch, $responseEntity);
+
                     $responseEntity->errorEnum    = CurlError::OK;
                     $responseEntity->errorMessage = '';
-
-                    // レスポンスメタ情報のセット
-                    $getInfoFunc($responseEntity);
 
                     break;
                 }
@@ -597,17 +601,10 @@ final class SimpleCurlLib {
                 $responseEntity->errorMessage = '';
 
                 // レスポンスメタ情報のセット
-                $getInfoFunc($responseEntity);
+                $this->setCurlInfoMeta($this->ch, $responseEntity);
 
-                // ヘッダー情報とボディー情報を分割
-                $headerSize = $responseEntity->getInfo()['header_size'] ?? null;
-                if($headerSize !== null){
-                    $responseEntity->responseHeader = trim(substr($curlResult, 0, $headerSize));
-                    $responseEntity->responseBody   = substr($curlResult, $headerSize);
-                } else{
-                    $responseEntity->responseHeader = null;
-                    $responseEntity->responseBody   = $curlResult;
-                }
+                // ヘッダー情報とボディー情報に分割
+                $this->divideContent($curlResult, $responseEntity);
 
                 break;
             }
@@ -667,10 +664,5 @@ final class SimpleCurlLib {
         $temp = strtolower($v);
 
         return ($spaceAllRemove) ? str_replace(' ', '', $temp) : trim($temp);
-    }
-
-
-    public function test(?string $a){
-        $this->id = $a;
     }
 }
