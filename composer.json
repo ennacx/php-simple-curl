@@ -5,17 +5,22 @@
   "type": "library",
   "version": "1.0.0",
   "license": "MIT",
-  "autoload": {
-    "psr-4": {
-      "Ennacx\\SimpleCurl\\": "src/"
-    }
-  },
   "require": {
     "php": "^8.2",
     "ext-curl": "^8.2"
   },
   "require-dev": {
     "phpunit/phpunit": "^11.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Ennacx\\SimpleCurl\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Ennacx\\SimpleCurl\\Test\\": "tests/"
+    }
   },
   "scripts": {
     "test": "phpunit"
