@@ -138,7 +138,7 @@ final class SimpleCurlLib {
     }
 
     /**
-     * eURL実行確認
+     * cURL実行確認
      *
      * @return boolean True: 実行済 / False: 未実行
      */
@@ -227,19 +227,6 @@ final class SimpleCurlLib {
 
         curl_setopt($this->ch, CURLOPT_PROXY, $proxyAddr);
         curl_setopt($this->ch, CURLOPT_PROXYPORT, $port);
-
-        return $this;
-    }
-
-    /**
-     * Acceptを設定
-     *
-     * @param  string $acceptType ('application/json', 'text/html' etc...)
-     * @return $this
-     */
-    public function setAccept(string $acceptType): self {
-
-        $this->addHeader(['Accept' => $this->_trimLower($acceptType, true)]);
 
         return $this;
     }
@@ -403,6 +390,32 @@ final class SimpleCurlLib {
         }
 
         curl_setopt($this->ch, CURLOPT_POSTFIELDS, $fields);
+
+        return $this;
+    }
+
+    /**
+     * Acceptを設定
+     *
+     * @param  string $acceptType ('application/json', 'text/html' etc...)
+     * @return $this
+     */
+    public function setAccept(string $acceptType): self {
+
+        $this->addHeader(['Accept' => $this->_trimLower($acceptType, true)]);
+
+        return $this;
+    }
+
+    /**
+     * エンコード済レスポンスデータの展開有効化
+     *
+     * @param  string $encode ```identity, gzip, deflate``` separate them with comma
+     * @return $this
+     */
+    public function setEncoding(string $encode = 'gzip'): self {
+
+        curl_setopt($this->ch, CURLOPT_ENCODING, $encode);
 
         return $this;
     }
