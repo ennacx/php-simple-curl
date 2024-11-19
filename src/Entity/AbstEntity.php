@@ -40,12 +40,8 @@ abstract class AbstEntity {
         }
 
         $method = static::_accessor($name, 'get');
-        if($method){
-            // 参照渡しなので一旦変数に
-            $result = $this->{$method}($value);
-
-            return $result;
-        }
+        if($method)
+            $value = $this->{$method}();
 
         return $value;
     }

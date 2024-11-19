@@ -110,7 +110,7 @@ final class MultiCurlLib {
     /**
      * マルチcURL実行
      *
-     * @return ResponseEntity[]
+     * @return array<string, ResponseEntity>
      */
     public function exec(): array {
 
@@ -179,6 +179,7 @@ final class MultiCurlLib {
                 // ステータスを更新
                 $result = $executor($running);
 
+                // 変化のあったcurlハンドラーを取得する
                 do if($raised = curl_multi_info_read($this->cmh, $remains)){
                     // 結果が返ってきたハンドラー
                     $ch = $raised['handle'];
@@ -188,7 +189,6 @@ final class MultiCurlLib {
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
-                    // 変化のあったcurlハンドラーを取得する
                     $responseEntity->setInfo(curl_getinfo($ch));
 
                     $curlResult = curl_multi_getcontent($ch);
@@ -221,7 +221,7 @@ final class MultiCurlLib {
                         }
                     }
 
-                    $ret[] = $responseEntity;
+                    $ret[$responseEntity->id] = $responseEntity;
 
                     curl_multi_remove_handle($this->cmh, $ch);
                 } while($remains);
