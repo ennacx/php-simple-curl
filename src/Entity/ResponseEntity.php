@@ -8,14 +8,13 @@ use Ennacx\SimpleCurl\Enum\CurlError;
 /**
  * exec()メソッド後のcURL各結果
  *
- * @property mixed content_type (subtract character-set)
- * @property mixed character_set
- * @property mixed latency
- * @property mixed http_status_code
- * @property mixed redirect_count
- * @property mixed content_size
- * @property mixed upload_speed (alias for 'speed_upload')
- * @property mixed download_speed (alias for 'speed_download')
+ * @property string|null content_type (subtract character-set)
+ * @property string|null character_set
+ * @property int|null    content_length (alias for 'download_content_length')
+ * @property float|null  latency (alias for 'total_time')
+ * @property int|null    http_status_code (alias for 'http_code')
+ * @property int|null    upload_speed (alias for 'speed_upload')
+ * @property int|null    download_speed (alias for 'speed_download')
  *
  * @property mixed url
  * @property mixed http_code
@@ -34,6 +33,7 @@ use Ennacx\SimpleCurl\Enum\CurlError;
  * @property mixed download_content_length
  * @property mixed upload_content_length
  * @property mixed starttransfer_time
+ * @property mixed redirect_count
  * @property mixed redirect_time
  * @property mixed redirect_url
  * @property mixed primary_ip
@@ -140,17 +140,15 @@ class ResponseEntity extends AbstEntity {
 
         $temp = $this->getContentTypeRaw();
 
-        if($temp === null){
+        if($temp === null)
             return null;
-        }
 
         $result = preg_match('/^(?<type>.+)\s*;.*/', $temp, $matches);
 
-        if(!$result || !isset($matches['type'])){
+        if(!$result || !isset($matches['type']))
             return null;
-        }
 
-        return trim($matches['type']);
+        return trim(strtolower($matches['type']));
     }
 
     /**
@@ -162,17 +160,27 @@ class ResponseEntity extends AbstEntity {
 
         $temp = $this->getContentTypeRaw();
 
-        if($temp === null){
+        if($temp === null)
             return null;
-        }
 
         $result = preg_match('/.*;\s*charset\s*=\s*(?<charset>.+)\s*$/', $temp, $matches);
 
-        if(!$result || !isset($matches['charset'])){
+        if(!$result || !isset($matches['charset']))
             return null;
-        }
 
-        return trim($matches['charset']);
+        return trim(strtolower($matches['charset']));
+    }
+
+    /**
+     * Content-Length
+     *
+     * @return int|null
+     */
+    protected function _getContentLength(): ?int {
+
+        $temp = (isset($this->responseBody)) ? strlen($this->responseBody) : $this->getFromInfoRaw('size_download');
+
+        return ($temp !== null) ? intval($temp) : null;
     }
 
     /**
@@ -195,18 +203,6 @@ class ResponseEntity extends AbstEntity {
     protected function _getHttpStatusCode(): ?int {
 
         $temp = $this->getFromInfoRaw('http_code');
-
-        return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * Content-Length
-     *
-     * @return int|null
-     */
-    protected function _getContentSize(): ?int {
-
-        $temp = $this->getFromInfoRaw('size_download');
 
         return ($temp !== null) ? intval($temp) : null;
     }
@@ -246,9 +242,8 @@ class ResponseEntity extends AbstEntity {
     private function getFromInfoRaw(?string $key): mixed {
 
         // 未実行時や指定キーが存在しない場合は無視
-        if($this->_infoRaw === null || ($key !== null && !array_key_exists($key, $this->_infoRaw))){
+        if($this->_infoRaw === null || ($key !== null && !array_key_exists($key, $this->_infoRaw)))
             return null;
-        }
 
         // キーにnullを指定した場合は全取得
         return ($key !== null) ? $this->_infoRaw[$key] : $this->_infoRaw;
