@@ -83,7 +83,7 @@ final class MultiCurlLib {
         }
 
         // ReturnTransferを強制有効
-        $channel->setReturnTransfer(true);
+        $channel->setReturnTransfer(returnTransfer: true, returnHeader: true);
 
         $this->channels[$id] = $channel;
 

@@ -40,10 +40,20 @@ class SimpleCurlLibTest extends TestCase {
     public function testReturnTransfer(){
 
         $this->lib->setUrl(self::TEST_USE_URL);
-        $this->lib->setReturnTransfer(true);
+        $this->lib->setReturnTransfer(true, true);
 
         $result = $this->lib->exec();
 
         $this->assertTrue((!empty($result->responseBody)));
+    }
+
+    public function testNoHeader(){
+
+        $this->lib->setUrl(self::TEST_USE_URL);
+        $this->lib->setReturnTransfer(true, false);
+
+        $result = $this->lib->exec();
+
+        $this->assertNull($result->responseHeader);
     }
 }

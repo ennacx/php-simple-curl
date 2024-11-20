@@ -48,6 +48,9 @@ final class SimpleCurlLib {
     /** @var array<string, string> HTTPヘッダー */
     private array $_headers = [];
 
+    /** @var array<int, mixed> cURLオプション */
+    private array $_options = [];
+
     /** @var string|null Cookieデータ保存パス */
     private ?string $_cookieFilePath = null;
 
@@ -93,13 +96,13 @@ final class SimpleCurlLib {
                 // NOP
                 break;
             case CurlMethod::POST:
-                curl_setopt($this->ch, CURLOPT_POST, true);
+                $this->_options[CURLOPT_POST] = true;
                 break;
             case CurlMethod::PUT:
-                curl_setopt($this->ch, CURLOPT_PUT, true);
+                $this->_options[CURLOPT_PUT] = true;
                 break;
             case CurlMethod::DELETE:
-                curl_setopt($this->ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+                $this->_options[CURLOPT_CUSTOMREQUEST] = 'DELETE';
                 break;
         }
 
@@ -108,12 +111,12 @@ final class SimpleCurlLib {
             $this->setCookieFile($cookiePath);
 
         // HOSTの検証
-        curl_setopt($this->ch, CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
+        $this->_options[CURLOPT_SSL_VERIFYHOST] = ($hostVerify) ? 2 : 0;
         // 証明書の検証
-        curl_setopt($this->ch, CURLOPT_SSL_VERIFYPEER, $certVerify);
+        $this->_options[CURLOPT_SSL_VERIFYPEER] = $certVerify;
 
         // Return transfer
-        $this->setReturnTransfer($returnTransfer);
+        $this->setReturnTransfer(returnTransfer: $returnTransfer, returnHeader: true);
     }
 
     /**
@@ -191,7 +194,7 @@ final class SimpleCurlLib {
     public function setUrl(string $url): self {
 
         $this->url = $url;
-        curl_setopt($this->ch, CURLOPT_URL, $this->url);
+        $this->_options[CURLOPT_URL] = $this->url;
 
         return $this;
     }
@@ -225,8 +228,8 @@ final class SimpleCurlLib {
      */
     public function setProxy(string $proxyAddr, int $port = 3128): self {
 
-        curl_setopt($this->ch, CURLOPT_PROXY, $proxyAddr);
-        curl_setopt($this->ch, CURLOPT_PROXYPORT, $port);
+        $this->_options[CURLOPT_PROXY]     = $proxyAddr;
+        $this->_options[CURLOPT_PROXYPORT] = $port;
 
         return $this;
     }
@@ -234,16 +237,17 @@ final class SimpleCurlLib {
     /**
      * cURL実行結果を文字列で取得するか
      *
-     * @param  boolean $flag falseの場合、ボディーは直接出力
+     * @param  boolean $returnTransfer falseの場合、ボディーは直接出力
+     * @param  boolean $returnHeader   ```$returnTransfer = true の時```ヘッダーも返却するか
      * @return self
      */
-    public function setReturnTransfer(bool $flag): self {
+    public function setReturnTransfer(bool $returnTransfer, bool $returnHeader = true): self {
 
-        curl_setopt($this->ch, CURLOPT_RETURNTRANSFER, $flag);
+        $this->_options[CURLOPT_RETURNTRANSFER] = $returnTransfer;
 
-        // ReturnTransfer有効時はヘッダー情報も合わせて取得するよう設定
-        if($flag)
-            curl_setopt($this->ch, CURLOPT_HEADER, true);
+        // ReturnTransfer有効時はヘッダー情報も合わせて取得するか設定
+        if($returnTransfer)
+            $this->_options[CURLOPT_HEADER] = $returnHeader;
 
         return $this;
     }
@@ -258,11 +262,11 @@ final class SimpleCurlLib {
      */
     public function setFollowLocation(bool $follow, int $redirectCount = 10, bool $autoReferer = true): self {
 
-        curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, $follow);
+        $this->_options[CURLOPT_FOLLOWLOCATION] = $follow;
 
         if($follow){
-            curl_setopt($this->ch, CURLOPT_MAXREDIRS, $redirectCount);
-            curl_setopt($this->ch, CURLOPT_AUTOREFERER, $autoReferer);
+            $this->_options[CURLOPT_MAXREDIRS]   = $redirectCount;
+            $this->_options[CURLOPT_AUTOREFERER] = $autoReferer;
         }
 
         return $this;
@@ -278,11 +282,10 @@ final class SimpleCurlLib {
      */
     public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
 
-        curl_setopt($this->ch, CURLOPT_HTTPAUTH, $method->toCurlConst());
+        $this->_options[CURLOPT_HTTPAUTH] = $method->toCurlConst();
 
-        if($method !== CurlAuth::NONE && $user !== null && $pass !== null){
-            curl_setopt($this->ch, CURLOPT_USERPWD, "{$user}:{$pass}");
-        }
+        if($method !== CurlAuth::NONE && $user !== null && $pass !== null)
+            $this->_options[CURLOPT_USERPWD] = "{$user}:{$pass}";
 
         return $this;
     }
@@ -297,9 +300,11 @@ final class SimpleCurlLib {
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
 
         if(!empty($user) && !empty($pass)){
-            curl_setopt($this->ch, CURLOPT_HTTPAUTH, CurlAuth::BASIC->toCurlConst());
+            $this->_options[CURLOPT_HTTPAUTH] = CurlAuth::BASIC->toCurlConst();
 
-            $this->addHeader(['Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))]);
+            $this->addHeader([
+                'Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))
+            ]);
         }
 
         return $this;
@@ -314,7 +319,9 @@ final class SimpleCurlLib {
     public function setBearerToken(?string $token = null): self {
 
         if(!empty($token)){
-            $this->addHeader(['Authorization' => "Bearer {$token}"]);
+            $this->addHeader([
+                'Authorization' => "Bearer {$token}"
+            ]);
         }
 
         return $this;
@@ -349,7 +356,7 @@ final class SimpleCurlLib {
             $count = -1;
 
         $this->setFollowLocation(true);
-        curl_setopt($this->ch, CURLOPT_MAXREDIRS, $count);
+        $this->_options[CURLOPT_MAXREDIRS] = $count;
 
         return $this;
     }
@@ -362,11 +369,10 @@ final class SimpleCurlLib {
      */
     public function setTimeoutSeconds(int $seconds): self {
 
-        if($seconds < 0){
+        if($seconds < 0)
             $seconds = 0;
-        }
 
-        curl_setopt($this->ch, CURLOPT_TIMEOUT, $seconds);
+        $this->_options[CURLOPT_TIMEOUT] = $seconds;
 
         return $this;
     }
@@ -384,12 +390,11 @@ final class SimpleCurlLib {
 
         if($jsonEncode){
             $fields = json_encode($fields, $jsonFlags);
-            if($fields === false){
+            if($fields === false)
                 throw new InvalidArgumentException('JSON encode failed.');
-            }
         }
 
-        curl_setopt($this->ch, CURLOPT_POSTFIELDS, $fields);
+        $this->_options[CURLOPT_POSTFIELDS] = $fields;
 
         return $this;
     }
@@ -402,7 +407,9 @@ final class SimpleCurlLib {
      */
     public function setAccept(string $acceptType): self {
 
-        $this->addHeader(['Accept' => $this->_trimLower($acceptType, true)]);
+        $this->addHeader([
+            'Accept' => $this->_trimLower($acceptType, true)
+        ]);
 
         return $this;
     }
@@ -415,7 +422,7 @@ final class SimpleCurlLib {
      */
     public function setEncoding(string $encode = 'gzip'): self {
 
-        curl_setopt($this->ch, CURLOPT_ENCODING, $encode);
+        $this->_options[CURLOPT_ENCODING] = $encode;
 
         return $this;
     }
@@ -434,14 +441,12 @@ final class SimpleCurlLib {
 
         if(is_array($option)){
             $result = curl_setopt_array($this->ch, $option);
-            if(!$result){
+            if(!$result)
                 throw new InvalidArgumentException('Invalid cURL option or value included.');
-            }
         } else if($value !== null){
             $result = curl_setopt($this->ch, $option, $value);
-            if(!$result){
+            if(!$result)
                 throw new InvalidArgumentException('cURL option contains an invalid value or itself is illegal.');
-            }
         }
 
         return $this;
@@ -556,13 +561,12 @@ final class SimpleCurlLib {
      */
     public function removeHeader(string $key): bool {
 
-        $key = $this->_headerKeyReformer($key);
+        $k = $this->_headerKeyReformer($key);
 
-        if(!array_key_exists($key, $this->_headers)){
+        if(!array_key_exists($k, $this->_headers))
             return false;
-        }
 
-        unset($this->_headers[$key]);
+        unset($this->_headers[$k]);
 
         return true;
     }
@@ -589,35 +593,26 @@ final class SimpleCurlLib {
         // コード番号変換
         $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
 
-        /**
-         * cURLのレスポンスメタ情報をセットするサブファンクション
-         *
-         * @param  ResponseEntity $entity
-         * @return void
-         */
-        $setInfoFunc = function(ResponseEntity $entity): void {
-            $temp = curl_getinfo($this->ch);
-            if(is_array($temp)){
-                $entity->setInfo($temp);
-            }
-        };
-
         // ヘッダー情報の付与
         $strHeaders = $this->_headerReformation();
         if(!empty($strHeaders)){
-            curl_setopt($this->ch, CURLOPT_HTTPHEADER, $strHeaders);
+            $this->_options[CURLOPT_HTTPHEADER] = $strHeaders;
         }
 
         // Cookie使用時の設定
         if($this->_cookieFilePath !== null){
             // 保存用
-            curl_setopt($this->ch, CURLOPT_COOKIEJAR, $this->_cookieFilePath);
+            $this->_options[CURLOPT_COOKIEJAR] = $this->_cookieFilePath;
             // 取得用
-            curl_setopt($this->ch, CURLOPT_COOKIEFILE, $this->_cookieFilePath);
+            $this->_options[CURLOPT_COOKIEFILE] = $this->_cookieFilePath;
         }
 
         // 返却用エンティティー作成
         $responseEntity = new ResponseEntity();
+
+        // CurlHandlerにオプションを設定
+        if(count($this->_options) > 0)
+            $this->setOption($this->_options);
 
         while($retries--){
             // cURLリクエスト実行
@@ -664,8 +659,12 @@ final class SimpleCurlLib {
                 $responseEntity->errorEnum    = CurlError::OK;
                 $responseEntity->errorMessage = '';
 
-                // ヘッダー情報とボディー情報に分割
-                $this->divideContent($curlResult, $responseEntity);
+                // ヘッダー情報を返却要請している場合はヘッダー情報とボディー情報に分割
+                if(array_key_exists(CURLOPT_HEADER, $this->_options) && $this->_options[CURLOPT_HEADER] !== false)
+                    $this->divideContent($curlResult, $responseEntity);
+                // 要請していない場合は全部ボディ
+                else if(is_string($curlResult))
+                    $responseEntity->responseBody = $curlResult;
 
                 break;
             }
