@@ -11,6 +11,9 @@ use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
 use RuntimeException;
 
+/**
+ * 並列cURLをシンプルに使用出来るようにラップしたライブラリ
+ */
 final class MultiCurlLib {
 
     /* Lib共通使用トレイト */
@@ -34,16 +37,19 @@ final class MultiCurlLib {
 
         $this->cmh = curl_multi_init();
 
-        $temp = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
-        foreach($temp as $idx => $channel){
+        $channels = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
+
+        if(count($channels) === 0)
+            throw new InvalidArgumentException('Cannot assign an empty channel');
+
+        foreach($channels as $idx => $channel){
             $id = $channel->getId();
-            if(!empty($id) && !array_key_exists($id, $this->channels)){
+            if(!empty($id) && !array_key_exists($id, $this->channels))
                 $this->channels[$id] = $channel;
-            } else if(empty($id)){
+            else if(empty($id))
                 throw new InvalidArgumentException(sprintf('Channel-ID at index %d is empty.', $idx));
-            } else{
+            else
                 throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
-            }
         }
     }
 
@@ -63,9 +69,8 @@ final class MultiCurlLib {
      */
     public function close(): void {
 
-        if(isset($this->cmh)){
+        if(isset($this->cmh))
             curl_multi_close($this->cmh);
-        }
     }
 
     /**
@@ -78,9 +83,8 @@ final class MultiCurlLib {
     public function addChannel(SimpleCurlLib $channel): self {
 
         $id = $channel->getId();
-        if(array_key_exists($id, $this->channels)){
+        if(array_key_exists($id, $this->channels))
             throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
-        }
 
         // ReturnTransferを強制有効
         $channel->setReturnTransfer(returnTransfer: true, returnHeader: true);
@@ -108,9 +112,8 @@ final class MultiCurlLib {
      */
     public function removeChannel(string $label): void {
 
-        if(array_key_exists($label, $this->channels)){
+        if(array_key_exists($label, $this->channels))
             unset($this->channels[$label]);
-        }
     }
 
     /**
@@ -129,9 +132,8 @@ final class MultiCurlLib {
      */
     public function exec(): array {
 
-        if(count($this->channels) === 0){
+        if(count($this->channels) === 0)
             throw new InvalidArgumentException('No channels were found');
-        }
 
         /**
          * マルチcURL実行のサブファンクション
@@ -170,6 +172,7 @@ final class MultiCurlLib {
         if(!$running || $result !== MultiCurlError::OK->value)
             throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
 
+        // 返却用
         $ret = [];
 
         // select前に全ての処理が終わっていたりすると複数の結果が入っていることがあるのでループが必要
@@ -231,6 +234,7 @@ final class MultiCurlLib {
 
                     $ret[$responseEntity->id] = $responseEntity;
 
+                    // レスポンスが受け取れたハンドラーは除去
                     curl_multi_remove_handle($this->cmh, $ch);
                 } while($remains);
         } while($running);
