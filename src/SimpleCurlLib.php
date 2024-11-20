@@ -311,7 +311,7 @@ final class SimpleCurlLib {
 
         if(!empty($token)){
             $this->addHeader([
-                'Authorization' => "Bearer {$token}"
+                'Authorization' => sprintf('Bearer %s', $token)
             ]);
         }
 
@@ -436,7 +436,7 @@ final class SimpleCurlLib {
                 $this->_options = array_replace($this->_options, $option);
             } else{
                 // 既存に存在しないキーを取得
-                // FIXME: $this->_options += $option でも前変数のキーを優先するので大丈夫そうなのだが…
+                // FIXME: $this->_options += $option でも前変数のキーを優先するので大丈夫そうなのだが念のため
                 $diff = array_diff(array_keys($option), array_keys($this->_options));
                 if(!empty($diff)){
                     // 存在しないキーのみ追加

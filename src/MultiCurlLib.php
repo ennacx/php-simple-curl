@@ -167,9 +167,8 @@ final class MultiCurlLib {
 
         $result = $executor($running);
 
-        if(!$running || $result !== MultiCurlError::OK->value){
+        if(!$running || $result !== MultiCurlError::OK->value)
             throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
-        }
 
         $ret = [];
 
