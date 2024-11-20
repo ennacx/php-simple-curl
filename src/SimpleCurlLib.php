@@ -436,14 +436,16 @@ final class SimpleCurlLib {
                 $this->_options = array_replace($this->_options, $option);
             } else{
                 // 既存に存在しないキーを取得
+                // FIXME: $this->_options += $option でも前変数のキーを優先するので大丈夫そうなのだが…
                 $diff = array_diff(array_keys($option), array_keys($this->_options));
                 if(!empty($diff)){
                     // 存在しないキーのみ追加
                     $this->_options = array_replace(
                         $this->_options,
-                        array_filter($option, fn($k): bool => (in_array($k, $diff)), ARRAY_FILTER_USE_KEY)
+                        array_filter($option, fn($k): bool => (is_int($k) && in_array($k, $diff, true)), ARRAY_FILTER_USE_KEY)
                     );
                 }
+                unset($diff);
             }
         } else if($value !== null){
             if(!array_key_exists($option, $this->_options) || $overwrite)
