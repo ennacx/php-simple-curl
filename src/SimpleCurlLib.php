@@ -150,15 +150,6 @@ final class SimpleCurlLib {
     }
 
     /**
-     * cURLに設定したオプションを全リセットする (URL指定含む)
-     *
-     * @return void
-     */
-    public function resetOption(): void {
-        curl_reset($this->ch);
-    }
-
-    /**
      * ID取得
      *
      * @return string
@@ -428,28 +419,49 @@ final class SimpleCurlLib {
     }
 
     /**
-     * cURLのsetopt()関数ラッパー (特殊な設定時に使用)
+     * cURLにオプションを設定
      *
      * @link https://www.php.net/manual/ja/function.curl-setopt.php
      *
-     * @param  int|array $option
-     * @param  mixed     $value
+     * @param  int|array $option    PHPの```CURLOPT_XXX```定数値または```[CURLOPT_XXX => Value]```の配列
+     * @param  mixed     $value     ```$option```がint時の、そのオプションに対する設定値
+     * @param  boolean   $overwrite True: 既に設定されている場合は上書き / False: 既存を優先
      * @return self
      * @throws InvalidArgumentException
      */
-    public function setOption(int|array $option, mixed $value = null): self {
+    public function setOption(int|array $option, mixed $value = null, bool $overwrite = true): self {
 
         if(is_array($option)){
-            $result = curl_setopt_array($this->ch, $option);
-            if(!$result)
-                throw new InvalidArgumentException('Invalid cURL option or value included.');
+            if($overwrite){
+                $this->_options = array_replace($this->_options, $option);
+            } else{
+                // 既存に存在しないキーを取得
+                $diff = array_diff(array_keys($option), array_keys($this->_options));
+                if(!empty($diff)){
+                    // 存在しないキーのみ追加
+                    $this->_options = array_replace(
+                        $this->_options,
+                        array_filter($option, fn($k): bool => (in_array($k, $diff)), ARRAY_FILTER_USE_KEY)
+                    );
+                }
+            }
         } else if($value !== null){
-            $result = curl_setopt($this->ch, $option, $value);
-            if(!$result)
-                throw new InvalidArgumentException('cURL option contains an invalid value or itself is illegal.');
+            if(!array_key_exists($option, $this->_options) || $overwrite)
+                $this->_options[$option] = $value;
         }
 
         return $this;
+    }
+
+    /**
+     * cURLに設定したオプションを全リセットする (URL指定含む)
+     *
+     * @return void
+     */
+    public function resetOption(): void {
+
+        $this->_options = [];
+        curl_reset($this->ch);
     }
 
     /**
@@ -499,10 +511,9 @@ final class SimpleCurlLib {
          */
         $separateFunc = function(string $headerStr): array {
 
-            $temp = array_map(fn(string $v): string => trim($v), explode(':', $headerStr, 2));
-            if(count($temp) < 2 || empty($temp[0]) || empty($temp[1])){
+            $temp = array_map('trim', explode(':', $headerStr, 2));
+            if(count($temp) < 2 || empty($temp[0]) || empty($temp[1]))
                 throw new InvalidArgumentException(sprintf('\'%s\' is invalid header format.', $headerStr));
-            }
 
             $key = $this->_headerKeyReformer($temp[0]);
 
@@ -510,11 +521,10 @@ final class SimpleCurlLib {
         };
 
         if(is_string($argHeader)){
-            if(str_contains($argHeader, ':')){
+            if(str_contains($argHeader, ':'))
                 $this->_headers = array_merge($this->_headers, $separateFunc($argHeader));
-            } else{
+            else
                 throw new InvalidArgumentException(sprintf('\'%s\' is invalid header format.', $argHeader));
-            }
         } else{
             $headers = [];
             foreach($argHeader as $k => $v){
@@ -523,22 +533,22 @@ final class SimpleCurlLib {
                     if($result === 1){
                         // キー取得
                         $k = $matches['header_key'] ?? '';
+
                         // 値取得
-                        if(is_string($v)){
+                        if(is_string($v))
                             $temp = $v;
-                        } else if(is_numeric($v)){
+                        else if(is_numeric($v))
                             $temp = strval($v);
-                        } else if($v instanceof Stringable){
+                        else if($v instanceof Stringable)
                             $temp = $v->__toString();
-                        } else{
+                        else
                             throw new InvalidArgumentException(sprintf('Key: \'%s\' is invalid header format value.', $k));
-                        }
                         $v = trim($temp);
                         unset($temp);
 
-                        if(!empty($k) && !empty($v)){
+                        // キーと値が正常な場合ヘッダーに追加
+                        if(!empty($k) && !empty($v))
                             $headers[$this->_headerKeyReformer($k)] = $v;
-                        }
                     }
                 } else if(str_contains($v, ':')){
                     $temp = $separateFunc($v);
@@ -611,8 +621,11 @@ final class SimpleCurlLib {
         $responseEntity = new ResponseEntity();
 
         // CurlHandlerにオプションを設定
-        if(count($this->_options) > 0)
-            $this->setOption($this->_options);
+        if(count($this->_options) > 0){
+            $result = curl_setopt_array($this->ch, $this->_options);
+            if(!$result)
+                throw new InvalidArgumentException('Invalid cURL option or value included.');
+        }
 
         while($retries--){
             // cURLリクエスト実行
