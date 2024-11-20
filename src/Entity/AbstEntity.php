@@ -8,11 +8,11 @@ use InvalidArgumentException;
 
 abstract class AbstEntity {
 
-    /** @var array エンティティーに用意されている仮想プロパティ値取得メソッドをまとめたアクセサー */
-    protected static array $_accessors = [];
-
     /** @var array ダイナミックプロパティー */
     protected array $dynamicProps = [];
+
+    /** @var array エンティティーに用意されている仮想プロパティ値取得メソッドをまとめたアクセサー */
+    private static array $_accessors = [];
 
     /**
      * 未指定プロパティの取得
