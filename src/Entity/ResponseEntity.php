@@ -91,9 +91,8 @@ class ResponseEntity extends AbstEntity {
      */
     public function __construct(array $curlInfo = []){
 
-        if(!empty($curlInfo)){
-            $this->_infoRaw = $curlInfo;
-        }
+        if(!empty($curlInfo))
+            $this->setInfo($curlInfo);
     }
 
     /**
@@ -102,12 +101,11 @@ class ResponseEntity extends AbstEntity {
      * @param  string $name
      * @return mixed
      */
-    public function &__get(string $name): mixed{
+    public function &__get(string $name): mixed {
 
         $value = parent::__get($name);
-        if($value === null){
+        if($value === null)
             $value = $this->getFromInfoRaw($name);
-        }
 
         return $value;
     }
