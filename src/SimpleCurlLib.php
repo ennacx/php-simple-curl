@@ -135,9 +135,8 @@ final class SimpleCurlLib {
      */
     public function close(): void {
 
-        if(isset($this->ch)){
+        if(isset($this->ch))
             curl_close($this->ch);
-        }
     }
 
     /**
@@ -201,9 +200,8 @@ final class SimpleCurlLib {
 
         $value = $this->_trimLower($contentType, true);
 
-        if($charset !== null){
+        if($charset !== null)
             $value.= sprintf(';charset=%s', $this->_trimLower($charset, true));
-        }
 
         $this->addHeader(['Content-Type' => $value]);
 
