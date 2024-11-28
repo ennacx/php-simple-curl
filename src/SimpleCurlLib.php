@@ -70,16 +70,14 @@ final class SimpleCurlLib {
      */
     public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $cookiePath = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
 
-        if(!extension_loaded('curl')){
+        if(!extension_loaded('curl'))
             throw new RuntimeException('cURL extension required.');
-        }
 
         $this->url = $url;
         $temp = curl_init($this->url);
 
-        if($temp === false){
+        if($temp === false)
             throw new RuntimeException('cURL initialize failed.');
-        }
 
         $this->ch = $temp;
 
@@ -622,8 +620,7 @@ final class SimpleCurlLib {
 
         // CurlHandlerにオプションを設定
         if(count($this->_options) > 0){
-            $result = curl_setopt_array($this->ch, $this->_options);
-            if(!$result)
+            if(!curl_setopt_array($this->ch, $this->_options))
                 throw new InvalidArgumentException('Invalid cURL option or value included.');
         }
 
@@ -688,9 +685,8 @@ final class SimpleCurlLib {
         }
 
         // 最終確認
-        if(!$this->_executed){
+        if(!$this->_executed)
             throw new InvalidArgumentException('cURL finished without being executed.');
-        }
 
         return $responseEntity;
     }
@@ -717,9 +713,8 @@ final class SimpleCurlLib {
 
         // ヘッダー情報の付与
         if(!empty($this->_headers)){
-            foreach($this->_headers as $k => $v){
+            foreach($this->_headers as $k => $v)
                 $ret[] = "{$k}: {$v}";
-            }
         }
 
         return ($separate !== null) ? implode($separate, $ret) : $ret;
