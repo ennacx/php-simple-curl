@@ -50,6 +50,20 @@ class Utils {
     }
 
     /**
+     * 小文字にして両端の空白を除去
+     *
+     * @param  string  $v
+     * @param  boolean $spaceAllRemove
+     * @return string
+     */
+    public static function trimLower(string $v, bool $spaceAllRemove = false): string {
+
+        $temp = strtolower($v);
+
+        return ($spaceAllRemove) ? str_replace(' ', '', $temp) : trim($temp);
+    }
+
+    /**
      * UUID生成
      *
      * @return string RFC4122 UUID

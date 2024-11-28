@@ -196,10 +196,10 @@ final class SimpleCurlLib {
      */
     public function setContentType(string $contentType, ?string $charset = null): self {
 
-        $value = $this->_trimLower($contentType, true);
+        $value = Utils::trimLower($contentType, true);
 
         if($charset !== null)
-            $value.= sprintf(';charset=%s', $this->_trimLower($charset, true));
+            $value.= sprintf(';charset=%s', Utils::trimLower($charset, true));
 
         $this->addHeader(['Content-Type' => $value]);
 
@@ -395,7 +395,7 @@ final class SimpleCurlLib {
     public function setAccept(string $acceptType): self {
 
         $this->addHeader([
-            'Accept' => $this->_trimLower($acceptType, true)
+            'Accept' => Utils::trimLower($acceptType, true)
         ]);
 
         return $this;
@@ -718,19 +718,5 @@ final class SimpleCurlLib {
         }
 
         return ($separate !== null) ? implode($separate, $ret) : $ret;
-    }
-
-    /**
-     * 小文字にして両端の空白を除去
-     *
-     * @param  string  $v
-     * @param  boolean $spaceAllRemove
-     * @return string
-     */
-    private function _trimLower(string $v, bool $spaceAllRemove = false): string {
-
-        $temp = strtolower($v);
-
-        return ($spaceAllRemove) ? str_replace(' ', '', $temp) : trim($temp);
     }
 }
