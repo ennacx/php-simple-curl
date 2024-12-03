@@ -37,19 +37,22 @@ final class MultiCurlLib {
 
         $this->cmh = curl_multi_init();
 
-        $channels = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
+        // 処理対象が最初から設定されていればバリデーションしてセット
+        if(!empty($channels)){
+            $channels = array_filter($channels, fn($channel): bool => ($channel instanceof SimpleCurlLib));
 
-        if(count($channels) === 0)
-            throw new InvalidArgumentException('Cannot assign an empty channel');
+            if(count($channels) === 0)
+                throw new InvalidArgumentException('Cannot assign an empty channel');
 
-        foreach($channels as $idx => $channel){
-            $id = $channel->getId();
-            if(!empty($id) && !array_key_exists($id, $this->channels))
-                $this->channels[$id] = $channel;
-            else if(empty($id))
-                throw new InvalidArgumentException(sprintf('Channel-ID at index %d is empty.', $idx));
-            else
-                throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
+            foreach($channels as $idx => $channel){
+                $id = $channel->getId();
+                if(!empty($id) && !array_key_exists($id, $this->channels))
+                    $this->channels[$id] = $channel;
+                else if(empty($id))
+                    throw new InvalidArgumentException(sprintf('Channel-ID at index %d is empty.', $idx));
+                else
+                    throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
+            }
         }
     }
 
