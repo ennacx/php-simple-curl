@@ -454,12 +454,14 @@ final class SimpleCurlLib {
     /**
      * cURLに設定したオプションを全リセットする (URL指定含む)
      *
-     * @return void
+     * @return self
      */
-    public function resetOption(): void {
+    public function resetOption(): self {
 
         $this->_options = [];
         curl_reset($this->ch);
+
+        return $this;
     }
 
     /**
@@ -476,13 +478,11 @@ final class SimpleCurlLib {
      *
      * @param  string|null     $separate
      * @return string[]|string
-     *                 ```
      *                 ```$separate = null``` 各ヘッダー情報の配列
      *                 ```$separate = string``` 指定文字列で結合した文字列
-     *                 ```
      */
     public function getHeader(?string $separate = null): array|string {
-        return $this->_headerReformation($separate);
+        return $this->_headerReformation(separate: $separate);
     }
 
     /**
@@ -495,10 +495,10 @@ final class SimpleCurlLib {
      *                 ['Content-Type: Application/json', ...]
      *                 'Content-Type: Application/json'
      *             ```
-     * @return void
+     * @return self
      * @throws InvalidArgumentException
      */
-    public function addHeader(array|string $argHeader): void {
+    public function addHeader(array|string $argHeader): self {
 
         /**
          * 最初のコロンでkeyとvalueに分割するサブファンクション
@@ -559,6 +559,8 @@ final class SimpleCurlLib {
 
             $this->_headers = array_merge($this->_headers, $headers);
         }
+
+        return $this;
     }
 
     /**
@@ -582,10 +584,13 @@ final class SimpleCurlLib {
     /**
      * cURLで送信するヘッダー情報の全削除
      *
-     * @return void
+     * @return self
      */
-    public function resetHeader(): void {
+    public function resetHeader(): self {
+
         $this->_headers = [];
+
+        return $this;
     }
 
     /**
@@ -603,10 +608,9 @@ final class SimpleCurlLib {
         $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
 
         // ヘッダー情報の付与
-        $strHeaders = $this->_headerReformation();
-        if(!empty($strHeaders)){
+        $strHeaders = $this->_headerReformation(separate: null);
+        if(!empty($strHeaders))
             $this->_options[CURLOPT_HTTPHEADER] = $strHeaders;
-        }
 
         // Cookie使用時の設定
         if($this->_cookieFilePath !== null){
@@ -705,7 +709,7 @@ final class SimpleCurlLib {
     /**
      * ヘッダー整形
      *
-     * @param  string|null     $separate
+     * @param  string|null     $separate null時は配列
      * @return string[]|string
      */
     private function _headerReformation(?string $separate = null): array|string {
