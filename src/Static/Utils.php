@@ -15,7 +15,7 @@ class Utils {
      * "camelCaseString" -> "camel_case_string"
      * ```
      *
-     * @param  string|null $str
+     * @param  string|null $str Target string
      * @return string|null
      */
     public static function snakize(?string $str): ?string {
@@ -35,7 +35,7 @@ class Utils {
      * "snake_case_string" -> "snakeCaseString" or "SnakeCaseString"
      * ```
      *
-     * @param  string|null  $str     対象文字列
+     * @param  string|null  $str     Target string
      * @param  boolean      $isLower True: lowerCamel / False: UpperCamel
      * @return string|null
      */
@@ -52,8 +52,8 @@ class Utils {
     /**
      * 小文字にして両端の空白を除去
      *
-     * @param  string  $v
-     * @param  boolean $spaceAllRemove
+     * @param  string  $v              Target string
+     * @param  boolean $spaceAllRemove True: Remove all spaces / False: Remove both ends spaces
      * @return string
      */
     public static function trimLower(string $v, bool $spaceAllRemove = false): string {
