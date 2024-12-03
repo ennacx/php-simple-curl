@@ -107,13 +107,13 @@ final class MultiCurlLib {
     /**
      * 登録済みのチャネルを消去
      *
-     * @param  string $label
+     * @param  string $channelId
      * @return void
      */
-    public function removeChannel(string $label): void {
+    public function removeChannel(string $channelId): void {
 
-        if(array_key_exists($label, $this->channels))
-            unset($this->channels[$label]);
+        if(array_key_exists($channelId, $this->channels))
+            unset($this->channels[$channelId]);
     }
 
     /**
