@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlError;
+use InvalidArgumentException;
 
 /**
  * exec()メソッド後のcURL各結果
@@ -100,6 +101,7 @@ class ResponseEntity extends AbstEntity {
      *
      * @param  string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function &__get(string $name): mixed {
 

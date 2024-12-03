@@ -594,6 +594,7 @@ final class SimpleCurlLib {
      * @param  int     $retries 実行失敗時のリトライ回数
      * @param  boolean $throw   True: throw exception / False: return void
      * @return ResponseEntity
+     * @throws InvalidArgumentException
      * @throws RuntimeException
      */
     public function exec(int $retries = 5, bool $throw = false): ResponseEntity {

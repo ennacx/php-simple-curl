@@ -129,6 +129,8 @@ final class MultiCurlLib {
      * マルチcURL実行
      *
      * @return array<string, ResponseEntity>
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
      */
     public function exec(): array {
 

@@ -19,6 +19,7 @@ abstract class AbstEntity {
      *
      * @param  string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function &__get(string $name): mixed {
         return $this->get($name);
@@ -30,6 +31,7 @@ abstract class AbstEntity {
      * @param  string     $name
      * @param  mixed|null $value
      * @return void
+     * @throws InvalidArgumentException
      */
     public function __set(string $name, mixed $value): void {
         $this->set($name, $value);
@@ -40,6 +42,7 @@ abstract class AbstEntity {
      *
      * @param  string  $name
      * @return boolean
+     * @throws InvalidArgumentException
      */
     public function __isset(string $name): bool {
         return ($this->get($name) !== null);
@@ -60,6 +63,7 @@ abstract class AbstEntity {
      *
      * @param  string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     protected function &get(string $name): mixed {
 
@@ -83,6 +87,7 @@ abstract class AbstEntity {
      * @param  string     $name
      * @param  mixed|null $value
      * @return void
+     * @throws InvalidArgumentException
      */
     protected function set(string $name, mixed $value = null): void {
 
