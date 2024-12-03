@@ -27,6 +27,18 @@ class MultiCurlLibTest extends TestCase {
         $this->lib = new MultiCurlLib();
     }
 
+    public function testConstruction(){
+
+        $this->lib = new MultiCurlLib(
+            new SimpleCurlLib(self::TEST_USE_URL1),
+            new SimpleCurlLib(self::TEST_USE_URL2),
+            new SimpleCurlLib(self::TEST_USE_URL3),
+            new SimpleCurlLib(self::TEST_USE_URL4)
+        );
+
+        $this->assertEquals(4, count($this->lib->getChannelIds()));
+    }
+
     public function testAddChannel(){
 
         $sc1 = new SimpleCurlLib(self::TEST_USE_URL1);
