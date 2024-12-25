@@ -35,18 +35,18 @@ class Utils {
      * "snake_case_string" -> "snakeCaseString" or "SnakeCaseString"
      * ```
      *
-     * @param  string|null  $str     Target string
-     * @param  boolean      $isLower True: lowerCamel / False: UpperCamel
+     * @param  string|null $str     Target string
+     * @param  boolean     $toLower True: lowerCamel / False: UpperCamel
      * @return string|null
      */
-    public static function camelize(?string $str, bool $isLower = true): ?string {
+    public static function camelize(?string $str, bool $toLower = true): ?string {
 
         if($str === null)
             return null;
 
         $camelStr = preg_replace_callback('/(^|_)(.)/', fn(array $v): string => ucfirst($v[2]), $str);
 
-        return ($isLower) ? lcfirst($camelStr) : $camelStr;
+        return ($toLower) ? lcfirst($camelStr) : $camelStr;
     }
 
     /**
