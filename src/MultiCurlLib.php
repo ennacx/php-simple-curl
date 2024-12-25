@@ -82,14 +82,14 @@ final class MultiCurlLib {
      */
     public function addChannel(SimpleCurlLib $channel): self {
 
-        $id = $channel->getId();
-        if(array_key_exists($id, $this->channels))
-            throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $id));
+        $channelId = $channel->getId();
+        if(array_key_exists($channelId, $this->channels))
+            throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $channelId));
 
         // ReturnTransferを強制有効
         $channel->setReturnTransfer(returnTransfer: true, returnHeader: true);
 
-        $this->channels[$id] = $channel;
+        $this->channels[$channelId] = $channel;
 
         return $this;
     }
@@ -196,7 +196,7 @@ final class MultiCurlLib {
             // どれかが成功 or 失敗
             default:
                 // ステータスを更新
-                $result = $executor($running);
+                $executor($running);
 
                 // 変化のあったcurlハンドラーを取得する
                 do if($raised = curl_multi_info_read($this->cmh, $remains)){
