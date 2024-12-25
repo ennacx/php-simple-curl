@@ -94,13 +94,13 @@ final class SimpleCurlLib {
                 // NOP
                 break;
             case CurlMethod::POST:
-                $this->_options[CURLOPT_POST] = true;
+                $this->_setOption(CURLOPT_POST, true);
                 break;
             case CurlMethod::PUT:
-                $this->_options[CURLOPT_PUT] = true;
+                $this->_setOption(CURLOPT_PUT, true);
                 break;
             case CurlMethod::DELETE:
-                $this->_options[CURLOPT_CUSTOMREQUEST] = 'DELETE';
+                $this->_setOption(CURLOPT_CUSTOMREQUEST, 'DELETE');
                 break;
         }
 
@@ -109,9 +109,9 @@ final class SimpleCurlLib {
             $this->setCookieFile($cookiePath);
 
         // HOSTの検証
-        $this->_options[CURLOPT_SSL_VERIFYHOST] = ($hostVerify) ? 2 : 0;
+        $this->_setOption(CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
         // 証明書の検証
-        $this->_options[CURLOPT_SSL_VERIFYPEER] = $certVerify;
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
 
         // Return transfer
         $this->setReturnTransfer(returnTransfer: $returnTransfer, returnHeader: true);
@@ -182,7 +182,7 @@ final class SimpleCurlLib {
     public function setUrl(string $url): self {
 
         $this->url = $url;
-        $this->_options[CURLOPT_URL] = $this->url;
+        $this->_setOption(CURLOPT_URL, $this->url);
 
         return $this;
     }
@@ -215,8 +215,8 @@ final class SimpleCurlLib {
      */
     public function setProxy(string $proxyAddr, int $port = 3128): self {
 
-        $this->_options[CURLOPT_PROXY]     = $proxyAddr;
-        $this->_options[CURLOPT_PROXYPORT] = $port;
+        $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
+        $this->_setOption(CURLOPT_PROXYPORT, $port);
 
         return $this;
     }
@@ -230,11 +230,11 @@ final class SimpleCurlLib {
      */
     public function setReturnTransfer(bool $returnTransfer, bool $returnHeader = true): self {
 
-        $this->_options[CURLOPT_RETURNTRANSFER] = $returnTransfer;
+        $this->_setOption(CURLOPT_RETURNTRANSFER, $returnTransfer);
 
         // ReturnTransfer有効時はヘッダー情報も合わせて取得するか設定
         if($returnTransfer)
-            $this->_options[CURLOPT_HEADER] = $returnHeader;
+            $this->_setOption(CURLOPT_HEADER, $returnHeader);
 
         return $this;
     }
@@ -249,11 +249,11 @@ final class SimpleCurlLib {
      */
     public function setFollowLocation(bool $follow, int $redirectCount = 10, bool $autoReferer = true): self {
 
-        $this->_options[CURLOPT_FOLLOWLOCATION] = $follow;
+        $this->_setOption(CURLOPT_FOLLOWLOCATION, $follow);
 
         if($follow){
-            $this->_options[CURLOPT_MAXREDIRS]   = $redirectCount;
-            $this->_options[CURLOPT_AUTOREFERER] = $autoReferer;
+            $this->_setOption(CURLOPT_MAXREDIRS, $redirectCount);
+            $this->_setOption(CURLOPT_AUTOREFERER, $autoReferer);
         }
 
         return $this;
@@ -269,10 +269,10 @@ final class SimpleCurlLib {
      */
     public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
 
-        $this->_options[CURLOPT_HTTPAUTH] = $method->toCurlConst();
+        $this->_setOption(CURLOPT_HTTPAUTH, $method->toCurlConst());
 
         if($method !== CurlAuth::NONE && $user !== null && $pass !== null)
-            $this->_options[CURLOPT_USERPWD] = "{$user}:{$pass}";
+            $this->_setOption(CURLOPT_USERPWD, "{$user}:{$pass}");
 
         return $this;
     }
@@ -287,7 +287,7 @@ final class SimpleCurlLib {
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
 
         if(!empty($user) && !empty($pass)){
-            $this->_options[CURLOPT_HTTPAUTH] = CurlAuth::BASIC->toCurlConst();
+            $this->_setOption(CURLOPT_HTTPAUTH, CurlAuth::BASIC->toCurlConst());
 
             $this->addHeader([
                 'Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))
@@ -343,7 +343,7 @@ final class SimpleCurlLib {
             $count = -1;
 
         $this->setFollowLocation(true);
-        $this->_options[CURLOPT_MAXREDIRS] = $count;
+        $this->_setOption(CURLOPT_MAXREDIRS, $count);
 
         return $this;
     }
@@ -359,7 +359,7 @@ final class SimpleCurlLib {
         if($seconds < 0)
             $seconds = 0;
 
-        $this->_options[CURLOPT_TIMEOUT] = $seconds;
+        $this->_setOption(CURLOPT_TIMEOUT, $seconds);
 
         return $this;
     }
@@ -381,7 +381,7 @@ final class SimpleCurlLib {
                 throw new InvalidArgumentException('JSON encode failed.');
         }
 
-        $this->_options[CURLOPT_POSTFIELDS] = $fields;
+        $this->_setOption(CURLOPT_POSTFIELDS, $fields);
 
         return $this;
     }
@@ -409,7 +409,7 @@ final class SimpleCurlLib {
      */
     public function setEncoding(string $encode = 'gzip'): self {
 
-        $this->_options[CURLOPT_ENCODING] = $encode;
+        $this->_setOption(CURLOPT_ENCODING, $encode);
 
         return $this;
     }
@@ -610,14 +610,14 @@ final class SimpleCurlLib {
         // ヘッダー情報の付与
         $strHeaders = $this->_headerReformation(separate: null);
         if(!empty($strHeaders))
-            $this->_options[CURLOPT_HTTPHEADER] = $strHeaders;
+            $this->_setOption(CURLOPT_HTTPHEADER, $strHeaders);
 
         // Cookie使用時の設定
         if($this->_cookieFilePath !== null){
             // 保存用
-            $this->_options[CURLOPT_COOKIEJAR] = $this->_cookieFilePath;
+            $this->_setOption(CURLOPT_COOKIEJAR, $this->_cookieFilePath);
             // 取得用
-            $this->_options[CURLOPT_COOKIEFILE] = $this->_cookieFilePath;
+            $this->_setOption(CURLOPT_COOKIEFILE, $this->_cookieFilePath);
         }
 
         // 返却用エンティティー作成
@@ -694,6 +694,17 @@ final class SimpleCurlLib {
             throw new InvalidArgumentException('cURL finished without being executed.');
 
         return $responseEntity;
+    }
+
+    /**
+     * cURLオプションを設定
+     *
+     * @param  int   $key   PHPの```CURLOPT_XXXX```定数
+     * @param  mixed $value cURLオプション設定値
+     * @return void
+     */
+    private function _setOption(int $key, mixed $value): void {
+        $this->_options[$key] = $value;
     }
 
     /**
