@@ -1,7 +1,8 @@
 {
   "name": "ennacx/php-simple-curl",
-  "description": "PHP cURL Simple Wrapper",
+  "description": "PHP - Simple cURL wrapper library.",
   "keywords": [],
+  "homepage": "https://github.com/ennacx/php-simple-curl",
   "type": "library",
   "version": "1.0.0",
   "license": "MIT",
