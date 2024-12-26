@@ -1,7 +1,5 @@
 # PHP Simple cURL Library
 
----
-
 ## 概要
 cURLを極力シンプルだけど幅広く対応した<strike>い</strike>、PHP専用のライブラリ。
 
@@ -26,7 +24,7 @@ composer require ennacx/php-simple-curl
 
 ## 使い方
 ### めっちゃシンプルに
-```
+```php
 <?php
 $lib = new SimpleCurlLib('https://www.google.co.jp/');
 $result = $lib->exec();
@@ -35,7 +33,7 @@ echo $result->result; // (bool)
 ```
 
 ### レスポンスデータが欲しい場合
-```
+```php
 <?php
 $lib = new SimpleCurlLib('https://www.google.co.jp/', returnTransfer: true);
 $result = $lib->exec();
@@ -46,7 +44,7 @@ echo $result->responseBody;   // (string) レスポンスボディー
 ```
 
 ### POSTやPUTもお手軽に
-```
+```php
 <?php
 $postData = ['foo' => 1, 'bar' => 'enjoy PHP', 'baz' => null];
 
@@ -61,7 +59,7 @@ echo $result->result; // (bool)
 他にもプロキシだったりCookieだったり認証だったり最低限必要と思われるものは用意。
 
 ### 並列処理も対応
-```
+```php
 <?php
 // 並列処理したいcURL対象を列挙
 $sLib1 = new SimpleCurlLib('https://www.google.co.jp/', returnTransfer: true);
