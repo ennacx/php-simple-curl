@@ -1,4 +1,4 @@
-# PHP Simple cURL Library
+# PHP - Simple cURL Library
 
 ## 概要
 cURLを極力シンプルだけど幅広く対応した<strike>い</strike>、PHP専用のライブラリ。
@@ -57,6 +57,24 @@ echo $result->result; // (bool)
 ```
 
 他にもプロキシだったりCookieだったり認証だったり最低限必要と思われるものは用意。
+
+### レスポンス内容も分かりやすく
+```php
+$lib = new SimpleCurlLib('https://www.google.co.jp/');
+
+// ResponseEntity
+$result = $lib->exec();
+
+// HTTPステータスコード
+$statusCode = $result->http_code;
+$statusCode = $result->http_status_code;
+
+// ダウンロードサイズ
+$contentLength = $result->content_length;
+$contentLength = $result->download_content_length;
+```
+
+その他 ```curl_getinfo()``` で取得可能はパラメーターは網羅済。
 
 ### 並列処理も対応
 ```php
