@@ -15,7 +15,7 @@ PHP8になっても ```curl_init();``` やら ```curl_close();``` やらでい�
 
 ## 動作要件
 * PHP 8.2 以上
-* composer
+* composer 2.6 以上
 
 ## インストール
 ```
