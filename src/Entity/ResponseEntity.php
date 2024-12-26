@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlError;
 use InvalidArgumentException;
+use Stringable;
 
 /**
  * exec()メソッド後のcURL各結果
@@ -59,7 +60,7 @@ use InvalidArgumentException;
  *
  * @see https://www.php.net/manual/ja/function.curl-getinfo.php
  */
-class ResponseEntity extends AbstEntity {
+class ResponseEntity extends AbstEntity implements Stringable {
 
     /** @var string SimpleCurlLibのID */
     public string $id;
@@ -129,6 +130,15 @@ class ResponseEntity extends AbstEntity {
      */
     public function setInfo(array $info): void {
         $this->_infoRaw = $info;
+    }
+
+    /**
+     * 文字列変換
+     *
+     * @return string
+     */
+    public function __toString(): string {
+        return $this->responseBody ?? '';
     }
 
     /**
