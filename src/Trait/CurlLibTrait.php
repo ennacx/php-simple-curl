@@ -21,8 +21,10 @@ trait CurlLibTrait {
     public function setCurlInfoMeta(CurlHandle $ch, ResponseEntity $entity): void {
 
         $temp = curl_getinfo($ch);
-        if(is_array($temp))
+        if(is_array($temp)){
             $entity->setInfo($temp);
+            $entity->setTime();
+        }
     }
 
     /**

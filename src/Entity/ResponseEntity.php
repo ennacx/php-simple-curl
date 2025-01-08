@@ -13,7 +13,6 @@ use Stringable;
  * @property string|null content_type (subtract character-set)
  * @property string|null character_set
  * @property int|null    content_length (alias for 'download_content_length')
- * @property float|null  latency (alias for 'total_time')
  * @property int|null    http_status_code (alias for 'http_code')
  * @property int|null    upload_speed (alias for 'speed_upload')
  * @property int|null    download_speed (alias for 'speed_download')
@@ -83,18 +82,19 @@ class ResponseEntity extends AbstEntity implements Stringable {
     /** @var string|null cURLエラーメッセージ */
     public ?string $errorMessage = null;
 
+    /** @var TimeEntity 時間に関するエンティティー */
+    public TimeEntity $time;
+
     /** @var array|null curl_getinfo()の生データ */
     private ?array $_infoRaw = null;
 
     /**
      * cURLレスポンス内容を使いやすくした実体クラス
-     *
-     * @param array $curlInfo
      */
-    public function __construct(array $curlInfo = []){
+    public function __construct(){
 
-        if(!empty($curlInfo))
-            $this->setInfo($curlInfo);
+        // TimeEntity初期化
+        $this->time = new TimeEntity();
     }
 
     /**
@@ -130,6 +130,50 @@ class ResponseEntity extends AbstEntity implements Stringable {
      */
     public function setInfo(array $info): void {
         $this->_infoRaw = $info;
+    }
+
+    /**
+     * 所要時間に関する内容をセット
+     *
+     * @return void
+     */
+    public function setTime(): void {
+
+        if(isset($this->_infoRaw)){
+            // 秒
+            $temp = $this->getFromInfoRaw('total_time');
+            $this->time->total = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('namelookup_time');
+            $this->time->nsLookup = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('appconnect_time');
+            $this->time->appConnect = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('connect_time');
+            $this->time->connect = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('pretransfer_time');
+            $this->time->preTransfer = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('starttransfer_time');
+            $this->time->startTransfer = ($temp !== null) ? floatval($temp) : null;
+            $temp = $this->getFromInfoRaw('redirect_time');
+            $this->time->redirect = ($temp !== null) ? floatval($temp) : null;
+
+            // マイクロ秒
+            $temp = $this->getFromInfoRaw('total_time_us');
+            $this->time->total_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('namelookup_time_us');
+            $this->time->nsLookup_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('appconnect_time_us');
+            $this->time->appConnect_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('connect_time_us');
+            $this->time->connect_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('pretransfer_time_us');
+            $this->time->preTransfer_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('starttransfer_time_us');
+            $this->time->startTransfer_us = ($temp !== null) ? intval($temp) : null;
+            $temp = $this->getFromInfoRaw('redirect_time_us');
+            $this->time->redirect_us = ($temp !== null) ? intval($temp) : null;
+
+            unset($temp);
+        }
     }
 
     /**
@@ -191,18 +235,6 @@ class ResponseEntity extends AbstEntity implements Stringable {
         $temp = (isset($this->responseBody)) ? strlen($this->responseBody) : $this->getFromInfoRaw('size_download');
 
         return ($temp !== null) ? intval($temp) : null;
-    }
-
-    /**
-     * cURLでのリクエスト～レスポンスまでの時間 (sec)
-     *
-     * @return float|null
-     */
-    protected function _getLatency(): ?float {
-
-        $temp = $this->getFromInfoRaw('total_time');
-
-        return ($temp !== null) ? floatval($temp) : null;
     }
 
     /**
