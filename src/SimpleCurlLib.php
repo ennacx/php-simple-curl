@@ -652,7 +652,7 @@ final class SimpleCurlLib {
                 // cURL失敗時はエラー情報を格納
                 if($curlResult === false){
                     if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
-                        $responseEntity->errorEnum    = CurlError::fromValue(curl_errno($this->ch));
+                        $responseEntity->errorEnum    = CurlError::from(curl_errno($this->ch));
                         $responseEntity->errorMessage = curl_error($this->ch);
 
                         if($throw)

@@ -8,7 +8,7 @@ namespace Ennacx\SimpleCurl\Enum;
  *
  * @see https://curl.se/libcurl/c/libcurl-errors.html
  */
-enum CurlError: int implements FromValueImpl {
+enum CurlError: int {
 
     case OK = 0;
     case UNSUPPORTED_PROTOCOL = 1;
@@ -102,8 +102,4 @@ enum CurlError: int implements FromValueImpl {
     case UNRECOVERABLE_POLL = 99;
     case TOO_LARGE = 100;
     case ECH_REQUIRED = 101;
-
-    public static function fromValue(int $value): self {
-        return self::from($value);
-    }
 }

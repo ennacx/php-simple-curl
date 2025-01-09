@@ -8,7 +8,7 @@ namespace Ennacx\SimpleCurl\Enum;
  *
  * @see https://developer.mozilla.org/ja/docs/Web/HTTP/Status
  */
-enum HttpStatusCode: int implements FromValueImpl {
+enum HttpStatusCode: int {
 
     case CONTINUE              = 100;
     case SW_PROTOCOLS          = 101;
@@ -59,11 +59,12 @@ enum HttpStatusCode: int implements FromValueImpl {
     case NOT_EXTENDED          = 510;
     case NETWORK_AUTH_REQUIRED = 511;
 
-    public static function fromValue(int $value): self {
-        return self::from($value);
-    }
-
-    public function getKeyword(): string {
+    /**
+     * メッセージ取得
+     *
+     * @return string
+     */
+    public function getMessage(): string {
 
         return match($this){
             self::CONTINUE              => 'Continue',
