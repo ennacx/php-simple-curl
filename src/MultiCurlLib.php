@@ -220,7 +220,7 @@ final class MultiCurlLib {
                         $responseEntity->responseHeader = null;
                         $responseEntity->responseBody   = null;
 
-                        $responseEntity->errorEnum    = CurlError::fromValue(curl_errno($ch));
+                        $responseEntity->errorEnum    = CurlError::from(curl_errno($ch));
                         $responseEntity->errorMessage = curl_error($ch);
                     }
                     // ReturnTransfer有効、且つcURL成功時

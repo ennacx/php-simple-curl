@@ -8,7 +8,7 @@ namespace Ennacx\SimpleCurl\Enum;
  *
  * @see https://curl.se/libcurl/c/libcurl-errors.html
  */
-enum MultiCurlError: int implements FromValueImpl {
+enum MultiCurlError: int {
 
     case CALL_MULTI_PERFORM = -1;
     case OK = 0;
@@ -24,8 +24,4 @@ enum MultiCurlError: int implements FromValueImpl {
     case BAD_FUNCTION_ARGUMENT = 10;
     case ABORTED_BY_CALLBACK = 11;
     case UNRECOVERABLE_POLL = 12;
-
-    public static function fromValue(int $value): self {
-        return self::from($value);
-    }
 }
