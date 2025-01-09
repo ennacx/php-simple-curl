@@ -156,6 +156,9 @@ final class MultiCurlLib {
 
         $curlInfoRaw = [];
         foreach($this->channels as $label => $channel){
+            // CurlHandlerにオプションをアタッチ
+            $channel->attachOptionToHandler();
+
             $curlInfoRaw[] = [
                 'id'      => $channel->getId(),
                 'handler' => $channel->getHandler(),
@@ -202,6 +205,7 @@ final class MultiCurlLib {
                     // 結果が返ってきたハンドラー
                     $ch = $raised['handle'];
 
+                    // レスポンスエンティティー作成
                     $responseEntity = new ResponseEntity();
 
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
@@ -233,10 +237,13 @@ final class MultiCurlLib {
                         $responseEntity->errorMessage = '';
                     }
 
+                    // 返却用配列にエンティティーをセット
                     $ret[$responseEntity->id] = $responseEntity;
 
                     // レスポンスが受け取れたハンドラーは除去
                     curl_multi_remove_handle($this->cmh, $ch);
+
+                    unset($responseEntity);
                 } while($remains);
         } while($running);
 

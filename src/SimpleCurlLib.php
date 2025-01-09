@@ -680,18 +680,12 @@ final class SimpleCurlLib {
     }
 
     /**
-     * cURL実行
+     * CurlHandlerにオプションをアタッチ
      *
-     * @param  int     $retries 実行失敗時のリトライ回数
-     * @param  boolean $throw   True: throw exception / False: return void
-     * @return ResponseEntity
+     * @return void
      * @throws InvalidArgumentException
-     * @throws RuntimeException
      */
-    public function exec(int $retries = 5, bool $throw = false): ResponseEntity {
-
-        // コード番号変換
-        $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
+    public function attachOptionToHandler(): void {
 
         // ヘッダー情報の付与
         $strHeaders = $this->_headerReformation(separate: null);
@@ -715,14 +709,32 @@ final class SimpleCurlLib {
                 unset($this->_options[CURLOPT_POSTFIELDS]);
         }
 
-        // 返却用エンティティー作成
-        $responseEntity = new ResponseEntity();
-
         // CurlHandlerにオプションを設定
         if(count($this->_options) > 0){
             if(!curl_setopt_array($this->ch, $this->_options))
                 throw new InvalidArgumentException('Invalid cURL option or value included.');
         }
+    }
+
+    /**
+     * cURL実行
+     *
+     * @param  int     $retries 実行失敗時のリトライ回数
+     * @param  boolean $throw   True: throw exception / False: return void
+     * @return ResponseEntity
+     * @throws InvalidArgumentException
+     * @throws RuntimeException
+     */
+    public function exec(int $retries = 5, bool $throw = false): ResponseEntity {
+
+        // リトライ可能エラーコードの番号変換
+        $continuableErrorCodes = array_map(fn(CurlError $v): int => $v->value, self::CURL_EXEC_CONTINUABLE_ERRORS);
+
+        // CurlHandlerにオプションをアタッチ
+        $this->attachOptionToHandler();
+
+        // 返却用エンティティー作成
+        $responseEntity = new ResponseEntity();
 
         while($retries--){
             // cURLリクエスト実行
