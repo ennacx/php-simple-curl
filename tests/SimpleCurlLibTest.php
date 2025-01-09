@@ -56,4 +56,15 @@ class SimpleCurlLibTest extends TestCase {
 
         $this->assertNull($result->responseHeader);
     }
+
+    public function testTime(){
+
+        $this->lib->setUrl(self::TEST_USE_URL);
+        $this->lib->setReturnTransfer(true);
+
+        $result = $this->lib->exec();
+
+        $this->assertIsFloat($result->time->total ?? null);
+        $this->assertIsInt($result->time->total_us ?? null);
+    }
 }
