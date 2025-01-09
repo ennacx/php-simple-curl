@@ -47,6 +47,15 @@ class SimpleCurlLibTest extends TestCase {
         $this->assertTrue(($result->responseBody !== null));
     }
 
+    public function testGetQueryBuilder(){
+
+        $this->lib
+            ->setUrl('https://www.google.com/search#test')
+            ->setGetQuery(['q' => 'php']);
+
+        $this->assertEquals('https://www.google.com/search?q=php#test', $this->lib->getUrl());
+    }
+
     public function testNoHeader(){
 
         $this->lib->setUrl(self::TEST_USE_URL);
