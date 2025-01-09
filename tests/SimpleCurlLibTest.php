@@ -44,7 +44,7 @@ class SimpleCurlLibTest extends TestCase {
 
         $result = $this->lib->exec();
 
-        $this->assertTrue((!empty($result->responseBody)));
+        $this->assertTrue(($result->responseBody !== null));
     }
 
     public function testNoHeader(){

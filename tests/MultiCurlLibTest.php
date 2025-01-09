@@ -68,7 +68,9 @@ class MultiCurlLibTest extends TestCase {
             ->addChannel($sc3)
             ->addChannel($sc4);
 
-        $result = array_map(fn(ResponseEntity $v) => $v->http_status_code, $this->lib->exec());
+        $results = $this->lib->exec();
+
+        $result = array_map(fn(ResponseEntity $v) => $v->http_status_code, $results);
 
         $this->assertTrue(empty(array_filter($result, fn($v) => ($v !== HttpStatusCode::OK->value && $v !== HttpStatusCode::MOVED_PERMANENTLY->value))));
     }

@@ -40,14 +40,11 @@ final class MultiCurlLib {
         if(!empty($channels)){
             foreach($channels as $idx => $channel){
                 $id = $channel->getId();
-                if(!empty($id) && !array_key_exists($id, $this->channels)){
-                    $this->channels[$id] = $channel;
-                } else{
-                    throw new InvalidArgumentException(
-                        (empty($id)) ?
-                            sprintf('Channel-ID at index %d is empty.', $idx) :
-                            sprintf('Channel-ID \'%s\' is duplicated.', $id)
-                    );
+
+                try{
+                    $this->addChannel($channel);
+                } catch(InvalidArgumentException $e){
+                    throw new InvalidArgumentException(sprintf('%s [Idx: %d / ID: %s]', $e->getMessage(), $idx, $id));
                 }
             }
         }
@@ -83,7 +80,9 @@ final class MultiCurlLib {
     public function addChannel(SimpleCurlLib $channel): self {
 
         $channelId = $channel->getId();
-        if(array_key_exists($channelId, $this->channels))
+        if(empty($channelId))
+            throw new InvalidArgumentException('Channel-ID is empty.');
+        else if(array_key_exists($channelId, $this->channels))
             throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $channelId));
 
         // ReturnTransferを強制有効

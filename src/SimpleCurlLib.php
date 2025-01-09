@@ -65,14 +65,16 @@ final class SimpleCurlLib {
      * @param  CurlMethod  $method         メソッド
      * @param  string|null $cookiePath     Cookie使用時のファイルパス
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
-     * @param  boolean     $certVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $cookiePath = null, bool $hostVerify = false, bool $certVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $cookiePath = null, bool $hostVerify = false, bool $returnTransfer = false){
 
         if(!extension_loaded('curl'))
             throw new RuntimeException('cURL extension required.');
+
+        if(!extension_loaded('openssl'))
+            throw new RuntimeException('OpenSSL extension required.');
 
         $this->url = $url;
         $temp = curl_init($this->url);
@@ -111,8 +113,8 @@ final class SimpleCurlLib {
 
         // HOSTの検証
         $this->_setOption(CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
-        // 証明書の検証
-        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
+        // 証明書の検証はデフォルトではfalse
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, false);
 
         // Return transfer
         $this->setReturnTransfer(returnTransfer: $returnTransfer, returnHeader: true);
@@ -203,6 +205,27 @@ final class SimpleCurlLib {
             $value.= sprintf(';charset=%s', Utils::trimLower($charset, true));
 
         $this->addHeader(['Content-Type' => $value]);
+
+        return $this;
+    }
+
+    /**
+     * SSL証明書の設定
+     *
+     * @param  string  $pemPath    証明書までのパス
+     * @param  boolean $certVerify 証明書検証 (Default: true)
+     * @return self
+     */
+    public function setCert(string $pemPath, bool $certVerify = true): self {
+
+        if(!file_exists($pemPath))
+            throw new InvalidArgumentException('Certificate file not found.');
+
+        // PEM
+        $this->_setOption(CURLOPT_CAINFO, $pemPath);
+
+        // 証明書の検証
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
 
         return $this;
     }
@@ -740,7 +763,7 @@ final class SimpleCurlLib {
                 }
             }
             // ReturnTransfer有効、且つcURL成功時
-            else if(!empty($curlResult)){
+            else if(is_string($curlResult) && $this->_options[CURLOPT_RETURNTRANSFER]){
                 $responseEntity->result = true;
 
                 $responseEntity->errorEnum    = CurlError::OK;
