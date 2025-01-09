@@ -15,7 +15,8 @@ PHP8になっても ```curl_init();``` やら ```curl_close();``` やらでい�
 
 ## 動作要件
 * PHP 8.2 以上
-* composer 2.6 以上
+* PHPモジュール ```curl```, ```openssl```
+* composer 2.0 以上
 
 ## インストール
 ```
@@ -26,7 +27,7 @@ composer require ennacx/php-simple-curl
 ### めっちゃシンプルに
 ```php
 <?php
-$lib = new SimpleCurlLib('https://www.google.co.jp/');
+$lib = new SimpleCurlLib('https://www.php.net/');
 $result = $lib->exec();
 
 echo $result->result; // (bool)
@@ -35,7 +36,7 @@ echo $result->result; // (bool)
 ### レスポンスデータが欲しい場合
 ```php
 <?php
-$lib = new SimpleCurlLib('https://www.google.co.jp/', returnTransfer: true);
+$lib = new SimpleCurlLib('https://www.php.net/', returnTransfer: true);
 $result = $lib->exec();
 
 echo $result->result;         // (bool)
@@ -48,7 +49,7 @@ echo $result->responseBody;   // (string) レスポンスボディー
 <?php
 $postData = ['foo' => 1, 'bar' => 'enjoy PHP', 'baz' => null];
 
-$lib = new SimpleCurlLib('https://www.google.co.jp/', method: CurlMethod::POST);
+$lib = new SimpleCurlLib('https://www.php.net/', method: CurlMethod::POST);
 $result = $lib
     ->setPostFields($postData, jsonEncode: true)
     ->exec();
@@ -60,7 +61,7 @@ echo $result->result; // (bool)
 
 ### レスポンス内容も分かりやすく
 ```php
-$lib = new SimpleCurlLib('https://www.google.co.jp/');
+$lib = new SimpleCurlLib('https://www.php.net/');
 
 // ResponseEntity
 $result = $lib->exec();
@@ -80,9 +81,9 @@ $contentLength = $result->download_content_length;
 ```php
 <?php
 // 並列処理したいcURL対象を列挙
-$sLib1 = new SimpleCurlLib('https://www.google.co.jp/', returnTransfer: true);
-$sLib2 = new SimpleCurlLib('https://www.yahoo.co.jp/', returnTransfer: true);
-$sLib3 = new SimpleCurlLib('https://www.amazon.co.jp/', returnTransfer: true);
+$sLib1 = new SimpleCurlLib('https://www.php.net/', returnTransfer: true);
+$sLib2 = new SimpleCurlLib('https://github.com/', returnTransfer: true);
+$sLib3 = new SimpleCurlLib('https://packagist.org/', returnTransfer: true);
 
 // MultiCurlLibに適用し実行
 $mLib = new MultiCurlLib($sLib1, $sLib2, $sLib3);

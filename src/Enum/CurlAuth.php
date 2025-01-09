@@ -7,6 +7,7 @@ namespace Ennacx\SimpleCurl\Enum;
  * cURL認証
  */
 enum CurlAuth {
+
     /** 認証無し */
     case NONE;
 

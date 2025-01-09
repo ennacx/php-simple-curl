@@ -8,6 +8,7 @@ use Ennacx\SimpleCurl\Entity\ResponseEntity;
 use Ennacx\SimpleCurl\Enum\CurlAuth;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
+use Ennacx\SimpleCurl\Enum\SSLVersion;
 use Ennacx\SimpleCurl\Static\Utils;
 use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
@@ -365,6 +366,40 @@ final class SimpleCurlLib {
     }
 
     /**
+     * GETクエリーを設定
+     *
+     * @param  array|string $query          リクエストパラメーターの配列またはURLエンコード化されたクエリ文字列
+     * @param  string       $numeric_prefix ```$query```がインデックスを含む配列だった場合、インデックス前に付与する文字列
+     * @return $this
+     */
+    public function setGetQuery(array|string $query, string $numeric_prefix = ''): self {
+
+        if(!empty($this->url) && !empty($query)){
+            $strQuery = (is_array($query)) ? http_build_query($query, $numeric_prefix) : $query;
+
+            $parse = parse_url($this->url);
+
+            $this->url = (!empty($parse['query'])) ?
+                // GETクエリの箇所のみ置換
+                str_replace($parse['query'], $strQuery, $this->url) :
+                // 組み立て直し
+                sprintf(
+                    '%s://%s%s%s?%s%s',
+                    $parse['scheme'],
+                    (!empty($parse['user'])) ? sprintf('%s:%s@', $parse['user'], $parse['pass'] ?? '') : '',
+                    $parse['host'],
+                    $parse['path'],
+                    $strQuery,
+                    (!empty($parse['fragment']) ? "#{$parse['fragment']}" : '')
+                );
+
+            unset($strQuery, $parse);
+        }
+
+        return $this;
+    }
+
+    /**
      * POSTのボディーを設定
      *
      * @param  mixed   $fields     POST内容
@@ -410,6 +445,21 @@ final class SimpleCurlLib {
     public function setEncoding(string $encode = 'gzip'): self {
 
         $this->_setOption(CURLOPT_ENCODING, $encode);
+
+        return $this;
+    }
+
+    /**
+     * SSLバージョンを指定
+     *
+     * @param  SSLVersion $sslVersion
+     * @return $this
+     */
+    public function setSSLVersion(SSLVersion $sslVersion): self {
+
+        $constName = sprintf('CURL_SSLVERSION_%s', $sslVersion->value);
+        if(defined($constName))
+            $this->_options[CURLOPT_SSLVERSION] = constant($constName);
 
         return $this;
     }
@@ -618,6 +668,15 @@ final class SimpleCurlLib {
             $this->_setOption(CURLOPT_COOKIEJAR, $this->_cookieFilePath);
             // 取得用
             $this->_setOption(CURLOPT_COOKIEFILE, $this->_cookieFilePath);
+        }
+
+        // POSTメソッドでなければPOSTフィールド削除
+        if($this->method !== CurlMethod::POST){
+            if(array_key_exists(CURLOPT_CUSTOMREQUEST, $this->_options) && strtoupper(trim($this->_options[CURLOPT_CUSTOMREQUEST])) === 'POST')
+                unset($this->_options[CURLOPT_CUSTOMREQUEST]);
+
+            if(array_key_exists(CURLOPT_POSTFIELDS, $this->_options))
+                unset($this->_options[CURLOPT_POSTFIELDS]);
         }
 
         // 返却用エンティティー作成
