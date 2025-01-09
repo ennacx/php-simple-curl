@@ -193,7 +193,7 @@ final class SimpleCurlLib {
      *
      * @param  string      $contentType ('application/json', 'text/html' etc...)
      * @param  string|null $charset     文字コード ('UTF-8' etc...)
-     * @return $this
+     * @return self
      */
     public function setContentType(string $contentType, ?string $charset = null): self {
 
@@ -212,7 +212,7 @@ final class SimpleCurlLib {
      *
      * @param  string $proxyAddr IP-Address or URL
      * @param  int    $port      Proxy port number
-     * @return $this
+     * @return self
      */
     public function setProxy(string $proxyAddr, int $port = 3128): self {
 
@@ -329,6 +329,19 @@ final class SimpleCurlLib {
     }
 
     /**
+     * UserAgentの設定
+     *
+     * @param  string $userAgent
+     * @return self
+     */
+    public function setUA(string $userAgent): self {
+
+        $this->_setOption(CURLOPT_USERAGENT, $userAgent);
+
+        return $this;
+    }
+
+    /**
      * リダイレクト回数の上限を設定
      *
      * @param int $count リダイレクト回数
@@ -370,7 +383,7 @@ final class SimpleCurlLib {
      *
      * @param  array|string $query          リクエストパラメーターの配列またはURLエンコード化されたクエリ文字列
      * @param  string       $numeric_prefix ```$query```がインデックスを含む配列だった場合、インデックス前に付与する文字列
-     * @return $this
+     * @return self
      */
     public function setGetQuery(array|string $query, string $numeric_prefix = ''): self {
 
@@ -425,7 +438,7 @@ final class SimpleCurlLib {
      * Acceptを設定
      *
      * @param  string $acceptType ('application/json', 'text/html' etc...)
-     * @return $this
+     * @return self
      */
     public function setAccept(string $acceptType): self {
 
@@ -440,7 +453,7 @@ final class SimpleCurlLib {
      * エンコード済レスポンスデータの展開有効化
      *
      * @param  string $encode ```identity, gzip, deflate``` separate them with comma
-     * @return $this
+     * @return self
      */
     public function setEncoding(string $encode = 'gzip'): self {
 
@@ -453,13 +466,13 @@ final class SimpleCurlLib {
      * SSLバージョンを指定
      *
      * @param  SSLVersion $sslVersion
-     * @return $this
+     * @return self
      */
     public function setSSLVersion(SSLVersion $sslVersion): self {
 
         $constName = sprintf('CURL_SSLVERSION_%s', $sslVersion->value);
         if(defined($constName))
-            $this->_options[CURLOPT_SSLVERSION] = constant($constName);
+            $this->_setOption(CURLOPT_SSLVERSION, constant($constName));
 
         return $this;
     }
