@@ -14,10 +14,10 @@ use PHPUnit\Framework\TestCase;
  */
 class MultiCurlLibTest extends TestCase {
 
-    private const TEST_USE_URL1 = 'https://www.google.co.jp';
-    private const TEST_USE_URL2 = 'https://www.yahoo.co.jp';
-    private const TEST_USE_URL3 = 'https://php.net';
-    private const TEST_USE_URL4 = 'https://cakephp.org';
+    private const TEST_USE_URL1 = 'https://php.net';
+    private const TEST_USE_URL2 = 'https://github.com';
+    private const TEST_USE_URL3 = 'https://packagist.org';
+    private const TEST_USE_URL4 = 'https://google.com';
 
     private MultiCurlLib $lib;
 
