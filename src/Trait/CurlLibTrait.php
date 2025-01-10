@@ -41,7 +41,7 @@ trait CurlLibTrait {
     /**
      * cURLの実行結果、レスポンス、エラーをエンティティーにセット
      *
-     * @param  bool|string|null                                                      $curlResult   curl_exec(), curl_multi_getcontent() の実行結果
+     * @param  bool|string|null                                                      $curlResult   ```curl_exec()```, ```curl_multi_getcontent()``` の実行結果
      * @param  ResponseEntity                                                        $entity       格納エンティティー
      * @param  bool|null                                                             $divideHeader レスポンスヘッダー分割フラグ
      * @param  array{ continuableErrorCodes: int[], retries: int, throw: bool }|null $option       Single側設定
