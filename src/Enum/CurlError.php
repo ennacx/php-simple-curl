@@ -102,4 +102,6 @@ enum CurlError: int {
     case UNRECOVERABLE_POLL = 99;
     case TOO_LARGE = 100;
     case ECH_REQUIRED = 101;
+
+    case OTHER = -1;
 }

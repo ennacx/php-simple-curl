@@ -5,7 +5,6 @@ namespace Ennacx\SimpleCurl;
 
 use CurlMultiHandle;
 use Ennacx\SimpleCurl\Entity\ResponseEntity;
-use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
@@ -206,7 +205,7 @@ final class MultiCurlLib {
                     $ch = $raised['handle'];
 
                     // レスポンスエンティティー作成
-                    $responseEntity = new ResponseEntity();
+                    $responseEntity = $this->newResponseEntity();
 
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
@@ -216,26 +215,12 @@ final class MultiCurlLib {
                     // cURLのレスポンスメタ情報をセット
                     $this->setCurlInfoMeta($ch, $responseEntity);
 
-                    // ReturnTransfer無効時、またはcURL失敗時
-                    if($curlResult === null){
-                        $responseEntity->result = false;
-
-                        $responseEntity->responseHeader = null;
-                        $responseEntity->responseBody   = null;
-
-                        $responseEntity->errorEnum    = CurlError::from(curl_errno($ch));
-                        $responseEntity->errorMessage = curl_error($ch);
-                    }
-                    // ReturnTransfer有効、且つcURL成功時
-                    else{
-                        $responseEntity->result = true;
-
-                        // ヘッダー情報とボディー情報に分割
-                        $this->divideContent($curlResult, $responseEntity);
-
-                        $responseEntity->errorEnum    = CurlError::OK;
-                        $responseEntity->errorMessage = '';
-                    }
+                    // cURLの実行結果、レスポンス、エラーをエンティティーにセット
+                    $this->setResponseToEntity(
+                        curlResult: $curlResult,
+                        entity: $responseEntity,
+                        divideHeader: true // addChannel()で強制有効にしている
+                    );
 
                     // 返却用配列にエンティティーをセット
                     $ret[$responseEntity->id] = $responseEntity;

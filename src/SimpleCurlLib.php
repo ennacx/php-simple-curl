@@ -8,6 +8,8 @@ use Ennacx\SimpleCurl\Entity\ResponseEntity;
 use Ennacx\SimpleCurl\Enum\CurlAuth;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
+use Ennacx\SimpleCurl\Enum\ProxyAuth;
+use Ennacx\SimpleCurl\Enum\ProxyProtocol;
 use Ennacx\SimpleCurl\Enum\SSLVersion;
 use Ennacx\SimpleCurl\Static\Utils;
 use Ennacx\SimpleCurl\Trait\CurlLibTrait;
@@ -233,14 +235,43 @@ final class SimpleCurlLib {
     /**
      * プロキシ接続設定
      *
-     * @param  string $proxyAddr IP-Address or URL
-     * @param  int    $port      Proxy port number
+     * @param  string        $proxyAddr  IP-Address or URL
+     * @param  int           $port       Proxy port number
+     * @param  ProxyProtocol $protocol   Proxy protocol
+     * @param  bool|null     $httpTunnel Tunnel through the specified HTTP proxy.
      * @return self
      */
-    public function setProxy(string $proxyAddr, int $port = 3128): self {
+    public function setProxy(string $proxyAddr, int $port = 3128, ProxyProtocol $protocol = ProxyProtocol::HTTP, ?bool $httpTunnel = null): self {
 
         $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
         $this->_setOption(CURLOPT_PROXYPORT, $port);
+
+        $this->_setOption($protocol->toCurlConst(), $httpTunnel);
+
+        if($httpTunnel !== null)
+            $this->_setOption(CURLOPT_HTTPPROXYTUNNEL, $httpTunnel);
+
+        return $this;
+    }
+
+    /**
+     * プロキシーへの認証情報の設定
+     *
+     * @param ProxyAuth   $method 認証メソッド
+     * @param string|null $user   ユーザーID
+     * @param string|null $pass   パスワード
+     * @return $this
+     */
+    public function setProxyAuthentication(ProxyAuth $method, ?string $user = null, ?string $pass = null): self {
+
+        if($this->_hasOption(CURLOPT_PROXY) && $this->_hasOption(CURLOPT_PROXYPORT)){
+            if($method !== ProxyAuth::NONE){
+                $this->_setOption(CURLOPT_PROXYAUTH, $method->toCurlConst());
+
+                if($user !== null && $pass !== null)
+                    $this->_setOption(CURLOPT_PROXYUSERPWD, "{$user}:{$pass}");
+            }
+        }
 
         return $this;
     }
@@ -493,9 +524,7 @@ final class SimpleCurlLib {
      */
     public function setSSLVersion(SSLVersion $sslVersion): self {
 
-        $constName = sprintf('CURL_SSLVERSION_%s', $sslVersion->value);
-        if(defined($constName))
-            $this->_setOption(CURLOPT_SSLVERSION, constant($constName));
+        $this->_setOption(CURLOPT_SSLVERSION, $sslVersion->toCurlConst());
 
         return $this;
     }
@@ -734,7 +763,7 @@ final class SimpleCurlLib {
         $this->attachOptionToHandler();
 
         // 返却用エンティティー作成
-        $responseEntity = new ResponseEntity();
+        $responseEntity = $this->newResponseEntity();
 
         while($retries--){
             // cURLリクエスト実行
@@ -749,51 +778,16 @@ final class SimpleCurlLib {
             // レスポンスメタ情報のセット
             $this->setCurlInfoMeta($this->ch, $responseEntity);
 
-            // ReturnTransfer無効時、またはcURL失敗時
-            if(is_bool($curlResult)){
-                $responseEntity->result = $curlResult;
+            // cURLの実行結果、レスポンス、エラーをエンティティーにセット
+            $breakable = $this->setResponseToEntity(
+                curlResult: $curlResult,
+                entity: $responseEntity,
+                divideHeader: $this->_getOption(CURLOPT_HEADER),
+                option: compact('continuableErrorCodes', 'retries', 'throw')
+            );
 
-                $responseEntity->responseHeader = null;
-                $responseEntity->responseBody   = null;
-
-                // cURL失敗時はエラー情報を格納
-                if($curlResult === false){
-                    if(!in_array(curl_errno($this->ch), $continuableErrorCodes, true) || $retries === 0){
-                        $responseEntity->errorEnum    = CurlError::from(curl_errno($this->ch));
-                        $responseEntity->errorMessage = curl_error($this->ch);
-
-                        if($throw)
-                            throw new RuntimeException(sprintf('cURL error (Code: %d): %s', $responseEntity->errorEnum->value, $responseEntity->errorMessage));
-                        else
-                            return $responseEntity;
-                    }
-                } else{
-                    $responseEntity->errorEnum    = CurlError::OK;
-                    $responseEntity->errorMessage = '';
-
-                    break;
-                }
-            }
-            // ReturnTransfer有効、且つcURL成功時
-            else if(is_string($curlResult) && $this->_options[CURLOPT_RETURNTRANSFER]){
-                $responseEntity->result = true;
-
-                $responseEntity->errorEnum    = CurlError::OK;
-                $responseEntity->errorMessage = '';
-
-                // ヘッダー情報を返却要請している場合はヘッダー情報とボディー情報に分割
-                if(array_key_exists(CURLOPT_HEADER, $this->_options) && $this->_options[CURLOPT_HEADER] !== false)
-                    $this->divideContent($curlResult, $responseEntity);
-                // 要請していない場合は全部ボディ
-                else if(is_string($curlResult))
-                    $responseEntity->responseBody = $curlResult;
-
+            if($breakable)
                 break;
-            }
-            // 理論上ここには入らない
-            else{
-                throw new RuntimeException('Unknown error.');
-            }
         }
 
         // 最終確認
@@ -801,6 +795,30 @@ final class SimpleCurlLib {
             throw new InvalidArgumentException('cURL finished without being executed.');
 
         return $responseEntity;
+    }
+
+    /**
+     * cURLオプションが設定されているか
+     *
+     * @param  int     $curlOpt
+     * @return boolean
+     */
+    private function _hasOption(int $curlOpt): bool {
+        return (array_key_exists($curlOpt, $this->_options));
+    }
+
+    /**
+     * 適用するcURLオプション取得
+     *
+     * @param  int|null                $curlOpt PHPの```CURLOPT_XXX```定数値指定で対象値、未指定で全取得
+     * @return array<int, mixed>|mixed
+     */
+    private function _getOption(?int $curlOpt = null): mixed {
+
+        if($curlOpt === null)
+            return $this->_options;
+
+        return (array_key_exists($curlOpt, $this->_options)) ? $this->_options[$curlOpt] : null;
     }
 
     /**
