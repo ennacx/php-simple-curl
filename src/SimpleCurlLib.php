@@ -212,71 +212,6 @@ final class SimpleCurlLib {
     }
 
     /**
-     * SSL証明書の設定
-     *
-     * @param  string  $pemPath    証明書までのパス
-     * @param  boolean $certVerify 証明書検証 (Default: true)
-     * @return self
-     */
-    public function setCert(string $pemPath, bool $certVerify = true): self {
-
-        if(!file_exists($pemPath))
-            throw new InvalidArgumentException('Certificate file not found.');
-
-        // PEM
-        $this->_setOption(CURLOPT_CAINFO, $pemPath);
-
-        // 証明書の検証
-        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
-
-        return $this;
-    }
-
-    /**
-     * プロキシ接続設定
-     *
-     * @param  string        $proxyAddr  IP-Address or URL
-     * @param  int           $port       Proxy port number
-     * @param  ProxyProtocol $protocol   Proxy protocol
-     * @param  bool|null     $httpTunnel Tunnel through the specified HTTP proxy.
-     * @return self
-     */
-    public function setProxy(string $proxyAddr, int $port = 3128, ProxyProtocol $protocol = ProxyProtocol::HTTP, ?bool $httpTunnel = null): self {
-
-        $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
-        $this->_setOption(CURLOPT_PROXYPORT, $port);
-
-        $this->_setOption($protocol->toCurlConst(), $protocol);
-
-        if($httpTunnel !== null)
-            $this->_setOption(CURLOPT_HTTPPROXYTUNNEL, $httpTunnel);
-
-        return $this;
-    }
-
-    /**
-     * プロキシーへの認証情報の設定
-     *
-     * @param ProxyAuth   $method 認証メソッド
-     * @param string|null $user   ユーザーID
-     * @param string|null $pass   パスワード
-     * @return $this
-     */
-    public function setProxyAuthentication(ProxyAuth $method, ?string $user = null, ?string $pass = null): self {
-
-        if($this->_hasOption(CURLOPT_PROXY) && $this->_hasOption(CURLOPT_PROXYPORT)){
-            if($method !== ProxyAuth::NONE){
-                $this->_setOption(CURLOPT_PROXYAUTH, $method->toCurlConst());
-
-                if($user !== null && $pass !== null)
-                    $this->_setOption(CURLOPT_PROXYUSERPWD, "{$user}:{$pass}");
-            }
-        }
-
-        return $this;
-    }
-
-    /**
      * cURL実行結果を文字列で取得するか
      *
      * @param  boolean $returnTransfer falseの場合、ボディーは直接出力
@@ -310,87 +245,6 @@ final class SimpleCurlLib {
             $this->_setOption(CURLOPT_MAXREDIRS, $redirectCount);
             $this->_setOption(CURLOPT_AUTOREFERER, $autoReferer);
         }
-
-        return $this;
-    }
-
-    /**
-     * 認証情報の設定
-     *
-     * @param  CurlAuth    $method 認証メソッド
-     * @param  string|null $user   ユーザーID
-     * @param  string|null $pass   パスワード
-     * @return self
-     */
-    public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
-
-        $this->_setOption(CURLOPT_HTTPAUTH, $method->toCurlConst());
-
-        if($method !== CurlAuth::NONE && $user !== null && $pass !== null)
-            $this->_setOption(CURLOPT_USERPWD, "{$user}:{$pass}");
-
-        return $this;
-    }
-
-    /**
-     * BASIC認証情報の設定
-     *
-     * @param  string|null $user ユーザーID
-     * @param  string|null $pass パスワード
-     * @return self
-     */
-    public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
-
-        if(!empty($user) && !empty($pass)){
-            $this->_setOption(CURLOPT_HTTPAUTH, CurlAuth::BASIC->toCurlConst());
-
-            $this->addHeader([
-                'Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))
-            ]);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Bearerトークンの設定
-     *
-     * @param  string|null $token トークン
-     * @return self
-     */
-    public function setBearerToken(?string $token = null): self {
-
-        if(!empty($token)){
-            $this->addHeader([
-                'Authorization' => sprintf('Bearer %s', $token)
-            ]);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Cookie保存ファイルパスの設定
-     *
-     * @param  string $cookieFilePath
-     * @return self
-     */
-    public function setCookieFile(string $cookieFilePath): self {
-
-        $this->_cookieFilePath = $cookieFilePath;
-
-        return $this;
-    }
-
-    /**
-     * UserAgentの設定
-     *
-     * @param  string $userAgent
-     * @return self
-     */
-    public function setUA(string $userAgent): self {
-
-        $this->_setOption(CURLOPT_USERAGENT, $userAgent);
 
         return $this;
     }
@@ -484,6 +338,152 @@ final class SimpleCurlLib {
         }
 
         $this->_setOption(CURLOPT_POSTFIELDS, $fields);
+
+        return $this;
+    }
+
+    /**
+     * プロキシ接続設定
+     *
+     * @param  string        $proxyAddr  IP-Address or URL
+     * @param  int           $port       Proxy port number
+     * @param  ProxyProtocol $protocol   Proxy protocol
+     * @param  bool|null     $httpTunnel Tunnel through the specified HTTP proxy.
+     * @return self
+     */
+    public function setProxy(string $proxyAddr, int $port = 3128, ProxyProtocol $protocol = ProxyProtocol::HTTP, ?bool $httpTunnel = null): self {
+
+        $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
+        $this->_setOption(CURLOPT_PROXYPORT, $port);
+
+        $this->_setOption($protocol->toCurlConst(), $protocol);
+
+        if($httpTunnel !== null)
+            $this->_setOption(CURLOPT_HTTPPROXYTUNNEL, $httpTunnel);
+
+        return $this;
+    }
+
+    /**
+     * プロキシーへの認証情報の設定
+     *
+     * @param ProxyAuth   $method 認証メソッド
+     * @param string|null $user   ユーザーID
+     * @param string|null $pass   パスワード
+     * @return $this
+     */
+    public function setProxyAuthentication(ProxyAuth $method, ?string $user = null, ?string $pass = null): self {
+
+        if($this->_hasOption(CURLOPT_PROXY) && $this->_hasOption(CURLOPT_PROXYPORT)){
+            if($method !== ProxyAuth::NONE){
+                $this->_setOption(CURLOPT_PROXYAUTH, $method->toCurlConst());
+
+                if($user !== null && $pass !== null)
+                    $this->_setOption(CURLOPT_PROXYUSERPWD, "{$user}:{$pass}");
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * 認証情報の設定
+     *
+     * @param  CurlAuth    $method 認証メソッド
+     * @param  string|null $user   ユーザーID
+     * @param  string|null $pass   パスワード
+     * @return self
+     */
+    public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
+
+        $this->_setOption(CURLOPT_HTTPAUTH, $method->toCurlConst());
+
+        if($method !== CurlAuth::NONE && $user !== null && $pass !== null)
+            $this->_setOption(CURLOPT_USERPWD, "{$user}:{$pass}");
+
+        return $this;
+    }
+
+    /**
+     * BASIC認証情報の設定
+     *
+     * @param  string|null $user ユーザーID
+     * @param  string|null $pass パスワード
+     * @return self
+     */
+    public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
+
+        if(!empty($user) && !empty($pass)){
+            $this->_setOption(CURLOPT_HTTPAUTH, CurlAuth::BASIC->toCurlConst());
+
+            $this->addHeader([
+                'Authorization' => sprintf("Basic %s", base64_encode("{$user}:{$pass}"))
+            ]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Bearerトークンの設定
+     *
+     * @param  string|null $token トークン
+     * @return self
+     */
+    public function setBearerToken(?string $token = null): self {
+
+        if(!empty($token)){
+            $this->addHeader([
+                'Authorization' => sprintf('Bearer %s', $token)
+            ]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * SSL証明書の設定
+     *
+     * @param  string  $pemPath    証明書までのパス
+     * @param  boolean $certVerify 証明書検証 (Default: true)
+     * @return self
+     */
+    public function setCert(string $pemPath, bool $certVerify = true): self {
+
+        if(!file_exists($pemPath))
+            throw new InvalidArgumentException('Certificate file not found.');
+
+        // PEM
+        $this->_setOption(CURLOPT_CAINFO, $pemPath);
+
+        // 証明書の検証
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
+
+        return $this;
+    }
+
+    /**
+     * Cookie保存ファイルパスの設定
+     *
+     * @param  string $cookieFilePath
+     * @return self
+     */
+    public function setCookieFile(string $cookieFilePath): self {
+
+        $this->_cookieFilePath = $cookieFilePath;
+
+        return $this;
+    }
+
+    /**
+     * UserAgentの設定
+     *
+     * @param  string $userAgent
+     * @return self
+     */
+    public function setUA(string $userAgent): self {
+
+        $this->_setOption(CURLOPT_USERAGENT, $userAgent);
 
         return $this;
     }
@@ -709,7 +709,7 @@ final class SimpleCurlLib {
     }
 
     /**
-     * CurlHandlerにオプションをアタッチ
+     * CurlHandlerにCURLOPTをアタッチ
      *
      * @return void
      * @throws InvalidArgumentException
