@@ -27,16 +27,23 @@ composer require ennacx/php-simple-curl
 ### めっちゃシンプルに
 ```php
 <?php
-$lib = new SimpleCurlLib('https://www.php.net/');
+// まず初期化をします。
+$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
+
+// exec()メソッドでcurlの実行をします。
+/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
 $result = $lib->exec();
 
+// エンティティーには各cURLの実行結果を扱いやすくまとめています。
 echo $result->result; // (bool)
 ```
 
 ### レスポンスデータが欲しい場合
 ```php
 <?php
-$lib = new SimpleCurlLib('https://www.php.net/', returnTransfer: true);
+$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', returnTransfer: true);
+
+/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
 $result = $lib->exec();
 
 echo $result->result;         // (bool)
@@ -49,9 +56,11 @@ echo $result->responseBody;   // (string) レスポンスボディー
 <?php
 $postData = ['foo' => 1, 'bar' => 'enjoy PHP', 'baz' => null];
 
-$lib = new SimpleCurlLib('https://www.php.net/', method: CurlMethod::POST);
+$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', method: CurlMethod::POST);
+
+/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
 $result = $lib
-    ->setPostFields($postData, jsonEncode: true)
+    ->setPostFields($postData, jsonFlags: JSON_UNESCAPED_SLASHES)
     ->exec();
 
 echo $result->result; // (bool)
@@ -61,9 +70,9 @@ echo $result->result; // (bool)
 
 ### レスポンス内容も分かりやすく
 ```php
-$lib = new SimpleCurlLib('https://www.php.net/');
+$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
 
-// ResponseEntity
+/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
 $result = $lib->exec();
 
 // HTTPステータスコード
@@ -80,16 +89,18 @@ $contentLength = $result->download_content_length;
 ### 並列処理も対応
 ```php
 <?php
-// 並列処理したいcURL対象を列挙
-$sLib1 = new SimpleCurlLib('https://www.php.net/', returnTransfer: true);
-$sLib2 = new SimpleCurlLib('https://github.com/', returnTransfer: true);
-$sLib3 = new SimpleCurlLib('https://packagist.org/', returnTransfer: true);
+// 並列処理したいcURL対象を列挙します。
+$sLib1 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', returnTransfer: true);
+$sLib2 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://github.com/', returnTransfer: true);
+$sLib3 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://packagist.org/', returnTransfer: true);
 
-// MultiCurlLibに適用し実行
-$mLib = new MultiCurlLib($sLib1, $sLib2, $sLib3);
+// MultiCurlLibに適用し exec() メソッドで実行します。
+$mLib = new \Ennacx\SimpleCurl\MultiCurlLib($sLib1, $sLib2, $sLib3);
+
+/** @var array<string, \Ennacx\SimpleCurl\Entity\ResponseEntity> $multiResult */
 $multiResult = $mLib->exec();
 
-// それぞれのIDから各結果を取得出来ます
+// それぞれのIDから各結果を取得出来ます。
 $s1Result = $multiResult[$sLib1->getId()];
 echo $s1Result->result;         // (bool)   $sLib1のcurl実行結果
 echo $s1Result->responseHeader; // (string) $sLib1のレスポンスヘッダー

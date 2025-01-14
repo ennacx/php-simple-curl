@@ -323,15 +323,18 @@ final class SimpleCurlLib {
     /**
      * POSTのボディーを設定
      *
-     * @param  mixed   $fields     POST内容
-     * @param  boolean $jsonEncode POST内容をJSON化するか
-     * @param  int     $jsonFlags  $jsonEncodeがtrueの場合のJSONフラグ値
+     * @param  mixed       $fields     POST内容
+     * @param  bool|string $buildQuery true: POST内容をクエリーストリング化 / false: しない / string: クエリーストリング化しインデックスにはプレフィックスとして付与
+     * @param  int|null    $jsonFlags  ```null```以外はJSON化する際のエンコード条件のビットマスク
      * @return self
      * @throws InvalidArgumentException
      */
-    public function setPostFields(mixed $fields, bool $jsonEncode = false, int $jsonFlags = 0): self {
+    public function setPostFields(mixed $fields, bool|string $buildQuery = false, ?int $jsonFlags = null): self {
 
-        if($jsonEncode){
+        if($buildQuery !== false){
+            // FIXME: http_build_query() を行うと Content-Type: application/x-www-form-urlencoded 、行わないと Content-Type: multipart/form-data にバウンダリーでデータ挿入される
+            $fields = http_build_query($fields, (is_string($buildQuery)) ? $buildQuery : '');
+        } else if($jsonFlags !== null){
             $fields = json_encode($fields, $jsonFlags);
             if($fields === false)
                 throw new InvalidArgumentException('JSON encode failed.');
