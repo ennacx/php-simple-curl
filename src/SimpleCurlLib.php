@@ -246,7 +246,7 @@ final class SimpleCurlLib {
         $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
         $this->_setOption(CURLOPT_PROXYPORT, $port);
 
-        $this->_setOption($protocol->toCurlConst(), $httpTunnel);
+        $this->_setOption($protocol->toCurlConst(), $protocol);
 
         if($httpTunnel !== null)
             $this->_setOption(CURLOPT_HTTPPROXYTUNNEL, $httpTunnel);
