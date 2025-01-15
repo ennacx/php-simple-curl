@@ -215,7 +215,7 @@ final class SimpleCurlLib {
      * cURL実行結果を文字列で取得するか
      *
      * @param  boolean $returnTransfer falseの場合、ボディーは直接出力
-     * @param  boolean $returnHeader   ```$returnTransfer = true の時```ヘッダーも返却するか
+     * @param  boolean $returnHeader   ```$returnTransfer = true```の時にヘッダーも返却するか
      * @return self
      */
     public function setReturnTransfer(bool $returnTransfer, bool $returnHeader = true): self {
@@ -233,8 +233,8 @@ final class SimpleCurlLib {
      * Locationヘッダーの内容を辿るか
      *
      * @param  boolean $follow        True: ロケーションを辿る / False: 辿らない
-     * @param  int     $redirectCount ```$follow = true の時``` 最大リダイレクト回数
-     * @param  boolean $autoReferer   ```$follow = true の時``` True: ヘッダのリファラ情報を自動付与する / False: 付与しない
+     * @param  int     $redirectCount ```$follow = true```時の最大リダイレクト回数
+     * @param  boolean $autoReferer   ```$follow = true```時、True: ヘッダのリファラ情報を自動付与する / False: 付与しない
      * @return self
      */
     public function setFollowLocation(bool $follow, int $redirectCount = 10, bool $autoReferer = true): self {
@@ -370,9 +370,9 @@ final class SimpleCurlLib {
     /**
      * プロキシーへの認証情報の設定
      *
-     * @param ProxyAuth   $method 認証メソッド
-     * @param string|null $user   ユーザーID
-     * @param string|null $pass   パスワード
+     * @param ProxyAuth   $method Authentication method
+     * @param string|null $user   User-ID
+     * @param string|null $pass   Password
      * @return $this
      */
     public function setProxyAuthentication(ProxyAuth $method, ?string $user = null, ?string $pass = null): self {
@@ -392,9 +392,9 @@ final class SimpleCurlLib {
     /**
      * 認証情報の設定
      *
-     * @param  CurlAuth    $method 認証メソッド
-     * @param  string|null $user   ユーザーID
-     * @param  string|null $pass   パスワード
+     * @param  CurlAuth    $method Authentication method
+     * @param  string|null $user   User-ID
+     * @param  string|null $pass   Password
      * @return self
      */
     public function setAuthentication(CurlAuth $method, ?string $user = null, ?string $pass = null): self {
@@ -410,8 +410,8 @@ final class SimpleCurlLib {
     /**
      * BASIC認証情報の設定
      *
-     * @param  string|null $user ユーザーID
-     * @param  string|null $pass パスワード
+     * @param  string|null $user User-ID
+     * @param  string|null $pass Password
      * @return self
      */
     public function setBasicAuthentication(?string $user = null, ?string $pass = null): self {
@@ -430,7 +430,7 @@ final class SimpleCurlLib {
     /**
      * Bearerトークンの設定
      *
-     * @param  string|null $token トークン
+     * @param  string|null $token Token
      * @return self
      */
     public function setBearerToken(?string $token = null): self {
@@ -468,7 +468,7 @@ final class SimpleCurlLib {
     /**
      * Cookie保存ファイルパスの設定
      *
-     * @param  string $cookieFilePath
+     * @param  string $cookieFilePath Full path to Cookie-File
      * @return self
      */
     public function setCookieFile(string $cookieFilePath): self {
@@ -481,7 +481,7 @@ final class SimpleCurlLib {
     /**
      * UserAgentの設定
      *
-     * @param  string $userAgent
+     * @param  string $userAgent User-Agent
      * @return self
      */
     public function setUA(string $userAgent): self {
