@@ -447,23 +447,20 @@ final class SimpleCurlLib {
     /**
      * SSL証明書の設定
      *
-     * @param  boolean     $certVerify 証明書検証 (Default: true)
-     * @param  string|null $pemPath    証明書までのパス
-     * @param  boolean     $isDirPath  ```$pemPath```指定時、True: ```CURLOPT_CAPATH``` / False: ```CURLOPT_CAINFO```を使用
+     * @param  string  $pemPath    証明書までのパス
+     * @param  boolean $isDirPath  True: ```CURLOPT_CAPATH``` / False: ```CURLOPT_CAINFO```を使用
      * @return self
      */
-    public function setCert(bool $certVerify, ?string $pemPath = null, bool $isDirPath = false): self {
+    public function setCert(string $pemPath, bool $isDirPath = false): self {
+
+        if(!file_exists($pemPath))
+            throw new InvalidArgumentException('Certificate file not found.');
 
         // 証明書の検証
-        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $certVerify);
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, true);
 
-        if($pemPath !== null){
-            if(!file_exists($pemPath))
-                throw new InvalidArgumentException('Certificate file not found.');
-
-            // PEM
-            $this->_setOption(($isDirPath) ? CURLOPT_CAINFO : CURLOPT_CAPATH, $pemPath);
-        }
+        // PEM
+        $this->_setOption(($isDirPath) ? CURLOPT_CAINFO : CURLOPT_CAPATH, $pemPath);
 
         return $this;
     }
