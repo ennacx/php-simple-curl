@@ -84,15 +84,17 @@ $contentLength = $result->content_length;
 $contentLength = $result->download_content_length;
 ```
 
-その他 ```curl_getinfo()``` で取得可能はパラメーターは網羅済。
+その他 ```curl_getinfo()``` で取得可能はパラメーターは網羅済。<br>
+ダイナミックプロパティ形式でアクセスすれば取得出来ます。
 
 ### 並列処理も対応
 ```php
 <?php
 // 並列処理したいcURL対象を列挙します。
-$sLib1 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', returnTransfer: true);
-$sLib2 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://github.com/', returnTransfer: true);
-$sLib3 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://packagist.org/', returnTransfer: true);
+// MultiCurlLib使用時は内部でreturnTransferを有効にするため、わざわざ指定する必要はありません。
+$sLib1 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
+$sLib2 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://github.com/');
+$sLib3 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://packagist.org/');
 
 // MultiCurlLibに適用し exec() メソッドで実行します。
 $mLib = new \Ennacx\SimpleCurl\MultiCurlLib($sLib1, $sLib2, $sLib3);
