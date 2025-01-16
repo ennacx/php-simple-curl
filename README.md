@@ -1,5 +1,11 @@
 # PHP - Simple cURL Library
 
+[![PHP Version Require](http://poser.pugx.org/ennacx/php-simple-curl/require/php)](https://packagist.org/packages/ennacx/php-simple-curl)
+[![Latest Stable Version](http://poser.pugx.org/ennacx/php-simple-curl/v)](https://packagist.org/packages/ennacx/php-simple-curl)
+[![Total Downloads](http://poser.pugx.org/ennacx/php-simple-curl/downloads)](https://packagist.org/packages/ennacx/php-simple-curl)
+[![Latest Unstable Version](http://poser.pugx.org/ennacx/php-simple-curl/v/unstable)](https://packagist.org/packages/ennacx/php-simple-curl)
+[![License](http://poser.pugx.org/ennacx/php-simple-curl/license)](https://packagist.org/packages/ennacx/php-simple-curl)
+
 ## 概要
 cURLを極力シンプルだけど幅広く対応した<strike>い</strike>、PHP専用のライブラリ。
 
