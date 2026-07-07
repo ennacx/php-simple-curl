@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl;
 
 use CurlMultiHandle;
 use Ennacx\SimpleCurl\Entity\ResponseEntity;
+use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Trait\CurlLibTrait;
 use InvalidArgumentException;
@@ -65,8 +66,9 @@ final class MultiCurlLib {
      */
     public function close(): void {
 
-        if(isset($this->cmh))
+        if(isset($this->cmh)){
             curl_multi_close($this->cmh);
+        }
     }
 
     /**
@@ -79,10 +81,11 @@ final class MultiCurlLib {
     public function addChannel(SimpleCurlLib $channel): self {
 
         $channelId = $channel->getId();
-        if(empty($channelId))
+        if(empty($channelId)){
             throw new InvalidArgumentException('Channel-ID is empty.');
-        else if(array_key_exists($channelId, $this->channels))
+        } else if(array_key_exists($channelId, $this->channels)){
             throw new InvalidArgumentException(sprintf('Channel-ID \'%s\' is duplicated.', $channelId));
+        }
 
         // ReturnTransferを強制有効
         $channel->setReturnTransfer(returnTransfer: true, returnHeader: true);
@@ -110,8 +113,9 @@ final class MultiCurlLib {
      */
     public function removeChannel(string $channelId): void {
 
-        if(array_key_exists($channelId, $this->channels))
+        if(array_key_exists($channelId, $this->channels)){
             unset($this->channels[$channelId]);
+        }
     }
 
     /**
@@ -132,8 +136,9 @@ final class MultiCurlLib {
      */
     public function exec(): array {
 
-        if(count($this->channels) === 0)
+        if(count($this->channels) === 0){
             throw new InvalidArgumentException('No channels were found');
+        }
 
         /**
          * マルチcURL実行のサブファンクション
@@ -143,8 +148,9 @@ final class MultiCurlLib {
          */
         $executor = function(?int &$running): int {
 
-            if(!isset($running))
+            if(!isset($running)){
                 $running = MultiCurlError::CALL_MULTI_PERFORM->value;
+            }
 
             do{
                 $result = curl_multi_exec($this->cmh, $running);
@@ -172,8 +178,9 @@ final class MultiCurlLib {
 
         $result = $executor($running);
 
-        if(!$running || $result !== MultiCurlError::OK->value)
+        if($result !== MultiCurlError::OK->value){
             throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
+        }
 
         // 返却用
         $ret = [];
@@ -204,32 +211,37 @@ final class MultiCurlLib {
                     // 結果が返ってきたハンドラー
                     $ch = $raised['handle'];
 
+                    $result = $raised['result'];
+
                     // レスポンスエンティティー作成
                     $responseEntity = $this->newResponseEntity();
-
                     $responseEntity->id  = array_search($ch, $curlInfoHandler) ?: 'not found';
                     $responseEntity->url = $curlInfoUrl[$responseEntity->id] ?? '';
 
-                    $curlResult = curl_multi_getcontent($ch);
-
-                    // cURLのレスポンスメタ情報をセット
                     $this->setCurlInfoMeta($ch, $responseEntity);
 
                     // cURLの実行結果、レスポンス、エラーをエンティティーにセット
-                    $this->setResponseToEntity(
-                        curlResult: $curlResult,
-                        entity: $responseEntity,
-                        divideHeader: true // addChannel()で強制有効にしている
-                    );
+                    if($result === CURLE_OK){
+                        $this->setResponseToEntity(
+                            curlResult: curl_multi_getcontent($ch),
+                            entity: $responseEntity,
+                            divideHeader: true
+                        );
+                    } else{
+                        $responseEntity->result         = false;
+                        $responseEntity->responseHeader = null;
+                        $responseEntity->responseBody   = null;
+                        $responseEntity->errorEnum      = CurlError::tryFrom($result) ?? CurlError::OTHER;
+                        $responseEntity->errorMessage   = curl_error($ch);
+                    }
 
                     // 返却用配列にエンティティーをセット
                     $ret[$responseEntity->id] = $responseEntity;
-
                     // レスポンスが受け取れたハンドラーは除去
                     curl_multi_remove_handle($this->cmh, $ch);
 
                     unset($responseEntity);
-                } while($remains);
+                } while($result !== CURLE_OK || $remains);
         } while($running);
 
         return $ret;

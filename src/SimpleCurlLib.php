@@ -67,22 +67,26 @@ final class SimpleCurlLib {
      * @param  CurlMethod  $method         メソッド
      * @param  string|null $cookiePath     Cookie使用時のファイルパス
      * @param  boolean     $hostVerify     SSL_VERIFYHOST
+     * @param  boolean     $peerVerify     SSL_VERIFYPEER
      * @param  boolean     $returnTransfer Return transfer
      * @throws RuntimeException
      */
-    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET, ?string $cookiePath = null, bool $hostVerify = false, bool $returnTransfer = false){
+    public function __construct(?string $url = null, CurlMethod $method = CurlMethod::GET,
+                                ?string $cookiePath = null, bool $hostVerify = true, bool $peerVerify = true,
+                                bool $returnTransfer = false){
 
-        if(!extension_loaded('curl'))
+        if(!extension_loaded('curl')){
             throw new RuntimeException('cURL extension required.');
-
-        if(!extension_loaded('openssl'))
+        } else if(!extension_loaded('openssl')){
             throw new RuntimeException('OpenSSL extension required.');
+        }
 
         $this->url = $url;
         $temp = curl_init($this->url);
 
-        if($temp === false)
+        if($temp === false){
             throw new RuntimeException('cURL initialize failed.');
+        }
 
         $this->ch = $temp;
 
@@ -110,13 +114,14 @@ final class SimpleCurlLib {
         }
 
         // Cookie
-        if($cookiePath !== null)
+        if($cookiePath !== null){
             $this->setCookieFile($cookiePath);
+        }
 
         // HOSTの検証
         $this->_setOption(CURLOPT_SSL_VERIFYHOST, ($hostVerify) ? 2 : 0);
-        // 証明書の検証はデフォルトではfalse
-        $this->_setOption(CURLOPT_SSL_VERIFYPEER, false);
+        // 証明書の検証はデフォルトではtrue
+        $this->_setOption(CURLOPT_SSL_VERIFYPEER, $peerVerify);
 
         // Return transfer
         $this->setReturnTransfer(returnTransfer: $returnTransfer, returnHeader: true);
@@ -138,8 +143,9 @@ final class SimpleCurlLib {
      */
     public function close(): void {
 
-        if(isset($this->ch))
+        if(isset($this->ch)){
             curl_close($this->ch);
+        }
     }
 
     /**
@@ -215,7 +221,7 @@ final class SimpleCurlLib {
      * cURL実行結果を文字列で取得するか
      *
      * @param  boolean $returnTransfer falseの場合、ボディーは直接出力
-     * @param  boolean $returnHeader   ```$returnTransfer = true```の時にヘッダーも返却するか
+     * @param  boolean $returnHeader   `$returnTransfer = true`の時にヘッダーも返却するか
      * @return self
      */
     public function setReturnTransfer(bool $returnTransfer, bool $returnHeader = true): self {
@@ -223,8 +229,9 @@ final class SimpleCurlLib {
         $this->_setOption(CURLOPT_RETURNTRANSFER, $returnTransfer);
 
         // ReturnTransfer有効時はヘッダー情報も合わせて取得するか設定
-        if($returnTransfer)
+        if($returnTransfer){
             $this->_setOption(CURLOPT_HEADER, $returnHeader);
+        }
 
         return $this;
     }
@@ -233,8 +240,8 @@ final class SimpleCurlLib {
      * Locationヘッダーの内容を辿るか
      *
      * @param  boolean $follow        True: ロケーションを辿る / False: 辿らない
-     * @param  int     $redirectCount ```$follow = true```時の最大リダイレクト回数
-     * @param  boolean $autoReferer   ```$follow = true```時、True: ヘッダのリファラ情報を自動付与する / False: 付与しない
+     * @param  int     $redirectCount `$follow = true`時の最大リダイレクト回数
+     * @param  boolean $autoReferer   `$follow = true`時、True: ヘッダのリファラ情報を自動付与する / False: 付与しない
      * @return self
      */
     public function setFollowLocation(bool $follow, int $redirectCount = 10, bool $autoReferer = true): self {
@@ -261,8 +268,9 @@ final class SimpleCurlLib {
      */
     public function setMaxRedirectCount(int $count): self {
 
-        if($count < 0)
+        if($count < 0){
             $count = -1;
+        }
 
         $this->setFollowLocation(true);
         $this->_setOption(CURLOPT_MAXREDIRS, $count);
@@ -278,8 +286,9 @@ final class SimpleCurlLib {
      */
     public function setTimeoutSeconds(int $seconds): self {
 
-        if($seconds < 0)
+        if($seconds < 0){
             $seconds = 0;
+        }
 
         $this->_setOption(CURLOPT_TIMEOUT, $seconds);
 
@@ -290,7 +299,7 @@ final class SimpleCurlLib {
      * GETクエリーを設定
      *
      * @param  array|string $query          リクエストパラメーターの配列またはURLエンコード化されたクエリ文字列
-     * @param  string       $numeric_prefix ```$query```がインデックスを含む配列だった場合、インデックス前に付与する文字列
+     * @param  string       $numeric_prefix `$query`がインデックスを含む配列だった場合、インデックス前に付与する文字列
      * @return self
      */
     public function setGetQuery(array|string $query, string $numeric_prefix = ''): self {
@@ -325,7 +334,7 @@ final class SimpleCurlLib {
      *
      * @param  mixed       $fields     POST内容
      * @param  bool|string $buildQuery true: POST内容をクエリーストリング化 / false: しない / string: クエリーストリング化しインデックスにはプレフィックスとして付与
-     * @param  int|null    $jsonFlags  ```null```以外はJSON化する際のエンコード条件のビットマスク
+     * @param  int|null    $jsonFlags  `null`以外はJSON化する際のエンコード条件のビットマスク
      * @return self
      * @throws InvalidArgumentException
      */
@@ -336,8 +345,9 @@ final class SimpleCurlLib {
             $fields = http_build_query($fields, (is_string($buildQuery)) ? $buildQuery : '');
         } else if($jsonFlags !== null){
             $fields = json_encode($fields, $jsonFlags);
-            if($fields === false)
+            if($fields === false){
                 throw new InvalidArgumentException('JSON encode failed.');
+            }
         }
 
         $this->_setOption(CURLOPT_POSTFIELDS, $fields);
@@ -359,10 +369,11 @@ final class SimpleCurlLib {
         $this->_setOption(CURLOPT_PROXY,     $proxyAddr);
         $this->_setOption(CURLOPT_PROXYPORT, $port);
 
-        $this->_setOption($protocol->toCurlConst(), $protocol);
+        $this->_setOption(CURLOPT_PROXYTYPE, $protocol->toCurlConst());
 
-        if($httpTunnel !== null)
+        if($httpTunnel !== null){
             $this->_setOption(CURLOPT_HTTPPROXYTUNNEL, $httpTunnel);
+        }
 
         return $this;
     }
@@ -381,8 +392,9 @@ final class SimpleCurlLib {
             if($method !== ProxyAuth::NONE){
                 $this->_setOption(CURLOPT_PROXYAUTH, $method->toCurlConst());
 
-                if($user !== null && $pass !== null)
+                if($user !== null && $pass !== null){
                     $this->_setOption(CURLOPT_PROXYUSERPWD, "{$user}:{$pass}");
+                }
             }
         }
 
@@ -401,8 +413,9 @@ final class SimpleCurlLib {
 
         $this->_setOption(CURLOPT_HTTPAUTH, $method->toCurlConst());
 
-        if($method !== CurlAuth::NONE && $user !== null && $pass !== null)
+        if($method !== CurlAuth::NONE && $user !== null && $pass !== null){
             $this->_setOption(CURLOPT_USERPWD, "{$user}:{$pass}");
+        }
 
         return $this;
     }
@@ -448,19 +461,20 @@ final class SimpleCurlLib {
      * SSL証明書の設定
      *
      * @param  string  $pemPath    証明書までのパス
-     * @param  boolean $isDirPath  True: ```CURLOPT_CAPATH``` / False: ```CURLOPT_CAINFO```を使用
+     * @param  boolean $isDirPath  True: `CURLOPT_CAPATH` / False: `CURLOPT_CAINFO`を使用
      * @return self
      */
     public function setCert(string $pemPath, bool $isDirPath = false): self {
 
-        if(!file_exists($pemPath))
+        if(!file_exists($pemPath)){
             throw new InvalidArgumentException('Certificate file not found.');
+        }
 
         // 証明書の検証
         $this->_setOption(CURLOPT_SSL_VERIFYPEER, true);
 
         // PEM
-        $this->_setOption(($isDirPath) ? CURLOPT_CAINFO : CURLOPT_CAPATH, $pemPath);
+        $this->_setOption(($isDirPath) ? CURLOPT_CAPATH : CURLOPT_CAINFO, $pemPath);
 
         return $this;
     }
@@ -509,7 +523,7 @@ final class SimpleCurlLib {
     /**
      * エンコード済レスポンスデータの展開有効化
      *
-     * @param  string $encode ```identity, gzip, deflate``` separate them with comma
+     * @param  string $encode `identity, gzip, deflate` separate them with comma
      * @return self
      */
     public function setEncoding(string $encode = 'gzip'): self {
@@ -537,8 +551,8 @@ final class SimpleCurlLib {
      *
      * @link https://www.php.net/manual/ja/function.curl-setopt.php
      *
-     * @param  int|array $option    PHPの```CURLOPT_XXX```定数値または```[CURLOPT_XXX => Value]```の配列
-     * @param  mixed     $value     ```$option```がint時の、そのオプションに対する設定値
+     * @param  int|array $option    PHPの`CURLOPT_XXX`定数値または`[CURLOPT_XXX => Value]`の配列
+     * @param  mixed     $value     `$option`がint時の、そのオプションに対する設定値
      * @param  boolean   $overwrite True: 既に設定されている場合は上書き / False: 既存を優先
      * @return self
      * @throws InvalidArgumentException
@@ -562,8 +576,9 @@ final class SimpleCurlLib {
                 unset($diff);
             }
         } else if($value !== null){
-            if(!array_key_exists($option, $this->_options) || $overwrite)
+            if(!array_key_exists($option, $this->_options) || $overwrite){
                 $this->_options[$option] = $value;
+            }
         }
 
         return $this;
@@ -596,8 +611,8 @@ final class SimpleCurlLib {
      *
      * @param  string|null     $separate
      * @return string[]|string
-     *                 ```$separate = null``` 各ヘッダー情報の配列
-     *                 ```$separate = string``` 指定文字列で結合した文字列
+     *                 `$separate = null` 各ヘッダー情報の配列
+     *                 `$separate = string` 指定文字列で結合した文字列
      */
     public function getHeader(?string $separate = null): array|string {
         return $this->_headerReformation(separate: $separate);
@@ -621,8 +636,8 @@ final class SimpleCurlLib {
         /**
          * 最初のコロンでkeyとvalueに分割するサブファンクション
          *
-         * @param  string $headerStr (ex. ``` 'Content-Type: application/json' ```)
-         * @return array<string, string> (ex. ```['Content-Type' => 'application/json']```)
+         * @param  string $headerStr (ex. ` 'Content-Type: application/json' `)
+         * @return array<string, string> (ex. `['Content-Type' => 'application/json']`)
          * @throws InvalidArgumentException
          */
         $separateFunc = function(string $headerStr): array {
@@ -637,10 +652,11 @@ final class SimpleCurlLib {
         };
 
         if(is_string($argHeader)){
-            if(str_contains($argHeader, ':'))
+            if(str_contains($argHeader, ':')){
                 $this->_headers = array_merge($this->_headers, $separateFunc($argHeader));
-            else
+            } else{
                 throw new InvalidArgumentException(sprintf('\'%s\' is invalid header format.', $argHeader));
+            }
         } else{
             $headers = [];
             foreach($argHeader as $k => $v){
@@ -651,20 +667,23 @@ final class SimpleCurlLib {
                         $k = $matches['header_key'] ?? '';
 
                         // 値取得
-                        if(is_string($v))
+                        if(is_string($v)){
                             $temp = $v;
-                        else if(is_numeric($v))
+                        } else if(is_numeric($v)){
                             $temp = strval($v);
-                        else if($v instanceof Stringable)
+                        } else if($v instanceof Stringable){
                             $temp = $v->__toString();
-                        else
+                        } else{
                             throw new InvalidArgumentException(sprintf('Key: \'%s\' is invalid header format value.', $k));
+                        }
+
                         $v = trim($temp);
                         unset($temp);
 
                         // キーと値が正常な場合ヘッダーに追加
-                        if(!empty($k) && !empty($v))
+                        if(!empty($k) && !empty($v)){
                             $headers[$this->_headerKeyReformer($k)] = $v;
+                        }
                     }
                 } else if(str_contains($v, ':')){
                     $temp = $separateFunc($v);
@@ -691,8 +710,9 @@ final class SimpleCurlLib {
 
         $k = $this->_headerKeyReformer($key);
 
-        if(!array_key_exists($k, $this->_headers))
+        if(!array_key_exists($k, $this->_headers)){
             return false;
+        }
 
         unset($this->_headers[$k]);
 
@@ -721,8 +741,9 @@ final class SimpleCurlLib {
 
         // ヘッダー情報の付与
         $strHeaders = $this->_headerReformation(separate: null);
-        if(!empty($strHeaders))
+        if(!empty($strHeaders)){
             $this->_setOption(CURLOPT_HTTPHEADER, $strHeaders);
+        }
 
         // Cookie使用時の設定
         if($this->_cookieFilePath !== null){
@@ -734,17 +755,20 @@ final class SimpleCurlLib {
 
         // POSTメソッドでなければPOSTフィールド削除
         if($this->method !== CurlMethod::POST){
-            if(array_key_exists(CURLOPT_CUSTOMREQUEST, $this->_options) && strtoupper(trim($this->_options[CURLOPT_CUSTOMREQUEST])) === 'POST')
+            if(array_key_exists(CURLOPT_CUSTOMREQUEST, $this->_options) && strtoupper(trim($this->_options[CURLOPT_CUSTOMREQUEST])) === 'POST'){
                 unset($this->_options[CURLOPT_CUSTOMREQUEST]);
+            }
 
-            if(array_key_exists(CURLOPT_POSTFIELDS, $this->_options))
+            if(array_key_exists(CURLOPT_POSTFIELDS, $this->_options)){
                 unset($this->_options[CURLOPT_POSTFIELDS]);
+            }
         }
 
         // CurlHandlerにオプションを設定
         if(count($this->_options) > 0){
-            if(!curl_setopt_array($this->ch, $this->_options))
+            if(!curl_setopt_array($this->ch, $this->_options)){
                 throw new InvalidArgumentException('Invalid cURL option or value included.');
+            }
         }
     }
 
@@ -789,13 +813,15 @@ final class SimpleCurlLib {
                 option: compact('continuableErrorCodes', 'retries', 'throw')
             );
 
-            if($breakable)
+            if($breakable){
                 break;
+            }
         }
 
         // 最終確認
-        if(!$this->_executed)
+        if(!$this->_executed){
             throw new InvalidArgumentException('cURL finished without being executed.');
+        }
 
         return $responseEntity;
     }
@@ -813,13 +839,14 @@ final class SimpleCurlLib {
     /**
      * 適用するcURLオプション取得
      *
-     * @param  int|null                $curlOpt PHPの```CURLOPT_XXX```定数値指定で対象値、未指定で全取得
+     * @param  int|null                $curlOpt PHPの`CURLOPT_XXX`定数値指定で対象値、未指定で全取得
      * @return array<int, mixed>|mixed
      */
     private function _getOption(?int $curlOpt = null): mixed {
 
-        if($curlOpt === null)
+        if($curlOpt === null){
             return $this->_options;
+        }
 
         return (array_key_exists($curlOpt, $this->_options)) ? $this->_options[$curlOpt] : null;
     }
@@ -827,7 +854,7 @@ final class SimpleCurlLib {
     /**
      * cURLオプションを設定
      *
-     * @param  int   $key   PHPの```CURLOPT_XXXX```定数
+     * @param  int   $key   PHPの`CURLOPT_XXXX`定数
      * @param  mixed $value cURLオプション設定値
      * @return void
      */
@@ -836,7 +863,7 @@ final class SimpleCurlLib {
     }
 
     /**
-     * keyからスペースをなくし整形 (ex. ``` 'c ONtenT - tY  PE' ```を``` 'Content-Type' ``` に変換)
+     * keyからスペースをなくし整形 (ex. ` 'c ONtenT - tY  PE' `を` 'Content-Type' ` に変換)
      *
      * @param  string $key
      * @return string
@@ -856,9 +883,8 @@ final class SimpleCurlLib {
         $ret = [];
 
         // ヘッダー情報の付与
-        if(!empty($this->_headers)){
-            foreach($this->_headers as $k => $v)
-                $ret[] = "{$k}: {$v}";
+        foreach($this->_headers as $k => $v){
+            $ret[] = "{$k}: {$v}";
         }
 
         return ($separate !== null) ? implode($separate, $ret) : $ret;
