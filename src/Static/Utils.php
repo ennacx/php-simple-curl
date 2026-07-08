@@ -64,35 +64,35 @@ class Utils {
     }
 
     /**
-     * UUID生成
+     * UUIDv4 生成
      *
      * @return string RFC4122 UUID
      * @throws RuntimeException
      * @see    https://www.ietf.org/rfc/rfc4122.txt
      */
-    public static function generateUUID(): string {
+    public static function uuid_v4(): string {
 
         try{
             return sprintf(
                 '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
                 // 32 bits for "time_low"
-                random_int(0, 65535),
-                random_int(0, 65535),
+                random_int(0, 0xFFFF),
+                random_int(0, 0xFFFF),
                 // 16 bits for "time_mid"
-                random_int(0, 65535),
+                random_int(0, 0xFFFF),
                 // 12 bits before the 0100 of (version) 4 for "time_hi_and_version"
-                random_int(0, 4095) | 0x4000,
+                random_int(0, 0x0FFF) | 0x4000,
                 // 16 bits, 8 bits for "clk_seq_hi_res",
                 // 8 bits for "clk_seq_low",
                 // two most significant bits holds zero and one for variant DCE1.1
-                random_int(0, 0x3fff) | 0x8000,
+                random_int(0, 0x3FFF) | 0x8000,
                 // 48 bits for "node"
-                random_int(0, 65535),
-                random_int(0, 65535),
-                random_int(0, 65535)
+                random_int(0, 0xFFFF),
+                random_int(0, 0xFFFF),
+                random_int(0, 0xFFFF)
             );
         } catch(RandomException $e){
-            throw new RuntimeException($e->getMessage());
+            throw new RuntimeException($e->getMessage(), previous: $e);
         }
     }
 }

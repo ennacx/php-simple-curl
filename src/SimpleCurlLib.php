@@ -91,7 +91,7 @@ final class SimpleCurlLib {
         $this->ch = $temp;
 
         try{
-            $this->id = Utils::generateUUID();
+            $this->id = Utils::uuid_v4();
         } catch(RuntimeException){
             throw new RuntimeException('Object-ID generate failed.');
         }
