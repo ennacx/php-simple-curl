@@ -1,0 +1,40 @@
+name: Dependabot auto-merge
+
+# Policy:
+# - This workflow only enables GitHub auto-merge for Dependabot patch updates.
+# - Human PRs are never auto-merge enabled by this workflow.
+# - Required CI checks must be enforced by branch protection rules.
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    # Allow auto-merge may be enabled repository-wide, but this job only acts on Dependabot PRs.
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Enable auto-merge
+        # Keep this limited to patch updates. Minor and major updates require human review.
+        # To include minor updates later, add:
+        #   || steps.metadata.outputs.update-type == 'version-update:semver-minor'
+        if: |
+          steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ github.token }}
