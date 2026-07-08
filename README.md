@@ -8,6 +8,20 @@
 
 A small PHP 8.2+ cURL wrapper that builds typed request objects, executes them through single or multi clients, and returns response objects.
 
+## Philosophy
+
+PHP's cURL extension is powerful, but its option-based API can become hard to read as requests grow.
+Additionally, the sheer number of granular cURL constants provided by PHP makes it challenging to select the most appropriate ones.
+
+PHP Simple cURL keeps the core pieces explicit:
+
+- `Request` describes what to send.
+- `CurlOptions` describes how to send it.
+- `PendingRequest` combines them into something executable.
+- Clients execute requests and return typed `Response` objects.
+
+The library favors small value objects, immutable options, and predictable response helpers over a large fluent client with hidden state.
+
 ## Requirements
 
 - PHP 8.2 or later
@@ -18,7 +32,7 @@ A small PHP 8.2+ cURL wrapper that builds typed request objects, executes them t
 ## Installation
 
 ```bash
-composer require ennacx/php-simple-curl
+composer require ennacx/php-simple-curl:^2.0@beta
 ```
 
 ## Core Flow
