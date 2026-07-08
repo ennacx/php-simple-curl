@@ -34,25 +34,31 @@ final class ResponseFactory {
             throw new RuntimeException('Invalid curl info');
         }
 
-        $options = $pendingRequest->options ?? CurlOptions::create();
-        $errno = $resultCode ?? curl_errno($ch);
-        $error = ($errno === CURLE_OK) ? null : (CurlError::tryFrom($errno) ?? CurlError::OTHER);
-        $errorMessage = ($errno === CURLE_OK) ? '' : curl_error($ch);
+        $options      = $pendingRequest->options ?? CurlOptions::create();
+        $errno        = $resultCode ?? curl_errno($ch);
+        $error        = ($errno !== CURLE_OK) ? (CurlError::tryFrom($errno) ?? CurlError::OTHER) : null;
+        $errorMessage = ($errno !== CURLE_OK) ? curl_error($ch) : '';
 
+        // ヘッダーとボディを分割してそれぞれ格納
         $headers = [];
-        $body = null;
+        $body    = null;
         if(is_string($raw)){
+            // ヘッダーが必要な場合
             if($options->captureHeaders){
+                // ヘッダーサイズ取得
                 $headerSize = $info['header_size'] ?? null;
                 if(!is_int($headerSize)){
                     throw new InvalidArgumentException('Invalid cURL header size.');
                 }
 
+                // ヘッダーとボディを分割・格納
                 $headers = $this->parseHeaders(substr($raw, 0, $headerSize));
                 if($options->captureBody){
                     $body = substr($raw, $headerSize);
                 }
-            } else if($options->captureBody){
+            }
+            // ボディのみの場合はそのまま
+            else if($options->captureBody){
                 $body = $raw;
             }
         }

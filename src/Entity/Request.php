@@ -14,7 +14,7 @@ use Stringable;
 final class Request {
 
     /** @var string Requestを識別するID */
-    public string $id;
+    public readonly string $id;
 
     /** @var array<string, mixed> 送信するHTTPヘッダー */
     public array $requestHeaders = [];

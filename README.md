@@ -61,6 +61,10 @@ foreach($response->headers as $headerLine){
     echo $headerLine . PHP_EOL;
 }
 
+if($response->isSuccessful()){
+    echo $response->header('content-type');
+}
+
 if($response->error !== null){
     echo $response->error->name;
     echo $response->errorMessage;
@@ -128,6 +132,8 @@ Supported request factory methods:
 
 `CurlOptions` describes how cURL should execute the request. It owns timeout, SSL, proxy, auth, redirect, and response capture settings.
 
+`CurlOptions` is immutable. Fluent helper methods return a new instance, so remember to keep the returned value.
+
 ```php
 <?php
 
@@ -157,6 +163,13 @@ $options = CurlOptions::create()
     ->followRedirects()
     ->captureBody()
     ->captureHeaders();
+```
+
+Because options are immutable, this does not change the original instance:
+
+```php
+$baseOptions = CurlOptions::create()->timeout(10);
+$redirectOptions = $baseOptions->followRedirects();
 ```
 
 ## Pending Request
@@ -226,8 +239,31 @@ Both clients return `Response` objects.
 ```php
 echo $response->statusCode;      // int
 echo $response->body;            // string|null
-print_r($response->headers);     // string[]
+print_r($response->headers);     // raw response header lines
+print_r($response->headers());   // parsed response headers
 print_r($response->info);        // curl_getinfo() result
+
+if($response->isOk()){
+    // HTTP 200 and no cURL error.
+}
+
+if($response->isSuccessful()){
+    // HTTP 2xx and no cURL error.
+}
+
+if($response->isRedirect()){
+    // HTTP 3xx.
+}
+
+if($response->isError()){
+    // cURL error, HTTP 4xx, or HTTP 5xx.
+}
+
+if($response->hasHeader('content-type')){
+    echo $response->header('content-type');
+}
+
+$json = $response->json();
 
 if($response->error !== null){
     echo $response->error->name;
@@ -235,10 +271,32 @@ if($response->error !== null){
 }
 ```
 
+Response status helpers:
+
+- `isInformational()` returns true for HTTP `1xx`.
+- `isOk()` returns true for HTTP `200` with no cURL error.
+- `isSuccessful()` returns true for HTTP `2xx` with no cURL error.
+- `isRedirect()` returns true for HTTP `3xx`.
+- `isClientError()` returns true for HTTP `4xx`.
+- `isServerError()` returns true for HTTP `5xx`.
+- `isError()` returns true for a cURL error, HTTP `4xx`, or HTTP `5xx`.
+
+Header helpers:
+
+- `$response->headers` contains raw header lines.
+- `$response->headers()` returns parsed headers keyed by lower-case header name.
+- `$response->header('content-type')` returns a header value, an array of values, or `null`.
+- `$response->hasHeader('content-type')` checks whether the header exists.
+
+JSON helper:
+
+- `$response->json()` decodes `Response::$body` as JSON.
+- `$response->json(throw: false)` returns `null` when the body is empty.
+
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
-- `captureHeaders` controls whether response headers are stored in `Response::$headers`.
+- `captureHeaders` controls whether response header lines are stored in `Response::$headers`.
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
 - `MultiClient::sendAll()` returns `array<string, Response>`, keyed by `Request::$id`.
 

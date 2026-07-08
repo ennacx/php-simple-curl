@@ -14,13 +14,13 @@ use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
  *
  * Request本体には含めず、通信制御やレスポンス取得方法に関わる設定を保持する。
  */
-final class CurlOptions {
+final readonly class CurlOptions {
 
     /**
      * コンストラクタ
      *
-     * @param boolean             $captureBody    レスポンスボディをResponseに保持するか
      * @param boolean             $captureHeaders レスポンスヘッダーをResponseに保持するか
+     * @param boolean             $captureBody    レスポンスボディをResponseに保持するか
      * @param ProxyConfig|null    $proxy          プロキシー設定
      * @param SslConfig|null      $ssl            SSL/TLS設定
      * @param AuthConfig|null     $auth           認証設定
@@ -28,8 +28,8 @@ final class CurlOptions {
      * @param RedirectConfig|null $redirect       リダイレクト設定
      */
     public function __construct(
-        public bool            $captureBody    = true,
         public bool            $captureHeaders = true,
+        public bool            $captureBody    = true,
         public ?ProxyConfig    $proxy          = null,
         public ?SslConfig      $ssl            = null,
         public ?AuthConfig     $auth           = null,
@@ -55,9 +55,15 @@ final class CurlOptions {
      */
     public function captureHeaders(bool $capture = true): self {
 
-        $this->captureHeaders = $capture;
-
-        return $this;
+        return new self(
+            captureHeaders: $capture,
+            captureBody:    $this->captureBody,
+            proxy:          $this->proxy,
+            ssl:            $this->ssl,
+            auth:           $this->auth,
+            timeout:        $this->timeout,
+            redirect:       $this->redirect,
+        );
     }
 
     /**
@@ -68,9 +74,15 @@ final class CurlOptions {
      */
     public function captureBody(bool $capture = true): self {
 
-        $this->captureBody = $capture;
-
-        return $this;
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $capture,
+            proxy:          $this->proxy,
+            ssl:            $this->ssl,
+            auth:           $this->auth,
+            timeout:        $this->timeout,
+            redirect:       $this->redirect,
+        );
     }
 
     /**
@@ -82,9 +94,15 @@ final class CurlOptions {
      */
     public function timeout(int $timeoutSec): self {
 
-        $this->timeout = TimeoutConfig::seconds(timeoutSec: $timeoutSec, connectTimeoutSec: $timeoutSec);
-
-        return $this;
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            proxy:          $this->proxy,
+            ssl:            $this->ssl,
+            auth:           $this->auth,
+            timeout:        TimeoutConfig::seconds(timeoutSec: $timeoutSec, connectTimeoutSec: $timeoutSec),
+            redirect:       $this->redirect,
+        );
     }
 
     /**
@@ -96,9 +114,15 @@ final class CurlOptions {
      */
     public function followRedirects(int $maxRedirects = 10, bool $autoReferer = true): self {
 
-        $this->redirect = RedirectConfig::enabled(maxRedirects: $maxRedirects, autoReferer: $autoReferer);
-
-        return $this;
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            proxy:          $this->proxy,
+            ssl:            $this->ssl,
+            auth:           $this->auth,
+            timeout:        $this->timeout,
+            redirect:       RedirectConfig::enabled(maxRedirects: $maxRedirects, autoReferer: $autoReferer),
+        );
     }
 
     /**
