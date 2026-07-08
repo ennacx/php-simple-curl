@@ -3,11 +3,6 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity;
 
-use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
-use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
-use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
-use Ennacx\SimpleCurl\Entity\Config\SslConfig;
-use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Static\Utils;
 use InvalidArgumentException;
@@ -21,49 +16,37 @@ final class Request {
     /** @var string Requestを識別するID */
     public string $id;
 
+    /** @var array<string, mixed> 送信するHTTPヘッダー */
+    public array $requestHeaders = [];
+
     /**
-     * @param string              $url            送信先URL
-     * @param CurlMethod          $method         HTTPメソッド
-     * @param bool                $captureBody    レスポンスボディをResponseに保持するか
-     * @param bool                $captureHeaders レスポンスヘッダーをResponseに保持するか
-     * @param array<string,mixed> $requestHeaders 送信するHTTPヘッダー
-     * @param ProxyConfig|null    $proxy          プロキシー設定
-     * @param SslConfig|null      $ssl            SSL/TLS設定
-     * @param AuthConfig|null     $auth           認証設定
-     * @param TimeoutConfig|null  $timeout        タイムアウト設定
-     * @param RedirectConfig|null $redirect       リダイレクト設定
+     * コンストラクタ
+     *
+     * @param string     $url    送信先URL
+     * @param CurlMethod $method HTTPメソッド
      */
-    public function __construct(
-        public string          $url,
-        public CurlMethod      $method = CurlMethod::GET,
-        public bool            $captureBody = true,
-        public bool            $captureHeaders = true,
-        public array           $requestHeaders = [],
-        public ?ProxyConfig    $proxy = null,
-        public ?SslConfig      $ssl = null,
-        public ?AuthConfig     $auth = null,
-        public ?TimeoutConfig  $timeout = null,
-        public ?RedirectConfig $redirect = null,
-    ){
-        $this->id = Utils::uuid_v4();
+    public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
+
+        $this->id  = Utils::uuid_v4();
         $this->url = self::validateUrl($this->url);
-        $this->requestHeaders = self::validateHeaders($this->requestHeaders);
     }
 
     /**
-     * Request::get('https://example.com') のようなHTTPメソッド名の静的Factoryを提供する。
+     * Request::get('https://example.com') のような、HTTPメソッド名の静的Factoryを提供する。
      *
      * @param  string $method 呼び出された静的メソッド名
-     * @param  array  $args   Requestコンストラクタへ渡す引数
+     * @param  array  $args   Requestコンストラクタへ渡す引数 (現在`url`のみ)
      * @return self
      */
-    public static function __callStatic(string $method, array $args): mixed {
+    public static function __callStatic(string $method, array $args): self {
 
-        $curlMethod = self::findMethod($method);
+        // HTTPメソッドの解決
+        $curlMethod = self::findCurlMethod($method);
         if($curlMethod === null){
             throw new InvalidArgumentException(sprintf('Invalid method: %s', $method));
         }
 
+        // URL取得
         $url = null;
         if(isset($args['url']) && is_string($args['url'])){
             $url = $args['url'];
@@ -73,26 +56,45 @@ final class Request {
             unset($args[0]);
         }
 
-        if(!isset($url)){
+        if($url === null){
             throw new InvalidArgumentException('Request URL is required.');
         }
 
-        return new self($url, $curlMethod, ...$args);
+        return new self($url, $curlMethod);
     }
 
     /**
-     * Requestに設定されたConfig群を返す。
+     * 送信するHTTPヘッダーを設定する。
      *
-     * @return array<int, ProxyConfig|SslConfig|AuthConfig|TimeoutConfig|RedirectConfig|null>
+     * @param  array<string, mixed> $headers ヘッダー名をキーにした連想配列
+     * @return self
      */
-    public function getConfig(): array {
-        return [
-            $this->proxy,
-            $this->ssl,
-            $this->auth,
-            $this->timeout,
-            $this->redirect,
-        ];
+    public function headers(array $headers): self {
+
+        $this->requestHeaders = self::validateHeaders($headers);
+
+        return $this;
+    }
+
+    /**
+     * CurlOptionsを指定せず、デフォルト設定で送信待ちリクエストを生成する。
+     *
+     * @return PendingRequest
+     */
+    public function asPending(): PendingRequest {
+
+        return PendingRequest::create($this, null);
+    }
+
+    /**
+     * CurlOptionsを付与した送信待ちリクエストを生成する。
+     *
+     * @param  CurlOptions $options cURL実行時のオプション設定
+     * @return PendingRequest
+     */
+    public function withOptions(CurlOptions $options): PendingRequest {
+
+        return PendingRequest::create($this, $options);
     }
 
     /**
@@ -155,7 +157,7 @@ final class Request {
      * @param  string $method
      * @return CurlMethod|null
      */
-    private static function findMethod(string $method): ?CurlMethod {
+    private static function findCurlMethod(string $method): ?CurlMethod {
 
         $method = strtolower($method);
         foreach(CurlMethod::cases() as $curlMethod){

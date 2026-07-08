@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CurlHandle;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Entity\CurlOptions;
+use Ennacx\SimpleCurl\Entity\PendingRequest;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use InvalidArgumentException;
@@ -12,25 +13,28 @@ use RuntimeException;
 
 /**
  * cURLの実行結果からResponseを組み立てるFactory。
+ *
+ * CurlOptionsのcapture設定に従って、raw文字列からレスポンスヘッダーとボディを切り分ける。
  */
 final class ResponseFactory {
 
     /**
      * CurlHandleのメタ情報と実行結果からResponseを生成する。
      *
-     * @param  CurlHandle       $ch         実行済みのcURLハンドラー
-     * @param  bool|string      $raw        curl_exec()またはcurl_multi_getcontent()の戻り値
-     * @param  Request          $request    実行に使用したRequest
-     * @param  int|null         $resultCode `curl_multi_info_read()`のresult。単一実行時はnull
+     * @param  CurlHandle     $ch             実行済みのcURLハンドラー
+     * @param  bool|string    $raw            curl_exec()またはcurl_multi_getcontent()の戻り値
+     * @param  PendingRequest $pendingRequest 実行に使用したPendingRequest
+     * @param  int|null       $resultCode     `curl_multi_info_read()`のresult。単一実行時はnull
      * @return Response
      */
-    public function fromCurlResult(CurlHandle $ch, bool|string $raw, Request $request, ?int $resultCode = null): Response {
+    public function fromCurlResult(CurlHandle $ch, bool|string $raw, PendingRequest $pendingRequest, ?int $resultCode = null): Response {
 
         $info = curl_getinfo($ch);
         if(!is_array($info)){
             throw new RuntimeException('Invalid curl info');
         }
 
+        $options = $pendingRequest->options ?? CurlOptions::create();
         $errno = $resultCode ?? curl_errno($ch);
         $error = ($errno === CURLE_OK) ? null : (CurlError::tryFrom($errno) ?? CurlError::OTHER);
         $errorMessage = ($errno === CURLE_OK) ? '' : curl_error($ch);
@@ -38,17 +42,17 @@ final class ResponseFactory {
         $headers = [];
         $body = null;
         if(is_string($raw)){
-            if($request->captureHeaders){
+            if($options->captureHeaders){
                 $headerSize = $info['header_size'] ?? null;
                 if(!is_int($headerSize)){
                     throw new InvalidArgumentException('Invalid cURL header size.');
                 }
 
                 $headers = $this->parseHeaders(substr($raw, 0, $headerSize));
-                if($request->captureBody){
+                if($options->captureBody){
                     $body = substr($raw, $headerSize);
                 }
-            } else if($request->captureBody){
+            } else if($options->captureBody){
                 $body = $raw;
             }
         }
@@ -66,6 +70,9 @@ final class ResponseFactory {
     /**
      * 生のレスポンスヘッダー文字列を行単位の配列へ分割する。
      *
+     * cURLが返すステータスラインもヘッダー行として保持する。
+     *
+     * @param  string $rawHeaders cURLが返したレスポンスヘッダー文字列
      * @return string[]
      */
     private function parseHeaders(string $rawHeaders): array {

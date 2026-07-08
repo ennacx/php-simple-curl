@@ -5,7 +5,7 @@ namespace Ennacx\SimpleCurl\Client;
 
 use CurlHandle;
 use CurlMultiHandle;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Entity\PendingRequest;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
@@ -15,14 +15,16 @@ use RuntimeException;
 use Throwable;
 
 /**
- * 複数のRequestをcURL Multiで並列実行するクライアント。
+ * 複数のPendingRequestをcURL Multiで並列実行するクライアント。
+ *
+ * 各リクエストのcURLハンドラーをMultiハンドラーへ登録し、完了したものからResponseへ変換する。
  */
 final readonly class MultiClient {
 
     /**
      * コンストラクタ
      *
-     * @param CurlOptionsFactory $optionsFactory RequestからcURLオプションを生成するFactory
+     * @param CurlOptionsFactory $optionsFactory PendingRequestからcURLオプションを生成するFactory
      * @param ResponseFactory    $responseFactory cURL実行結果からResponseを生成するFactory
      */
     public function __construct(
@@ -32,13 +34,15 @@ final readonly class MultiClient {
     }
 
     /**
-     * 指定されたRequest群を並列実行し、Request IDをキーにしたResponse配列を返す。
+     * 指定されたPendingRequest群を並列実行し、Request IDをキーにしたResponse配列を返す。
      *
-     * @param  Request ...$requests 実行対象のRequest
+     * 返却配列のキーには各PendingRequestが保持するRequest::$idを使用する。
+     *
+     * @param  PendingRequest ...$pendingRequests 実行対象のPendingRequest
      * @return array<string, Response>
      * @throws Throwable
      */
-    public function sendAll(Request ...$requests): array {
+    public function sendAll(PendingRequest ...$pendingRequests): array {
 
         $cmh = curl_multi_init();
 
@@ -47,26 +51,28 @@ final readonly class MultiClient {
         $handles = [];
 
         try{
-            foreach($requests as $request){
-                $ch = curl_init($request->url);
+            foreach($pendingRequests as $pendingRequest){
+                $ch = curl_init($pendingRequest->request->url);
                 if($ch === false){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request ID: %s', $request->id));
+                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request ID: %s', $pendingRequest->request->id));
                 }
 
-                if(!curl_setopt_array($ch, $this->buildOptions($request))){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request ID: %s', $request->id));
+                $requestId = $pendingRequest->request->id;
+
+                if(!curl_setopt_array($ch, $this->optionsFactory->fromPendingRequest($pendingRequest))){
+                    throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request ID: %s', $requestId));
                 }
 
                 $result = curl_multi_add_handle($cmh, $ch);
                 if($result !== MultiCurlError::OK->value){
                     curl_close($ch);
-                    throw new RuntimeException(sprintf('Failed to add cURL handle. Request ID: %s', $request->id));
+                    throw new RuntimeException(sprintf('Failed to add cURL handle. Request ID: %s', $requestId));
                 }
 
                 $key = $this->generateKey($ch);
                 $handles[$key] = [
                     'handle' => $ch,
-                    'request' => $request,
+                    'pendingRequest' => $pendingRequest,
                 ];
             }
 
@@ -117,16 +123,6 @@ final readonly class MultiClient {
     }
 
     /**
-     * RequestからcURLに渡すオプション配列を生成する。
-     *
-     * @param  Request $request
-     * @return array<int, mixed>
-     */
-    private function buildOptions(Request $request): array {
-        return $this->optionsFactory->fromRequest($request);
-    }
-
-    /**
      * cURL multiを実行し、処理中ハンドラー数を更新する。
      *
      * @param  CurlMultiHandle $cmh
@@ -149,9 +145,11 @@ final readonly class MultiClient {
     /**
      * 完了したハンドラーを回収し、Responseを生成して返却配列へ格納する。
      *
-     * @param  CurlMultiHandle                                         $cmh
-     * @param  array<int, array{handle: CurlHandle, request: Request}> $handles
-     * @param  array<string, Response>                                 $responses
+     * 回収したハンドラーはMultiハンドラーから取り外し、個別にcloseする。
+     *
+     * @param  CurlMultiHandle                                                   $cmh
+     * @param  array<int, array{handle: CurlHandle, pendingRequest: PendingRequest}> $handles
+     * @param  array<string, Response>                                           $responses
      * @return void
      */
     private function drainCompleted(CurlMultiHandle $cmh, array &$handles, array &$responses): void {
@@ -168,11 +166,11 @@ final readonly class MultiClient {
                 continue;
             }
 
-            $request = $handles[$key]['request'];
+            $pendingRequest = $handles[$key]['pendingRequest'];
             $result = $raised['result'];
             $raw = ($result === CURLE_OK) ? curl_multi_getcontent($ch) : false;
 
-            $responses[$request->id] = $this->responseFactory->fromCurlResult($ch, $raw, $request, $result);
+            $responses[$pendingRequest->request->id] = $this->responseFactory->fromCurlResult($ch, $raw, $pendingRequest, $result);
 
             // 閉じる
             curl_multi_remove_handle($cmh, $ch);

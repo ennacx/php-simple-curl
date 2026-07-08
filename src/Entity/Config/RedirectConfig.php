@@ -11,14 +11,16 @@ use InvalidArgumentException;
 final readonly class RedirectConfig implements CurlOptionsApplierImpl {
 
     /**
-     * @param bool $follow       リダイレクトを追跡するか
-     * @param int  $maxRedirects 最大リダイレクト回数。-1は無制限
-     * @param bool $autoReferer  リダイレクト時にRefererを自動設定するか
+     * コンストラクタ
+     *
+     * @param boolean $follow       リダイレクトを追跡するか
+     * @param int     $maxRedirects 最大リダイレクト回数。-1は無制限
+     * @param boolean $autoReferer  リダイレクト時にRefererを自動設定するか
      */
     public function __construct(
-        public bool $follow = false,
-        public int $maxRedirects = 10,
-        public bool $autoReferer = true,
+        public bool $follow       = false,
+        public int  $maxRedirects = 10,
+        public bool $autoReferer  = true,
     ){
         if($this->maxRedirects < -1){
             throw new InvalidArgumentException('Max redirects must be -1 or greater.');
@@ -28,12 +30,12 @@ final readonly class RedirectConfig implements CurlOptionsApplierImpl {
     /**
      * リダイレクト追跡を有効にした設定を生成する。
      *
-     * @param  int  $maxRedirects
-     * @param  bool $autoReferer
+     * @param  int     $maxRedirects
+     * @param  boolean $autoReferer
      * @return self
      */
     public static function enabled(int $maxRedirects = 10, bool $autoReferer = true): self {
-        return new self(true, $maxRedirects, $autoReferer);
+        return new self(follow: true, maxRedirects: $maxRedirects, autoReferer: $autoReferer);
     }
 
     /**
@@ -42,7 +44,7 @@ final readonly class RedirectConfig implements CurlOptionsApplierImpl {
      * @return self
      */
     public static function disabled(): self {
-        return new self(false, 0, false);
+        return new self(follow: false, maxRedirects: 0, autoReferer: false);
     }
 
     /**
@@ -55,7 +57,7 @@ final readonly class RedirectConfig implements CurlOptionsApplierImpl {
     public function applyToCurlOptions(array &$options, array &$headers): void {
 
         $options[CURLOPT_FOLLOWLOCATION] = $this->follow;
-        $options[CURLOPT_MAXREDIRS] = $this->maxRedirects;
-        $options[CURLOPT_AUTOREFERER] = $this->autoReferer;
+        $options[CURLOPT_MAXREDIRS]      = $this->maxRedirects;
+        $options[CURLOPT_AUTOREFERER]    = $this->autoReferer;
     }
 }

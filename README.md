@@ -1,4 +1,4 @@
-# PHP - Simple cURL Library
+# PHP Simple cURL
 
 [![PHP Version Require](https://poser.pugx.org/ennacx/php-simple-curl/require/php)](https://packagist.org/packages/ennacx/php-simple-curl)
 [![Latest Stable Version](https://poser.pugx.org/ennacx/php-simple-curl/v)](https://packagist.org/packages/ennacx/php-simple-curl)
@@ -6,116 +6,242 @@
 [![Latest Unstable Version](https://poser.pugx.org/ennacx/php-simple-curl/v/unstable)](https://packagist.org/packages/ennacx/php-simple-curl)
 [![License](https://poser.pugx.org/ennacx/php-simple-curl/license)](https://packagist.org/packages/ennacx/php-simple-curl)
 
-## 概要
-cURLを極力シンプルだけど幅広く対応した<strike>い</strike>、PHP専用のライブラリ。
+A small PHP 8.2+ cURL wrapper that builds typed request objects, executes them through single or multi clients, and returns response objects.
 
-cURLって設定項目多すぎてわかんない。もっとシンプルに出来ないものか。<br>
-PHP8になっても ```curl_init();``` やら ```curl_close();``` やらでいちいち手続きしたり、 ```CURLOPT_XXXX``` ってなんぞ…ってのが **すごく** 多いのしんどい。
+## Requirements
 
-って常々思ってたので作りました。
+- PHP 8.2 or later
+- `ext-curl`
+- `ext-openssl`
+- Composer 2.x
 
-## 特長
-* シンプルさを追求
-* メソッドチェーンで設定追加できる
-* 設定メソッドは最後に呼び出した内容で上書きする
+## Installation
 
-## 動作要件
-* PHP 8.2 以上
-* PHPモジュール ```curl```, ```openssl```
-* composer 2.0 以上
-
-## インストール
-```
+```bash
 composer require ennacx/php-simple-curl
 ```
 
-## 使い方
-### めっちゃシンプルに
+## Core Flow
+
+1. Create a `Request` with the HTTP method, URL, and request headers.
+2. Create `CurlOptions` for timeout, SSL, proxy, auth, redirect, and response capture settings.
+3. Combine them into a `PendingRequest`.
+4. Pass the pending request to `SingleClient::send()` or `MultiClient::sendAll()`.
+5. Read the returned `Response` object.
+
+## Single Request
+
 ```php
 <?php
-// まず初期化をします。
-$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
 
-// exec()メソッドでcurlの実行をします。
-/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
-$result = $lib->exec();
+use Ennacx\SimpleCurl\Client\SingleClient;
+use Ennacx\SimpleCurl\Entity\CurlOptions;
+use Ennacx\SimpleCurl\Entity\Request;
 
-// エンティティーには各cURLの実行結果を扱いやすくまとめています。
-echo $result->result; // (bool)
+$request = Request::get('https://www.php.net/')
+    ->headers([
+        'Accept' => 'text/html',
+    ]);
+
+$options = CurlOptions::create()
+    ->timeout(10)
+    ->followRedirects()
+    ->captureBody()
+    ->captureHeaders();
+
+$pendingRequest = $request->withOptions($options);
+
+$client = new SingleClient();
+$response = $client->send($pendingRequest);
+
+echo $response->statusCode;
+echo $response->body;
+
+foreach($response->headers as $headerLine){
+    echo $headerLine . PHP_EOL;
+}
+
+if($response->error !== null){
+    echo $response->error->name;
+    echo $response->errorMessage;
+}
 ```
 
-### レスポンスデータが欲しい場合
+## Multiple Requests
+
+`MultiClient::sendAll()` executes multiple pending requests with cURL multi and returns responses keyed by each request ID.
+
 ```php
 <?php
-$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', returnTransfer: true);
 
-/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
-$result = $lib->exec();
+use Ennacx\SimpleCurl\Client\MultiClient;
+use Ennacx\SimpleCurl\Entity\CurlOptions;
+use Ennacx\SimpleCurl\Entity\Request;
 
-echo $result->result;         // (bool)
-echo $result->responseHeader; // (string) レスポンスヘッダー
-echo $result->responseBody;   // (string) レスポンスボディー
+$options = CurlOptions::create()
+    ->timeout(10)
+    ->followRedirects();
+
+$php = Request::get('https://www.php.net/')
+    ->withOptions($options);
+
+$packagist = Request::get('https://packagist.org/')
+    ->withOptions($options);
+
+$client = new MultiClient();
+$responses = $client->sendAll($php, $packagist);
+
+$phpResponse = $responses[$php->request->id];
+$packagistResponse = $responses[$packagist->request->id];
+
+echo $phpResponse->statusCode;
+echo $packagistResponse->statusCode;
 ```
 
-### POSTやPUTもお手軽に
+## Request
+
+`Request` describes the HTTP request itself. It owns the URL, HTTP method, request ID, and request headers. It does not execute cURL and does not own transport options.
+
 ```php
 <?php
-$postData = ['foo' => 1, 'bar' => 'enjoy PHP', 'baz' => null];
 
-$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/', method: CurlMethod::POST);
+use Ennacx\SimpleCurl\Entity\Request;
 
-/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
-$result = $lib
-    ->setPostFields($postData, jsonFlags: JSON_UNESCAPED_SLASHES)
-    ->exec();
-
-echo $result->result; // (bool)
+$request = Request::post('https://api.example.com/users')
+    ->headers([
+        'Accept' => 'application/json',
+        'Content-Type' => 'application/json',
+    ]);
 ```
 
-他にもプロキシだったりCookieだったり認証だったり最低限必要と思われるものは用意。
+Supported request factory methods:
 
-### レスポンス内容も分かりやすく
-```php
-$lib = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
+- `Request::get()`
+- `Request::post()`
+- `Request::put()`
+- `Request::delete()`
+- `Request::patch()`
+- `Request::head()`
+- `Request::options()`
 
-/** @var \Ennacx\SimpleCurl\Entity\ResponseEntity $result */
-$result = $lib->exec();
+## Curl Options
 
-// HTTPステータスコード
-$statusCode = $result->http_code;
-$statusCode = $result->http_status_code;
+`CurlOptions` describes how cURL should execute the request. It owns timeout, SSL, proxy, auth, redirect, and response capture settings.
 
-// ダウンロードサイズ
-$contentLength = $result->content_length;
-$contentLength = $result->download_content_length;
-```
-
-その他 ```curl_getinfo()``` で取得可能はパラメーターは網羅済。<br>
-ダイナミックプロパティ形式でアクセスすれば取得出来ます。
-
-### 並列処理も対応
 ```php
 <?php
-// 並列処理したいcURL対象を列挙します。
-// MultiCurlLib使用時は内部でreturnTransferを有効にするため、わざわざ指定する必要はありません。
-$sLib1 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://www.php.net/');
-$sLib2 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://github.com/');
-$sLib3 = new \Ennacx\SimpleCurl\SimpleCurlLib('https://packagist.org/');
 
-// MultiCurlLibに適用し exec() メソッドで実行します。
-$mLib = new \Ennacx\SimpleCurl\MultiCurlLib($sLib1, $sLib2, $sLib3);
+use Ennacx\SimpleCurl\Entity\CurlOptions;
+use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
+use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
+use Ennacx\SimpleCurl\Entity\Config\SslConfig;
+use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
-/** @var array<string, \Ennacx\SimpleCurl\Entity\ResponseEntity> $multiResult */
-$multiResult = $mLib->exec();
-
-// それぞれのIDから各結果を取得出来ます。
-$s1Result = $multiResult[$sLib1->getId()];
-echo $s1Result->result;         // (bool)   $sLib1のcurl実行結果
-echo $s1Result->responseHeader; // (string) $sLib1のレスポンスヘッダー
-echo $s1Result->responseBody;   // (string) $sLib1のレスポンスボディー
+$options = new CurlOptions(
+    captureBody: true,
+    captureHeaders: true,
+    proxy: ProxyConfig::http('proxy.example.com', port: 3128),
+    ssl: SslConfig::verified(),
+    auth: AuthConfig::bearer('token'),
+    timeout: TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
+    redirect: RedirectConfig::enabled(maxRedirects: 5),
+);
 ```
 
-## ライセンス
+For simple usage, fluent helpers are available:
+
+```php
+$options = CurlOptions::create()
+    ->timeout(10)
+    ->followRedirects()
+    ->captureBody()
+    ->captureHeaders();
+```
+
+## Pending Request
+
+`PendingRequest` combines a `Request` and optional `CurlOptions`. Clients receive this object.
+
+```php
+$pendingRequest = $request->withOptions($options);
+
+// If no custom options are required, default CurlOptions are used internally.
+$pendingRequest = $request->asPending();
+```
+
+## Config Objects
+
+Config objects own their own cURL option mapping. The client passes them through `CurlOptionsFactory` before execution.
+
+### Timeout
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
+
+$timeout = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
+$timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500);
+```
+
+### SSL
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\SslConfig;
+
+$ssl = SslConfig::verified();
+$insecure = SslConfig::insecure();
+```
+
+### Authentication
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
+
+$basic = AuthConfig::basic('user', 'password');
+$bearer = AuthConfig::bearer('token');
+```
+
+### Proxy
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+
+$httpProxy = ProxyConfig::http('proxy.example.com', port: 3128);
+$socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
+```
+
+### Redirects
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
+
+$redirect = RedirectConfig::enabled(maxRedirects: 10, autoReferer: true);
+$noRedirect = RedirectConfig::disabled();
+```
+
+## Response
+
+Both clients return `Response` objects.
+
+```php
+echo $response->statusCode;      // int
+echo $response->body;            // string|null
+print_r($response->headers);     // string[]
+print_r($response->info);        // curl_getinfo() result
+
+if($response->error !== null){
+    echo $response->error->name;
+    echo $response->errorMessage;
+}
+```
+
+## Notes
+
+- `captureBody` controls whether the response body is stored in `Response::$body`.
+- `captureHeaders` controls whether response headers are stored in `Response::$headers`.
+- Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
+- `MultiClient::sendAll()` returns `array<string, Response>`, keyed by `Request::$id`.
+
+## License
+
 [MIT](https://en.wikipedia.org/wiki/MIT_License)
-
-[CreativeCommons BY-SA](https://creativecommons.org/licenses/by-sa/4.0/)

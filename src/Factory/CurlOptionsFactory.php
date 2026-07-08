@@ -4,33 +4,41 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Entity\CurlOptions;
+use Ennacx\SimpleCurl\Entity\PendingRequest;
 
 /**
- * RequestをcURLオプション配列へ変換するFactory。
+ * PendingRequestをcURLオプション配列へ変換するFactory。
+ *
+ * Request本体、CurlOptions、各Configを集約し、`curl_setopt_array()` に渡せる形式へ変換する。
  */
 final class CurlOptionsFactory {
 
     /**
-     * Request本体と各Configからcurl_setopt_array()用の配列を生成する。
+     * PendingRequest本体と各Configから `curl_setopt_array()` 用の配列を生成する。
      *
-     * @param  Request $request
+     * レスポンスボディまたはヘッダーを取得する場合のみ `CURLOPT_RETURNTRANSFER` を有効にする。
+     * 送信ヘッダーはRequestのヘッダーとConfigが追加したヘッダーを統合して設定する。
+     *
+     * @param  PendingRequest $pendingRequest
      * @return array<int, mixed>
      */
-    public function fromRequest(Request $request): array {
+    public function fromPendingRequest(PendingRequest $pendingRequest): array {
+
+        $curlOptions = $pendingRequest->options ?? CurlOptions::create();
 
         // 基本設定
         $options = [
-            CURLOPT_URL            => $request->url,
-            CURLOPT_RETURNTRANSFER => ($request->captureBody || $request->captureHeaders),
-            CURLOPT_HEADER         => $request->captureHeaders,
+            CURLOPT_URL            => $pendingRequest->request->url,
+            CURLOPT_RETURNTRANSFER => ($curlOptions->captureBody || $curlOptions->captureHeaders),
+            CURLOPT_HEADER         => $curlOptions->captureHeaders,
         ];
 
         // HTTPメソッド設定の追加
-        $options += $request->method->toCurlOptions();
-        $headers  = $request->requestHeaders;
+        $options += $pendingRequest->request->method->toCurlOptions();
+        $headers  = $pendingRequest->request->requestHeaders;
 
-        foreach(array_filter($request->getConfig(), fn($config): bool => $config instanceof CurlOptionsApplierImpl) as $config){
+        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => $config instanceof CurlOptionsApplierImpl) as $config){
             $config->applyToCurlOptions($options, $headers);
         }
 
