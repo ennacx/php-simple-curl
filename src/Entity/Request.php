@@ -10,6 +10,15 @@ use Stringable;
 
 /**
  * cURLで送信するリクエスト内容を表す値オブジェクト。
+ *
+ * `CurlMethod` の列挙子を小文字にした静的Factoryを提供する。
+ * @method static get(string $url)
+ * @method static post(string $url)
+ * @method static put(string $url)
+ * @method static delete(string $url)
+ * @method static patch(string $url)
+ * @method static head(string $url)
+ * @method static options(string $url)
  */
 final class Request {
 
