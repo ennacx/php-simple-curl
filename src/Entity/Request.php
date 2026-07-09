@@ -31,6 +31,9 @@ final class Request {
     /** @var array<string, mixed> 送信するクエリパラメータ */
     public array $queryParams = [];
 
+    /** @var string|null フラグメント */
+    public ?string $fragment = null;
+
     /**
      * コンストラクタ
      *
@@ -43,22 +46,27 @@ final class Request {
 
         $url = self::validateUrl($this->url);
 
+        // GETクエリ取得
         $queryString = parse_url($url, PHP_URL_QUERY);
+        // フラグメント取得
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+
+        // GETクエリが存在する場合
         if($queryString !== null){
+            // 配列に格納
             parse_str($queryString, $this->queryParams);
-
-            $tempUrl = explode('?', $url);
-            $this->url = $tempUrl[0];
-
-            $tempFragment = parse_url($url, PHP_URL_FRAGMENT);
-            if(!empty($tempFragment)){
-                $this->url .= "#{$tempFragment}";
-            }
-
-            unset($tempUrl, $tempFragment);
-        } else{
-            $this->url = $url;
         }
+
+        // フラグメントが存在する場合
+        if($fragment !== null){
+            $this->fragment = $fragment;
+        }
+
+        // URLからクエリとフラグメントを除去
+        $tempUrl = explode('?', $url);
+        $this->url = (str_contains($tempUrl[0], '#')) ? explode('#', $tempUrl[0])[0] : $tempUrl[0];
+
+        unset($tempUrl);
     }
 
     /**
