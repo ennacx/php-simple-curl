@@ -114,6 +114,14 @@ final class Request {
         return $this;
     }
 
+    /**
+     * 単一のGETパラメーターを登録する。
+     *
+     * @param  string  $key       クエリパラメーターのキー名
+     * @param  mixed   $value     設定値 (`null`時は指定キーをクエリパラメーターから除外する)
+     * @param  boolean $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * @return self
+     */
     public function param(string $key, mixed $value, bool $overwrite = true): self {
 
         if(!$overwrite && array_key_exists($key, $this->queryParams)){
@@ -140,7 +148,7 @@ final class Request {
             }
 
             return $clone;
-        } else if(!array_key_exists($key, $clone->queryParams)){
+        } else if(!array_key_exists($key, $clone->queryParams) && $paramValue !== null){
             $clone->queryParams[$key] = $paramValue;
 
             return $clone;
@@ -149,6 +157,13 @@ final class Request {
         return $this;
     }
 
+    /**
+     * 複数のGETパラメーターを一括して登録する。
+     *
+     * @param  array<string, mixed> $params    `$overwrite = true` 且つ `value = null` の場合は対象キーをクエリパラメーターから除外する
+     * @param  boolean              $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * @return self
+     */
     public function params(array $params, bool $overwrite = true): self {
 
         $params = array_filter($params, fn($k): bool => (is_string($k)), ARRAY_FILTER_USE_KEY);
