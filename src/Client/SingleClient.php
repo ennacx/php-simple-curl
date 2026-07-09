@@ -21,12 +21,12 @@ final readonly class SingleClient {
     /**
      * コンストラクタ
      *
-     * @param CurlOptionsFactory $optionsFactory PendingRequestからcURLオプションを生成するFactory
+     * @param CurlOptionsFactory $optionsFactory  PendingRequestからcURLオプションを生成するFactory
      * @param ResponseFactory    $responseFactory cURL実行結果からResponseを生成するFactory
      */
     public function __construct(
-        private CurlOptionsFactory $optionsFactory = new CurlOptionsFactory(),
-        private ResponseFactory $responseFactory = new ResponseFactory(),
+        private CurlOptionsFactory $optionsFactory  = new CurlOptionsFactory(),
+        private ResponseFactory    $responseFactory = new ResponseFactory(),
     ){
     }
 
