@@ -38,7 +38,7 @@ final class RequestTest extends TestCase {
 
         $request = Request::get('https://example.com')
             ->headers([
-                'Accept' => ' application/json ',
+                'Accept'   => ' application/json ',
                 'X-Number' => 123,
             ]);
 
@@ -78,11 +78,11 @@ final class RequestTest extends TestCase {
             ->param('remove', null);
 
         self::assertSame([
-            'keep' => '1',
+            'keep'   => '1',
             'remove' => '2',
         ], $request->queryParams);
         self::assertSame([
-            'keep' => '9',
+            'keep'  => '9',
             'added' => '3',
         ], $updated->queryParams);
     }
@@ -104,7 +104,7 @@ final class RequestTest extends TestCase {
         self::assertSame(['keep' => '1'], $request->queryParams);
         self::assertSame([
             'keep' => '1',
-            'new' => '3',
+            'new'  => '3',
         ], $updated->queryParams);
     }
 
