@@ -49,6 +49,66 @@ final class RequestTest extends TestCase {
     }
 
     /**
+     * URLに含まれる既存クエリがRequest生成時にqueryParamsへ分離されることを検証する。
+     *
+     * @return void
+     */
+    public function testExistingQueryStringIsParsedOnCreate(): void {
+
+        $request = Request::get('https://example.com/search?b=2&a=1');
+
+        self::assertSame('https://example.com/search', $request->url);
+        self::assertSame([
+            'b' => '2',
+            'a' => '1',
+        ], $request->queryParams);
+    }
+
+    /**
+     * param()でクエリの追加・上書き・削除ができ、元のRequestは変更されないことを検証する。
+     *
+     * @return void
+     */
+    public function testParamAddsOverwritesAndRemovesQueryParameter(): void {
+
+        $request = Request::get('https://example.com?keep=1&remove=2');
+        $updated = $request
+            ->param('added', ' 3 ')
+            ->param('keep', 9)
+            ->param('remove', null);
+
+        self::assertSame([
+            'keep' => '1',
+            'remove' => '2',
+        ], $request->queryParams);
+        self::assertSame([
+            'keep' => '9',
+            'added' => '3',
+        ], $updated->queryParams);
+    }
+
+    /**
+     * params()で複数クエリを追加でき、overwrite=falseでは既存値を維持することを検証する。
+     *
+     * @return void
+     */
+    public function testParamsAddsQueryParametersAndCanKeepExistingValues(): void {
+
+        $request = Request::get('https://example.com?keep=1');
+        $updated = $request->params([
+            'keep' => '2',
+            'new' => '3',
+            0 => 'ignored',
+        ], overwrite: false);
+
+        self::assertSame(['keep' => '1'], $request->queryParams);
+        self::assertSame([
+            'keep' => '1',
+            'new' => '3',
+        ], $updated->queryParams);
+    }
+
+    /**
      * スキームのないURLを不正として扱うことを検証する。
      *
      * @return void
