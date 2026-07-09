@@ -6,6 +6,7 @@ namespace Ennacx\SimpleCurl\Factory;
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PendingRequest;
+use InvalidArgumentException;
 
 /**
  * PendingRequestをcURLオプション配列へ変換するFactory。
@@ -30,7 +31,24 @@ final class CurlOptionsFactory {
         // GETパラメーター付与
         $url = $pendingRequest->request->url;
         if(!empty($pendingRequest->request->queryParams)){
+            // フラグメント
+            $fragment = null;
+            if(str_contains($url, '#')){
+                $temp = explode('#', $url);
+                if(count($temp) !== 2){
+                    throw new InvalidArgumentException(sprintf('Invalid URL: %s', $url));
+                }
+
+                $url      = $temp[0];
+                $fragment = $temp[1];
+
+                unset($temp);
+            }
+
             $url .= '?' . http_build_query($pendingRequest->request->queryParams);
+            if(isset($fragment)){
+                $url .= '#' . $fragment;
+            }
         }
 
         // 基本設定

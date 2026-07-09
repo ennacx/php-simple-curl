@@ -28,6 +28,9 @@ final class Request {
     /** @var array<string, mixed> 送信するHTTPヘッダー */
     public array $requestHeaders = [];
 
+    /** @var array<string, mixed> 送信するクエリパラメータ */
+    public array $queryParams = [];
+
     /**
      * コンストラクタ
      *
@@ -36,8 +39,26 @@ final class Request {
      */
     public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
 
-        $this->id  = Utils::uuid_v4();
-        $this->url = self::validateUrl($this->url);
+        $this->id = Utils::uuid_v4();
+
+        $url = self::validateUrl($this->url);
+
+        $queryString = parse_url($url, PHP_URL_QUERY);
+        if($queryString !== null){
+            parse_str($queryString, $this->queryParams);
+
+            $tempUrl = explode('?', $url);
+            $this->url = $tempUrl[0];
+
+            $tempFragment = parse_url($url, PHP_URL_FRAGMENT);
+            if(!empty($tempFragment)){
+                $this->url .= "#{$tempFragment}";
+            }
+
+            unset($tempUrl, $tempFragment);
+        } else{
+            $this->url = $url;
+        }
     }
 
     /**
@@ -83,6 +104,57 @@ final class Request {
         $this->requestHeaders = self::validateHeaders($headers);
 
         return $this;
+    }
+
+    public function param(string $key, mixed $value, bool $overwrite = true): self {
+
+        if(!$overwrite && array_key_exists($key, $this->queryParams)){
+            return $this;
+        }
+
+        if($value === null){
+            $paramValue = null;
+        } else if(is_string($value) || is_numeric($value)){
+            $paramValue = trim((string)$value);
+        } else if($value instanceof Stringable){
+            $paramValue = trim($value->__toString());
+        } else{
+            throw new InvalidArgumentException(sprintf('Request param "%s" has an invalid value.', $key));
+        }
+
+        $clone = clone $this;
+
+        if($overwrite){
+            if(array_key_exists($key, $clone->queryParams) && $paramValue === null){
+                unset($clone->queryParams[$key]);
+            } else{
+                $clone->queryParams[$key] = $paramValue;
+            }
+
+            return $clone;
+        } else if(!array_key_exists($key, $clone->queryParams)){
+            $clone->queryParams[$key] = $paramValue;
+
+            return $clone;
+        }
+
+        return $this;
+    }
+
+    public function params(array $params, bool $overwrite = true): self {
+
+        $params = array_filter($params, fn($k): bool => (is_string($k)), ARRAY_FILTER_USE_KEY);
+        if(empty($params)){
+            return $this;
+        }
+
+        $clone = clone $this;
+
+        foreach($params as $key => $value){
+            $clone = $clone->param($key, $value, $overwrite);
+        }
+
+        return $clone;
     }
 
     /**

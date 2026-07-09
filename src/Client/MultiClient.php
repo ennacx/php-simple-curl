@@ -34,9 +34,8 @@ final readonly class MultiClient {
     }
 
     /**
-     * 指定されたPendingRequest群を並列実行し、Request IDをキーにしたResponse配列を返す。
-     *
-     * 返却配列のキーには各PendingRequestが保持するRequest::$idを使用する。
+     * 指定されたPendingRequest群を並列実行し、Request-IDをキーにしたResponse配列を返す。
+     * ※返却配列のキーには各PendingRequestが保持する `Request::$id` を使用する。
      *
      * @param  PendingRequest ...$pendingRequests 実行対象のPendingRequest
      * @return array<string, Response>
@@ -52,26 +51,27 @@ final readonly class MultiClient {
 
         try{
             foreach($pendingRequests as $pendingRequest){
-                $ch = curl_init($pendingRequest->request->url);
+                $ch = curl_init();
+
                 if($ch === false){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request ID: %s', $pendingRequest->request->id));
+                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request-ID: %s', $pendingRequest->request->id));
                 }
 
                 $requestId = $pendingRequest->request->id;
 
                 if(!curl_setopt_array($ch, $this->optionsFactory->fromPendingRequest($pendingRequest))){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request ID: %s', $requestId));
+                    throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
                 }
 
                 $result = curl_multi_add_handle($cmh, $ch);
                 if($result !== MultiCurlError::OK->value){
                     curl_close($ch);
-                    throw new RuntimeException(sprintf('Failed to add cURL handle. Request ID: %s', $requestId));
+                    throw new RuntimeException(sprintf('Failed to add cURL handle. Request-ID: %s', $requestId));
                 }
 
                 $key = $this->generateKey($ch);
                 $handles[$key] = [
-                    'handle' => $ch,
+                    'handle'         => $ch,
                     'pendingRequest' => $pendingRequest,
                 ];
             }
