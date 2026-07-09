@@ -27,9 +27,15 @@ final class CurlOptionsFactory {
 
         $curlOptions = $pendingRequest->options ?? CurlOptions::create();
 
+        // GETパラメーター付与
+        $url = $pendingRequest->request->url;
+        if(!empty($pendingRequest->request->queryParams)){
+            $url .= '?' . http_build_query($pendingRequest->request->queryParams);
+        }
+
         // 基本設定
         $options = [
-            CURLOPT_URL            => $pendingRequest->request->url,
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => ($curlOptions->captureBody || $curlOptions->captureHeaders),
             CURLOPT_HEADER         => $curlOptions->captureHeaders,
         ];
