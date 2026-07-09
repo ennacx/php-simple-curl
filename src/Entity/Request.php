@@ -28,6 +28,12 @@ final class Request {
     /** @var array<string, mixed> 送信するHTTPヘッダー */
     public array $requestHeaders = [];
 
+    /** @var array<string, mixed> 送信するクエリパラメータ */
+    public array $queryParams = [];
+
+    /** @var string|null フラグメント */
+    public ?string $fragment = null;
+
     /**
      * コンストラクタ
      *
@@ -36,8 +42,31 @@ final class Request {
      */
     public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
 
-        $this->id  = Utils::uuid_v4();
-        $this->url = self::validateUrl($this->url);
+        $this->id = Utils::uuid_v4();
+
+        $url = self::validateUrl($this->url);
+
+        // GETクエリ取得
+        $queryString = parse_url($url, PHP_URL_QUERY);
+        // フラグメント取得
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+
+        // GETクエリが存在する場合
+        if($queryString !== null){
+            // 配列に格納
+            parse_str($queryString, $this->queryParams);
+        }
+
+        // フラグメントが存在する場合
+        if($fragment !== null){
+            $this->fragment = $fragment;
+        }
+
+        // URLからクエリとフラグメントを除去
+        $tempUrl = explode('?', $url);
+        $this->url = (str_contains($tempUrl[0], '#')) ? explode('#', $tempUrl[0])[0] : $tempUrl[0];
+
+        unset($tempUrl);
     }
 
     /**
@@ -83,6 +112,72 @@ final class Request {
         $this->requestHeaders = self::validateHeaders($headers);
 
         return $this;
+    }
+
+    /**
+     * 単一のGETパラメーターを登録する。
+     *
+     * @param  string  $key       クエリパラメーターのキー名
+     * @param  mixed   $value     設定値 (`null`時は指定キーをクエリパラメーターから除外する)
+     * @param  boolean $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * @return self
+     */
+    public function param(string $key, mixed $value, bool $overwrite = true): self {
+
+        if(!$overwrite && array_key_exists($key, $this->queryParams)){
+            return $this;
+        }
+
+        if($value === null){
+            $paramValue = null;
+        } else if(is_string($value) || is_numeric($value)){
+            $paramValue = trim((string)$value);
+        } else if($value instanceof Stringable){
+            $paramValue = trim($value->__toString());
+        } else{
+            throw new InvalidArgumentException(sprintf('Request param "%s" has an invalid value.', $key));
+        }
+
+        $clone = clone $this;
+
+        if($overwrite){
+            if(array_key_exists($key, $clone->queryParams) && $paramValue === null){
+                unset($clone->queryParams[$key]);
+            } else{
+                $clone->queryParams[$key] = $paramValue;
+            }
+
+            return $clone;
+        } else if(!array_key_exists($key, $clone->queryParams) && $paramValue !== null){
+            $clone->queryParams[$key] = $paramValue;
+
+            return $clone;
+        }
+
+        return $this;
+    }
+
+    /**
+     * 複数のGETパラメーターを一括して登録する。
+     *
+     * @param  array<string, mixed> $params    `$overwrite = true` 且つ `value = null` の場合は対象キーをクエリパラメーターから除外する
+     * @param  boolean              $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * @return self
+     */
+    public function params(array $params, bool $overwrite = true): self {
+
+        $params = array_filter($params, fn($k): bool => (is_string($k)), ARRAY_FILTER_USE_KEY);
+        if(empty($params)){
+            return $this;
+        }
+
+        $clone = clone $this;
+
+        foreach($params as $key => $value){
+            $clone = $clone->param($key, $value, $overwrite);
+        }
+
+        return $clone;
     }
 
     /**

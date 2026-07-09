@@ -132,6 +132,63 @@ $request = Request::post('https://api.example.com/users')
     ]);
 ```
 
+### Query Parameters
+
+`Request` can manage GET query parameters separately from the base URL.
+
+Existing query strings are parsed when the request is created:
+
+```php
+$request = Request::get('https://api.example.com/users?page=1')
+    ->param('q', 'php curl')
+    ->param('page', 2);
+```
+
+The request above is executed as:
+
+```text
+https://api.example.com/users?page=2&q=php+curl
+```
+
+Use `params()` to add multiple query parameters:
+
+```php
+$request = Request::get('https://api.example.com/users')
+    ->params([
+        'page' => 1,
+        'limit' => 20,
+        'sort' => 'name',
+    ]);
+```
+
+Passing `null` removes an existing query parameter when overwriting is enabled:
+
+```php
+$request = Request::get('https://api.example.com/users?page=1&debug=1')
+    ->param('debug', null);
+```
+
+Use `overwrite: false` to keep existing values:
+
+```php
+$request = Request::get('https://api.example.com/users?page=1')
+    ->param('page', 2, overwrite: false)
+    ->param('limit', 20);
+```
+
+URL fragments are preserved and appended after the rebuilt query string:
+
+```php
+$request = Request::get('https://example.com/docs?lang=en#install')
+    ->param('version', '2.x');
+```
+
+This is executed as:
+
+```text
+https://example.com/docs?lang=en&version=2.x#install
+```
+
 Supported request factory methods:
 
 - `Request::get()`

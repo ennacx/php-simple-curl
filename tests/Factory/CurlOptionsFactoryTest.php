@@ -37,6 +37,58 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * URL作成時点のクエリと追加クエリがCURLOPT_URLへ反映されることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsUrlWithQueryParameters(): void {
+
+        $pendingRequest = Request::get('https://example.com/search?b=2&a=1')
+            ->param('c', '3')
+            ->asPending();
+
+        $options = (new CurlOptionsFactory())->fromPendingRequest($pendingRequest);
+        $urlParts = self::parseUrlWithQuery($options[CURLOPT_URL]);
+
+        self::assertSame('https', $urlParts['scheme']);
+        self::assertSame('example.com', $urlParts['host']);
+        self::assertSame('/search', $urlParts['path']);
+        self::assertSame([
+            'b' => '2',
+            'a' => '1',
+            'c' => '3',
+        ], $urlParts['query']);
+    }
+
+    /**
+     * フラグメント付きURLでもクエリがフラグメントより前に付与されることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsUrlWithQueryParametersBeforeFragment(): void {
+
+        $pendingRequest = Request::get('https://example.com/path?foo=1#section')
+            ->params([
+                'bar' => '2',
+                'baz' => '3',
+            ])
+            ->asPending();
+
+        $options = (new CurlOptionsFactory())->fromPendingRequest($pendingRequest);
+        $urlParts = self::parseUrlWithQuery($options[CURLOPT_URL]);
+
+        self::assertSame('https', $urlParts['scheme']);
+        self::assertSame('example.com', $urlParts['host']);
+        self::assertSame('/path', $urlParts['path']);
+        self::assertSame('section', $urlParts['fragment']);
+        self::assertSame([
+            'foo' => '1',
+            'bar' => '2',
+            'baz' => '3',
+        ], $urlParts['query']);
+    }
+
+    /**
      * ボディとヘッダーの取得が不要な場合にCURLOPT_RETURNTRANSFERが無効になることを検証する。
      *
      * @return void
@@ -82,5 +134,30 @@ final class CurlOptionsFactoryTest extends TestCase {
             'Accept: application/json',
             'Authorization: Bearer token',
         ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * URLをパースし、クエリ文字列を連想配列へ正規化する。
+     *
+     * @param  string $url
+     * @return array{scheme: string, host: string, path: string, query: array<string, mixed>, fragment?: string}
+     */
+    private static function parseUrlWithQuery(string $url): array {
+
+        $parts = parse_url($url);
+        self::assertIsArray($parts);
+
+        $query = [];
+        if(isset($parts['query'])){
+            parse_str($parts['query'], $query);
+        }
+
+        return [
+            'scheme'   => $parts['scheme'] ?? '',
+            'host'     => $parts['host'] ?? '',
+            'path'     => $parts['path'] ?? '',
+            'query'    => $query,
+            'fragment' => $parts['fragment'] ?? null,
+        ];
     }
 }

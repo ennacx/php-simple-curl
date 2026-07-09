@@ -27,9 +27,20 @@ final class CurlOptionsFactory {
 
         $curlOptions = $pendingRequest->options ?? CurlOptions::create();
 
+        // GETクエリ付与
+        $url = $pendingRequest->request->url;
+        if(!empty($pendingRequest->request->queryParams)){
+            $url .= '?' . http_build_query($pendingRequest->request->queryParams);
+        }
+
+        // フラグメント付与 (URLの仕様上、必ずGETクエリの後にすること)
+        if(isset($pendingRequest->request->fragment)){
+            $url .= '#' . $pendingRequest->request->fragment;
+        }
+
         // 基本設定
         $options = [
-            CURLOPT_URL            => $pendingRequest->request->url,
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => ($curlOptions->captureBody || $curlOptions->captureHeaders),
             CURLOPT_HEADER         => $curlOptions->captureHeaders,
         ];
@@ -38,10 +49,12 @@ final class CurlOptionsFactory {
         $options += $pendingRequest->request->method->toCurlOptions();
         $headers  = $pendingRequest->request->requestHeaders;
 
-        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => $config instanceof CurlOptionsApplierImpl) as $config){
+        // 各Configの設定内容をcURL形式のオプションに変換して付与
+        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplierImpl)) as $config){
             $config->applyToCurlOptions($options, $headers);
         }
 
+        // オプションにヘッダー情報付与
         if($headers !== []){
             $options[CURLOPT_HTTPHEADER] = $this->formatHeaders($headers);
         }
