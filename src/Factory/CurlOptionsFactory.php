@@ -49,10 +49,12 @@ final class CurlOptionsFactory {
         $options += $pendingRequest->request->method->toCurlOptions();
         $headers  = $pendingRequest->request->requestHeaders;
 
-        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => $config instanceof CurlOptionsApplierImpl) as $config){
+        // 各Configの設定内容をcURL形式のオプションに変換して付与
+        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplierImpl)) as $config){
             $config->applyToCurlOptions($options, $headers);
         }
 
+        // オプションにヘッダー情報付与
         if($headers !== []){
             $options[CURLOPT_HTTPHEADER] = $this->formatHeaders($headers);
         }
