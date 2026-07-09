@@ -50,12 +50,12 @@ final class Request {
             $tempUrl = explode('?', $url);
             $this->url = $tempUrl[0];
 
-            $tempAnchor = parse_url($url, PHP_URL_FRAGMENT);
-            if(!empty($tempAnchor)){
-                $this->url .= "#{$tempAnchor}";
+            $tempFragment = parse_url($url, PHP_URL_FRAGMENT);
+            if(!empty($tempFragment)){
+                $this->url .= "#{$tempFragment}";
             }
 
-            unset($tempUrl, $tempAnchor);
+            unset($tempUrl, $tempFragment);
         } else{
             $this->url = $url;
         }
@@ -151,7 +151,7 @@ final class Request {
         $clone = clone $this;
 
         foreach($params as $key => $value){
-            $clone->param($key, $value, $overwrite);
+            $clone = $clone->param($key, $value, $overwrite);
         }
 
         return $clone;

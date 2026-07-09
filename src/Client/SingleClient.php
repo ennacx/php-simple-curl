@@ -41,9 +41,7 @@ final readonly class SingleClient {
      */
     public function send(PendingRequest $pendingRequest): Response {
 
-        $request = $pendingRequest->request;
-
-        $ch = curl_init($request->url);
+        $ch = curl_init();
 
         if($ch === false){
             throw new RuntimeException('cURL initialize failed.');
