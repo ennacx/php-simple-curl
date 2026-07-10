@@ -5,7 +5,9 @@ namespace Ennacx\SimpleCurl\Test\Entity;
 
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,16 +27,21 @@ final class CurlOptionsTest extends TestCase {
         $withoutBody = $base->captureBody(false);
         $timeout = $base->timeout(15);
         $redirect = $base->followRedirects(maxRedirects: 3, autoReferer: false);
+        $client = $base
+            ->userAgent('php-simple-curl-test/1.0')
+            ->referer('https://example.com/from');
 
         self::assertNotSame($base, $withoutHeaders);
         self::assertNotSame($base, $withoutBody);
         self::assertNotSame($base, $timeout);
         self::assertNotSame($base, $redirect);
+        self::assertNotSame($base, $client);
 
         self::assertTrue($base->captureHeaders);
         self::assertTrue($base->captureBody);
-        self::assertNull($base->timeout);
-        self::assertNull($base->redirect);
+        self::assertFalse($base->has(TimeoutConfig::class));
+        self::assertFalse($base->has(RedirectConfig::class));
+        self::assertFalse($base->has(ClientConfig::class));
 
         self::assertFalse($withoutHeaders->captureHeaders);
         self::assertTrue($withoutHeaders->captureBody);
@@ -42,14 +49,21 @@ final class CurlOptionsTest extends TestCase {
         self::assertTrue($withoutBody->captureHeaders);
         self::assertFalse($withoutBody->captureBody);
 
-        self::assertInstanceOf(TimeoutConfig::class, $timeout->timeout);
-        self::assertSame(15, $timeout->timeout->timeoutSeconds);
-        self::assertSame(15, $timeout->timeout->connectTimeoutSeconds);
+        $timeoutConfig = $timeout->get(TimeoutConfig::class);
+        self::assertInstanceOf(TimeoutConfig::class, $timeoutConfig);
+        self::assertSame(15, $timeoutConfig->timeoutSeconds);
+        self::assertSame(15, $timeoutConfig->connectTimeoutSeconds);
 
-        self::assertInstanceOf(RedirectConfig::class, $redirect->redirect);
-        self::assertTrue($redirect->redirect->follow);
-        self::assertSame(3, $redirect->redirect->maxRedirects);
-        self::assertFalse($redirect->redirect->autoReferer);
+        $redirectConfig = $redirect->get(RedirectConfig::class);
+        self::assertInstanceOf(RedirectConfig::class, $redirectConfig);
+        self::assertTrue($redirectConfig->follow);
+        self::assertSame(3, $redirectConfig->maxRedirects);
+        self::assertFalse($redirectConfig->autoReferer);
+
+        $clientConfig = $client->get(ClientConfig::class);
+        self::assertInstanceOf(ClientConfig::class, $clientConfig);
+        self::assertSame('php-simple-curl-test/1.0', $clientConfig->userAgent);
+        self::assertSame('https://example.com/from', $clientConfig->referer);
     }
 
     /**
@@ -61,9 +75,53 @@ final class CurlOptionsTest extends TestCase {
 
         $options = CurlOptions::create()->followRedirect();
 
-        self::assertInstanceOf(RedirectConfig::class, $options->redirect);
-        self::assertTrue($options->redirect->follow);
-        self::assertSame(10, $options->redirect->maxRedirects);
-        self::assertTrue($options->redirect->autoReferer);
+        $redirectConfig = $options->get(RedirectConfig::class);
+        self::assertInstanceOf(RedirectConfig::class, $redirectConfig);
+        self::assertTrue($redirectConfig->follow);
+        self::assertSame(10, $redirectConfig->maxRedirects);
+        self::assertTrue($redirectConfig->autoReferer);
+    }
+
+    /**
+     * remove()が元インスタンスを変更せず、指定Configを除外した新しいインスタンスを返すことを検証する。
+     *
+     * @return void
+     */
+    public function testRemoveReturnsNewInstanceWithoutSpecifiedConfig(): void {
+
+        $options = CurlOptions::create()
+            ->timeout(10)
+            ->followRedirects();
+
+        $removed = $options->remove(TimeoutConfig::class);
+
+        self::assertNotSame($options, $removed);
+        self::assertTrue($options->has(TimeoutConfig::class));
+        self::assertFalse($removed->has(TimeoutConfig::class));
+        self::assertTrue($removed->has(RedirectConfig::class));
+    }
+
+    /**
+     * 空のUser-Agentを不正として扱うことを検証する。
+     *
+     * @return void
+     */
+    public function testUserAgentRejectsEmptyValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        CurlOptions::create()->userAgent(' ');
+    }
+
+    /**
+     * 空のRefererを不正として扱うことを検証する。
+     *
+     * @return void
+     */
+    public function testRefererRejectsEmptyValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        CurlOptions::create()->referer(' ');
     }
 }

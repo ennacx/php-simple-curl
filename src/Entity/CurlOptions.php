@@ -3,15 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity;
 
-use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
-use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
+use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
-use Ennacx\SimpleCurl\Entity\Config\SslConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
 /**
  * cURL実行時のオプション設定をまとめる値オブジェクト。
- *
  * Request本体には含めず、通信制御やレスポンス取得方法に関わる設定を保持する。
  */
 final readonly class CurlOptions {
@@ -19,32 +17,93 @@ final readonly class CurlOptions {
     /**
      * コンストラクタ
      *
-     * @param boolean             $captureHeaders レスポンスヘッダーをResponseに保持するか
-     * @param boolean             $captureBody    レスポンスボディをResponseに保持するか
-     * @param ProxyConfig|null    $proxy          プロキシー設定
-     * @param SslConfig|null      $ssl            SSL/TLS設定
-     * @param AuthConfig|null     $auth           認証設定
-     * @param TimeoutConfig|null  $timeout        タイムアウト設定
-     * @param RedirectConfig|null $redirect       リダイレクト設定
+     * @template T of CurlOptionsApplierImpl
+     * @param boolean                   $captureHeaders レスポンスヘッダーをResponseに保持するか
+     * @param boolean                   $captureBody    レスポンスボディをResponseに保持するか
+     * @param array<class-string<T>, T> $config         `CurlOptionsApplierImpl` のリスト
      */
     public function __construct(
-        public bool            $captureHeaders = true,
-        public bool            $captureBody    = true,
-        public ?ProxyConfig    $proxy          = null,
-        public ?SslConfig      $ssl            = null,
-        public ?AuthConfig     $auth           = null,
-        public ?TimeoutConfig  $timeout        = null,
-        public ?RedirectConfig $redirect       = null,
+        public  bool  $captureHeaders = true,
+        public  bool  $captureBody    = true,
+        private array $config         = [],
     ){
     }
 
     /**
      * デフォルト設定のCurlOptionsを生成する。
      *
+     * @template T of CurlOptionsApplierImpl
+     * @param  list<T> $config cURLオプションを保持するConfig
      * @return self
      */
-    public static function create(): self {
-        return new self();
+    public static function create(CurlOptionsApplierImpl ...$config): self {
+        return (new self())->with(...$config);
+    }
+
+    /**
+     * Configクラスを反映した本クラスを返却する。
+     *
+     * @param  CurlOptionsApplierImpl ...$config cURLオプションを保持するConfig
+     * @return self
+     */
+    public function with(CurlOptionsApplierImpl ...$config): self {
+
+        $applied = $this->config;
+
+        foreach($config as $c){
+            $applied[$c::class] = $c;
+        }
+
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            config:         $applied,
+        );
+    }
+
+    /**
+     * 指定Configクラスが設定済みかをチェックする。
+     *
+     * @template T of CurlOptionsApplierImpl
+     * @param class-string<T> $class
+     */
+    public function has(string $class): bool {
+        return (isset($this->config[$class]));
+    }
+
+    /**
+     * 指定されたConfigクラスを取得する。
+     *
+     * @template T of CurlOptionsApplierImpl
+     * @param  class-string<T> $class
+     * @return T|null
+     */
+    public function get(string $class): ?CurlOptionsApplierImpl {
+
+        if(!$this->has($class)){
+            return null;
+        }
+
+        return $this->config[$class];
+    }
+
+    /**
+     * 指定されたConfigクラスを削除する。
+     *
+     * @template T of CurlOptionsApplierImpl
+     * @param  class-string<T> $class
+     * @return self
+     */
+    public function remove(string $class): self {
+
+        $config = $this->config;
+        unset($config[$class]);
+
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            config:         $config,
+        );
     }
 
     /**
@@ -58,11 +117,7 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $capture,
             captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
-            ssl:            $this->ssl,
-            auth:           $this->auth,
-            timeout:        $this->timeout,
-            redirect:       $this->redirect,
+            config:         $this->config,
         );
     }
 
@@ -77,11 +132,7 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $this->captureHeaders,
             captureBody:    $capture,
-            proxy:          $this->proxy,
-            ssl:            $this->ssl,
-            auth:           $this->auth,
-            timeout:        $this->timeout,
-            redirect:       $this->redirect,
+            config:         $this->config,
         );
     }
 
@@ -94,14 +145,8 @@ final readonly class CurlOptions {
      */
     public function timeout(int $timeoutSec): self {
 
-        return new self(
-            captureHeaders: $this->captureHeaders,
-            captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
-            ssl:            $this->ssl,
-            auth:           $this->auth,
-            timeout:        TimeoutConfig::seconds(timeoutSec: $timeoutSec, connectTimeoutSec: $timeoutSec),
-            redirect:       $this->redirect,
+        return $this->with(
+            TimeoutConfig::seconds(timeoutSec: $timeoutSec, connectTimeoutSec: $timeoutSec),
         );
     }
 
@@ -114,14 +159,8 @@ final readonly class CurlOptions {
      */
     public function followRedirects(int $maxRedirects = 10, bool $autoReferer = true): self {
 
-        return new self(
-            captureHeaders: $this->captureHeaders,
-            captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
-            ssl:            $this->ssl,
-            auth:           $this->auth,
-            timeout:        $this->timeout,
-            redirect:       RedirectConfig::enabled(maxRedirects: $maxRedirects, autoReferer: $autoReferer),
+        return $this->with(
+            RedirectConfig::enabled(maxRedirects: $maxRedirects, autoReferer: $autoReferer),
         );
     }
 
@@ -137,17 +176,45 @@ final readonly class CurlOptions {
     }
 
     /**
-     * 自身に設定されたConfig群を返す。設定していないConfigは返さない。
+     * User-Agentヘッダーを送信する設定を追加する。
      *
-     * @return array<int, ProxyConfig|SslConfig|AuthConfig|TimeoutConfig|RedirectConfig>
+     * @param  string $userAgent
+     * @return self
+     */
+    public function userAgent(string $userAgent): self {
+
+        $client  = $this->config[ClientConfig::class] ?? null;
+        $referer = ($client instanceof ClientConfig) ? $client->referer : null;
+
+        return $this->with(
+            new ClientConfig(userAgent: $userAgent, referer: $referer),
+        );
+    }
+
+    /**
+     * Refererヘッダーを送信する設定を追加する。
+     *
+     * @param  string $referer
+     * @return self
+     */
+    public function referer(string $referer): self {
+
+        $client    = $this->config[ClientConfig::class] ?? null;
+        $userAgent = ($client instanceof ClientConfig) ? $client->userAgent : null;
+
+        return $this->with(
+            new ClientConfig(userAgent: $userAgent, referer: $referer),
+        );
+    }
+
+    /**
+     * 本クラスに設定されたConfig群を返却する。
+     * ※設定していないConfigは返さない。
+     *
+     * @template T of CurlOptionsApplierImpl
+     * @return list<T>
      */
     public function getConfig(): array {
-        return array_filter([
-            $this->proxy,
-            $this->ssl,
-            $this->auth,
-            $this->timeout,
-            $this->redirect,
-        ]);
+        return array_values($this->config);
     }
 }

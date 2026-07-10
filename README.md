@@ -58,6 +58,7 @@ $request = Request::get('https://www.php.net/')
 $options = CurlOptions::create()
     ->timeout(10)
     ->followRedirects()
+    ->userAgent('MyApp/1.0')
     ->captureBody()
     ->captureHeaders();
 
@@ -226,6 +227,13 @@ $request = Request::post('https://api.example.com/users')
     ]);
 ```
 
+You can also pass a pre-encoded JSON string. The string is validated before it is stored as the request body.
+
+```php
+$request = Request::post('https://api.example.com/users')
+    ->json('{"name":"Taro","email":"taro@example.com"}');
+```
+
 Use `form()` for `application/x-www-form-urlencoded` payloads:
 
 ```php
@@ -276,23 +284,23 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\SslConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
-$options = new CurlOptions(
-    captureBody: true,
-    captureHeaders: true,
-    proxy: ProxyConfig::http('proxy.example.com', port: 3128),
-    ssl: SslConfig::verified(),
-    auth: AuthConfig::bearer('token'),
-    timeout: TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
-    redirect: RedirectConfig::enabled(maxRedirects: 5),
+$options = CurlOptions::create(
+    AuthConfig::bearer('token'),
+    SslConfig::verified(),
+    ProxyConfig::http('proxy.example.com', port: 3128),
+    TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
+    RedirectConfig::enabled(maxRedirects: 5),
 );
 ```
 
-For simple usage, fluent helpers are available:
+Fluent helpers are also available:
 
 ```php
 $options = CurlOptions::create()
     ->timeout(10)
     ->followRedirects()
+    ->userAgent('MyApp/1.0')
+    ->referer('https://example.com')
     ->captureBody()
     ->captureHeaders();
 ```
@@ -319,13 +327,26 @@ $response = $client->send($request->asConfigured());
 
 Config objects own their own cURL option mapping. The client passes them through `CurlOptionsFactory` before execution.
 
-### Timeout
+### Client
+
+Use client settings to add `User-Agent` and `Referer` headers through `CurlOptions`.
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
+$options = CurlOptions::create()
+    ->userAgent('MyApp/1.0')
+    ->referer('https://example.com');
+```
 
-$timeout = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
-$timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500);
+If the same headers are explicitly set with `Request::headers()`, those request headers are kept.
+
+```php
+$request = Request::get('https://api.example.com')
+    ->headers([
+        'User-Agent' => 'CustomAgent/2.0',
+    ]);
+
+$options = CurlOptions::create()
+    ->userAgent('MyApp/1.0');
 ```
 
 ### SSL
@@ -337,6 +358,15 @@ $ssl = SslConfig::verified();
 $insecure = SslConfig::insecure();
 ```
 
+### Proxy
+
+```php
+use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+
+$httpProxy = ProxyConfig::http('proxy.example.com', port: 3128);
+$socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
+```
+
 ### Authentication
 
 ```php
@@ -346,13 +376,13 @@ $basic = AuthConfig::basic('user', 'password');
 $bearer = AuthConfig::bearer('token');
 ```
 
-### Proxy
+### Timeout
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
-$httpProxy = ProxyConfig::http('proxy.example.com', port: 3128);
-$socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
+$timeout = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
+$timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500);
 ```
 
 ### Redirects

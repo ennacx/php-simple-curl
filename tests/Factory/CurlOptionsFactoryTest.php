@@ -118,10 +118,10 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         $configuredRequest = Request::get('https://example.com')
             ->headers(['Accept' => 'application/json'])
-            ->withOptions(new CurlOptions(
-                auth: AuthConfig::bearer('token'),
-                timeout: TimeoutConfig::seconds(timeoutSec: 9, connectTimeoutSec: 4),
-                redirect: RedirectConfig::enabled(maxRedirects: 2, autoReferer: false),
+            ->withOptions(CurlOptions::create(
+                AuthConfig::bearer('token'),
+                TimeoutConfig::seconds(timeoutSec: 9, connectTimeoutSec: 4),
+                RedirectConfig::enabled(maxRedirects: 2, autoReferer: false),
             ));
 
         $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
@@ -134,6 +134,54 @@ final class CurlOptionsFactoryTest extends TestCase {
         self::assertSame([
             'Accept: application/json',
             'Authorization: Bearer token',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * User-AgentとRefererが送信ヘッダーへ反映されることを検証する。
+     *
+     * @return void
+     */
+    public function testAppliesClientHeaders(): void {
+
+        $configuredRequest = Request::get('https://example.com')
+            ->withOptions(
+                CurlOptions::create()
+                    ->userAgent('php-simple-curl-test/1.0')
+                    ->referer('https://example.com/from')
+            );
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame([
+            'User-Agent: php-simple-curl-test/1.0',
+            'Referer: https://example.com/from',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * Requestで明示されたUser-AgentとRefererはClientConfigで上書きしないことを検証する。
+     *
+     * @return void
+     */
+    public function testKeepsUserDefinedClientHeaders(): void {
+
+        $configuredRequest = Request::get('https://example.com')
+            ->headers([
+                'User-Agent' => 'custom-agent/2.0',
+                'Referer'    => 'https://example.com/custom',
+            ])
+            ->withOptions(
+                CurlOptions::create()
+                    ->userAgent('php-simple-curl-test/1.0')
+                    ->referer('https://example.com/from')
+            );
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame([
+            'User-Agent: custom-agent/2.0',
+            'Referer: https://example.com/custom',
         ], $options[CURLOPT_HTTPHEADER]);
     }
 
@@ -214,6 +262,24 @@ final class CurlOptionsFactoryTest extends TestCase {
         $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
 
         self::assertSame('{"name":"Taro","tags":["php","curl"]}', $options[CURLOPT_POSTFIELDS]);
+        self::assertSame(['Content-Type: application/json'], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * JSON文字列をそのままJSONリクエストボディとして扱えることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsJsonRequestBodyOptionsFromJsonString(): void {
+
+        $json = '{"name":"Taro","tags":["php","curl"]}';
+        $configuredRequest = Request::post('https://example.com/users')
+            ->json($json)
+            ->asConfigured();
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame($json, $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: application/json'], $options[CURLOPT_HTTPHEADER]);
     }
 
