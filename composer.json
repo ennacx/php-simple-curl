@@ -1,7 +1,7 @@
 {
   "name": "ennacx/php-simple-curl",
   "description": "PHP - Simple cURL wrapper library.",
-  "keywords": ["curl", "http-client", "http", "client", "php"],
+  "keywords": ["curl", "http-client", "http", "client", "api", "rest", "php"],
   "homepage": "https://github.com/ennacx/php-simple-curl",
   "type": "library",
   "license": "MIT",
@@ -25,5 +25,9 @@
   },
   "scripts": {
     "test": "phpunit"
+  },
+  "support": {
+    "issues": "https://github.com/ennacx/php-simple-curl/issues",
+    "source": "https://github.com/ennacx/php-simple-curl"
   }
 }

@@ -5,23 +5,21 @@ namespace Ennacx\SimpleCurl\Static;
 
 use Random\RandomException;
 use RuntimeException;
+use Stringable;
 
 class Utils {
 
     /**
-     * CamelCaseString to snake_case_string
-     *
-     * ```
-     * "camelCaseString" -> "camel_case_string"
-     * ```
+     * キャメルケース `CamelCaseString` をスネークケース `snake_case_string` に変換する。
      *
      * @param  string|null $str Target string
      * @return string|null
      */
     public static function snakize(?string $str): ?string {
 
-        if($str === null)
+        if($str === null){
             return null;
+        }
 
         $snakeStr = strtolower(preg_replace('/[A-Z]/', "_$0", $str));
 
@@ -29,11 +27,7 @@ class Utils {
     }
 
     /**
-     * snake_case_string to CamelCaseString
-     *
-     * ```
-     * "snake_case_string" -> "snakeCaseString" or "SnakeCaseString"
-     * ```
+     * スネークケース `snake_case_string` をキャメルケース `CamelCaseString (camelCaseString)` に変換する。
      *
      * @param  string|null $str     Target string
      * @param  boolean     $toLower True: lowerCamel / False: UpperCamel
@@ -41,8 +35,9 @@ class Utils {
      */
     public static function camelize(?string $str, bool $toLower = true): ?string {
 
-        if($str === null)
+        if($str === null){
             return null;
+        }
 
         $camelStr = preg_replace_callback('/(^|_)(.)/', fn(array $v): string => ucfirst($v[2]), $str);
 
@@ -64,7 +59,26 @@ class Utils {
     }
 
     /**
-     * UUIDv4 生成
+     * 与えられた引数を文字列に変換する。
+     *
+     * @param  mixed             $value
+     * @return string|null|false        与えられた引数が`null`の場合は`null`を返し、文字列に変換できない場合は`false`を返す
+     */
+    public static function toString(mixed $value): string|null|false {
+
+        if($value === null){
+            return null;
+        } else if(is_string($value) || is_numeric($value)){
+            return trim((string)$value);
+        } else if($value instanceof Stringable){
+            return trim($value->__toString());
+        }
+
+        return false;
+    }
+
+    /**
+     * UUIDv4を生成する。
      *
      * @return string RFC4122 UUID
      * @throws RuntimeException

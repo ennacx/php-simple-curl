@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 /**
- * RequestとCurlOptionsを組み合わせた送信待ちリクエスト。
+ * RequestとCurlOptionsを組み合わせた設定済みリクエスト。
  */
-final class PendingRequest {
+final readonly class ConfiguredRequest {
 
     /**
      * コンストラクタ
@@ -18,7 +18,7 @@ final class PendingRequest {
     }
 
     /**
-     * 送信待ちリクエストを生成する。
+     * 設定済みリクエストを生成する。
      *
      * @param  Request          $request
      * @param  CurlOptions|null $options
