@@ -6,6 +6,7 @@ namespace Ennacx\SimpleCurl\Test\Entity;
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,16 +26,21 @@ final class CurlOptionsTest extends TestCase {
         $withoutBody = $base->captureBody(false);
         $timeout = $base->timeout(15);
         $redirect = $base->followRedirects(maxRedirects: 3, autoReferer: false);
+        $client = $base
+            ->userAgent('php-simple-curl-test/1.0')
+            ->referer('https://example.com/from');
 
         self::assertNotSame($base, $withoutHeaders);
         self::assertNotSame($base, $withoutBody);
         self::assertNotSame($base, $timeout);
         self::assertNotSame($base, $redirect);
+        self::assertNotSame($base, $client);
 
         self::assertTrue($base->captureHeaders);
         self::assertTrue($base->captureBody);
         self::assertNull($base->timeout);
         self::assertNull($base->redirect);
+        self::assertNull($base->client);
 
         self::assertFalse($withoutHeaders->captureHeaders);
         self::assertTrue($withoutHeaders->captureBody);
@@ -50,6 +56,9 @@ final class CurlOptionsTest extends TestCase {
         self::assertTrue($redirect->redirect->follow);
         self::assertSame(3, $redirect->redirect->maxRedirects);
         self::assertFalse($redirect->redirect->autoReferer);
+
+        self::assertSame('php-simple-curl-test/1.0', $client->client->userAgent);
+        self::assertSame('https://example.com/from', $client->client->referer);
     }
 
     /**
@@ -65,5 +74,29 @@ final class CurlOptionsTest extends TestCase {
         self::assertTrue($options->redirect->follow);
         self::assertSame(10, $options->redirect->maxRedirects);
         self::assertTrue($options->redirect->autoReferer);
+    }
+
+    /**
+     * 空のUser-Agentを不正として扱うことを検証する。
+     *
+     * @return void
+     */
+    public function testUserAgentRejectsEmptyValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        CurlOptions::create()->userAgent(' ');
+    }
+
+    /**
+     * 空のRefererを不正として扱うことを検証する。
+     *
+     * @return void
+     */
+    public function testRefererRejectsEmptyValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        CurlOptions::create()->referer(' ');
     }
 }

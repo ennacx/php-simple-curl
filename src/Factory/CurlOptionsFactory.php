@@ -6,6 +6,7 @@ namespace Ennacx\SimpleCurl\Factory;
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
+use Ennacx\SimpleCurl\Static\HeaderUtils;
 
 /**
  * ConfiguredRequestをcURLオプション配列へ変換するFactory。
@@ -56,7 +57,7 @@ final class CurlOptionsFactory {
 
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
         if($configuredRequest->request->requestContentType !== null){
-            if(!$this->hasHeader($headers, 'content-type')){
+            if(!HeaderUtils::has($headers, 'Content-Type')){
                 $headers['Content-Type'] = $configuredRequest->request->requestContentType->getContentType();
             }
         }
@@ -88,22 +89,5 @@ final class CurlOptionsFactory {
         }
 
         return $ret;
-    }
-
-    private function hasHeader(array $headers, string $name): bool {
-
-        $needle = strtolower($name);
-
-        foreach($headers as $key => $value){
-            if(is_string($key) && strtolower($key) === $needle){
-                return true;
-            }
-
-            if(is_string($value) && str_starts_with(strtolower($value), "{$needle}:")){
-                return true;
-            }
-        }
-
-        return false;
     }
 }

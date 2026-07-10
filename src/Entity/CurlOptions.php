@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
+use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
 use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\SslConfig;
@@ -21,6 +22,7 @@ final readonly class CurlOptions {
      *
      * @param boolean             $captureHeaders レスポンスヘッダーをResponseに保持するか
      * @param boolean             $captureBody    レスポンスボディをResponseに保持するか
+     * @param ClientConfig|null   $client         クライアント情報設定
      * @param ProxyConfig|null    $proxy          プロキシー設定
      * @param SslConfig|null      $ssl            SSL/TLS設定
      * @param AuthConfig|null     $auth           認証設定
@@ -30,8 +32,9 @@ final readonly class CurlOptions {
     public function __construct(
         public bool            $captureHeaders = true,
         public bool            $captureBody    = true,
-        public ?ProxyConfig    $proxy          = null,
+        public ?ClientConfig   $client         = null,
         public ?SslConfig      $ssl            = null,
+        public ?ProxyConfig    $proxy          = null,
         public ?AuthConfig     $auth           = null,
         public ?TimeoutConfig  $timeout        = null,
         public ?RedirectConfig $redirect       = null,
@@ -58,8 +61,9 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $capture,
             captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
+            client:         $this->client,
             ssl:            $this->ssl,
+            proxy:          $this->proxy,
             auth:           $this->auth,
             timeout:        $this->timeout,
             redirect:       $this->redirect,
@@ -77,8 +81,9 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $this->captureHeaders,
             captureBody:    $capture,
-            proxy:          $this->proxy,
+            client:         $this->client,
             ssl:            $this->ssl,
+            proxy:          $this->proxy,
             auth:           $this->auth,
             timeout:        $this->timeout,
             redirect:       $this->redirect,
@@ -97,8 +102,9 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $this->captureHeaders,
             captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
+            client:         $this->client,
             ssl:            $this->ssl,
+            proxy:          $this->proxy,
             auth:           $this->auth,
             timeout:        TimeoutConfig::seconds(timeoutSec: $timeoutSec, connectTimeoutSec: $timeoutSec),
             redirect:       $this->redirect,
@@ -117,8 +123,9 @@ final readonly class CurlOptions {
         return new self(
             captureHeaders: $this->captureHeaders,
             captureBody:    $this->captureBody,
-            proxy:          $this->proxy,
+            client:         $this->client,
             ssl:            $this->ssl,
+            proxy:          $this->proxy,
             auth:           $this->auth,
             timeout:        $this->timeout,
             redirect:       RedirectConfig::enabled(maxRedirects: $maxRedirects, autoReferer: $autoReferer),
@@ -137,14 +144,55 @@ final readonly class CurlOptions {
     }
 
     /**
+     * User-Agentヘッダーを送信する設定を追加する。
+     *
+     * @param  string $userAgent
+     * @return self
+     */
+    public function userAgent(string $userAgent): self {
+
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            client:         new ClientConfig(userAgent: $userAgent, referer: $this->client?->referer),
+            ssl:            $this->ssl,
+            proxy:          $this->proxy,
+            auth:           $this->auth,
+            timeout:        $this->timeout,
+            redirect:       $this->redirect,
+        );
+    }
+
+    /**
+     * Refererヘッダーを送信する設定を追加する。
+     *
+     * @param  string $referer
+     * @return self
+     */
+    public function referer(string $referer): self {
+
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            client:         new ClientConfig(userAgent: $this->client?->userAgent, referer: $referer),
+            ssl:            $this->ssl,
+            proxy:          $this->proxy,
+            auth:           $this->auth,
+            timeout:        $this->timeout,
+            redirect:       $this->redirect,
+        );
+    }
+
+    /**
      * 自身に設定されたConfig群を返す。設定していないConfigは返さない。
      *
-     * @return array<int, ProxyConfig|SslConfig|AuthConfig|TimeoutConfig|RedirectConfig>
+     * @return array<int, ProxyConfig|SslConfig|AuthConfig|TimeoutConfig|RedirectConfig|ClientConfig>
      */
     public function getConfig(): array {
         return array_filter([
-            $this->proxy,
+            $this->client,
             $this->ssl,
+            $this->proxy,
             $this->auth,
             $this->timeout,
             $this->redirect,

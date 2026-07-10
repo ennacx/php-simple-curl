@@ -7,7 +7,7 @@ use Random\RandomException;
 use RuntimeException;
 use Stringable;
 
-class Utils {
+final class Utils {
 
     /**
      * キャメルケース `CamelCaseString` をスネークケース `snake_case_string` に変換する。

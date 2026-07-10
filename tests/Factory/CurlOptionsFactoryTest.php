@@ -138,6 +138,54 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * User-AgentとRefererが送信ヘッダーへ反映されることを検証する。
+     *
+     * @return void
+     */
+    public function testAppliesClientHeaders(): void {
+
+        $configuredRequest = Request::get('https://example.com')
+            ->withOptions(
+                CurlOptions::create()
+                    ->userAgent('php-simple-curl-test/1.0')
+                    ->referer('https://example.com/from')
+            );
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame([
+            'User-Agent: php-simple-curl-test/1.0',
+            'Referer: https://example.com/from',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * Requestで明示されたUser-AgentとRefererはClientConfigで上書きしないことを検証する。
+     *
+     * @return void
+     */
+    public function testKeepsUserDefinedClientHeaders(): void {
+
+        $configuredRequest = Request::get('https://example.com')
+            ->headers([
+                'User-Agent' => 'custom-agent/2.0',
+                'Referer'    => 'https://example.com/custom',
+            ])
+            ->withOptions(
+                CurlOptions::create()
+                    ->userAgent('php-simple-curl-test/1.0')
+                    ->referer('https://example.com/from')
+            );
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame([
+            'User-Agent: custom-agent/2.0',
+            'Referer: https://example.com/custom',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
      * プレーンテキストのリクエストボディがcURLオプションへ反映されることを検証する。
      *
      * @return void
