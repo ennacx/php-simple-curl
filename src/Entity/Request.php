@@ -7,6 +7,7 @@ use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\RequestContentType;
 use Ennacx\SimpleCurl\Static\Utils;
 use InvalidArgumentException;
+use JsonException;
 
 /**
  * cURLで送信するリクエスト内容を表す値オブジェクト。
@@ -230,22 +231,37 @@ final class Request {
     }
 
     /**
-     * 配列をJSON文字列へ変換し、JSONリクエストボディーとして設定する。
+     * 配列またはJSON文字列をJSONリクエストボディーとして設定する。
      *
      * 既定では `JSON_THROW_ON_ERROR` を有効にし、Content-Typeには `application/json` を使用する。
      *
-     * @param  array<string|int, mixed> $input     JSON化する値
-     * @param  int                      $jsonFlags `json_encode()` へ渡すJSONフラグ
-     * @param  boolean                  $throw     JSON変換失敗時に例外を投げる場合はtrue
+     * @param  array<string|int, mixed>|string $input     JSON化する配列、または検証済みとして送信するJSON文字列
+     * @param  int                             $jsonFlags 配列をJSON化する場合に `json_encode()` へ渡すJSONフラグ
+     * @param  boolean                         $throw     JSON変換失敗時に例外を投げる場合はtrue
      * @return self
+     * @throws JsonException `$throw = true` の時、JSON変換失敗時に投げられる例外
      */
-    public function json(array $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
+    public function json(array|string $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
 
-        if($throw){
-            $jsonFlags |= JSON_THROW_ON_ERROR;
+        if(is_string($input)){
+            try{
+                json_decode($input, true, flags: JSON_THROW_ON_ERROR);
+
+                $json = $input;
+            } catch(JsonException $e){
+                if($throw){
+                    throw $e;
+                }
+
+                return $this;
+            }
+        } else{
+            if($throw){
+                $jsonFlags |= JSON_THROW_ON_ERROR;
+            }
+
+            $json = json_encode($input, $jsonFlags);
         }
-
-        $json = json_encode($input, $jsonFlags);
 
         if($json === false){
             return $this;

@@ -218,6 +218,24 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * JSON文字列をそのままJSONリクエストボディとして扱えることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsJsonRequestBodyOptionsFromJsonString(): void {
+
+        $json = '{"name":"Taro","tags":["php","curl"]}';
+        $configuredRequest = Request::post('https://example.com/users')
+            ->json($json)
+            ->asConfigured();
+
+        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+
+        self::assertSame($json, $options[CURLOPT_POSTFIELDS]);
+        self::assertSame(['Content-Type: application/json'], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
      * フォームリクエストボディがURLエンコード済み文字列とContent-Typeへ変換されることを検証する。
      *
      * @return void

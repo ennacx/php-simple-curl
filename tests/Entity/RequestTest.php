@@ -9,6 +9,7 @@ use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\RequestContentType;
 use InvalidArgumentException;
+use JsonException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -169,6 +170,35 @@ final class RequestTest extends TestCase {
 
         Request::post('https://example.com/upload')
             ->bodyFromFile(sys_get_temp_dir() . '/simple-curl-missing-file');
+    }
+
+    /**
+     * 不正なJSON文字列はthrow=trueの場合に例外を投げることを検証する。
+     *
+     * @return void
+     * @throws JsonException
+     */
+    public function testJsonThrowsExceptionForInvalidJsonString(): void {
+
+        $this->expectException(JsonException::class);
+
+        Request::post('https://example.com/users')
+            ->json('{"name":');
+    }
+
+    /**
+     * 不正なJSON文字列でもthrow=falseの場合は元のRequestを返すことを検証する。
+     *
+     * @return void
+     */
+    public function testJsonReturnsOriginalRequestForInvalidJsonStringWhenThrowDisabled(): void {
+
+        $request = Request::post('https://example.com/users');
+        $updated = $request->json('{"name":', throw: false);
+
+        self::assertSame($request, $updated);
+        self::assertNull($updated->requestBody);
+        self::assertNull($updated->requestContentType);
     }
 
     /**

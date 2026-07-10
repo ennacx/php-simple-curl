@@ -226,6 +226,13 @@ $request = Request::post('https://api.example.com/users')
     ]);
 ```
 
+You can also pass a pre-encoded JSON string. The string is validated before it is stored as the request body.
+
+```php
+$request = Request::post('https://api.example.com/users')
+    ->json('{"name":"Taro","email":"taro@example.com"}');
+```
+
 Use `form()` for `application/x-www-form-urlencoded` payloads:
 
 ```php
