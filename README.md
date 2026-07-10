@@ -17,7 +17,6 @@ PHP Simple cURL keeps the core pieces explicit:
 
 - `Request` describes what to send.
 - `CurlOptions` describes how to send it.
-- `PendingRequest` combines them into something executable.
 - Clients execute requests and return typed `Response` objects.
 
 The library favors small value objects, immutable options, and predictable response helpers over a large fluent client with hidden state.
@@ -39,9 +38,8 @@ composer require ennacx/php-simple-curl:^2.0@beta
 
 1. Create a `Request` with the HTTP method, URL, and request headers.
 2. Create `CurlOptions` for timeout, SSL, proxy, auth, redirect, and response capture settings.
-3. Combine them into a `PendingRequest`.
-4. Pass the pending request to `SingleClient::send()` or `MultiClient::sendAll()`.
-5. Read the returned `Response` object.
+3. Pass the request to `SingleClient::send()` or `MultiClient::sendAll()` with `Request::withOptions()` or `Request::asConfigured()`.
+4. Read the returned `Response` object.
 
 ## Single Request
 
@@ -63,10 +61,8 @@ $options = CurlOptions::create()
     ->captureBody()
     ->captureHeaders();
 
-$pendingRequest = $request->withOptions($options);
-
 $client = new SingleClient();
-$response = $client->send($pendingRequest);
+$response = $client->send($request->withOptions($options));
 
 echo $response->statusCode;
 echo $response->body;
@@ -87,7 +83,7 @@ if($response->error !== null){
 
 ## Multiple Requests
 
-`MultiClient::sendAll()` executes multiple pending requests with cURL multi and returns responses keyed by each request ID.
+`MultiClient::sendAll()` executes multiple configured requests with cURL multi and returns responses keyed by each request ID.
 
 ```php
 <?php
@@ -100,17 +96,20 @@ $options = CurlOptions::create()
     ->timeout(10)
     ->followRedirects();
 
-$php = Request::get('https://www.php.net/')
+$phpRequest = Request::get('https://www.php.net/');
+$packagistRequest = Request::get('https://packagist.org/');
+
+$php = $phpRequest
     ->withOptions($options);
 
-$packagist = Request::get('https://packagist.org/')
+$packagist = $packagistRequest
     ->withOptions($options);
 
 $client = new MultiClient();
 $responses = $client->sendAll($php, $packagist);
 
-$phpResponse = $responses[$php->request->id];
-$packagistResponse = $responses[$packagist->request->id];
+$phpResponse = $responses[$phpRequest->id];
+$packagistResponse = $responses[$packagistRequest->id];
 
 echo $phpResponse->statusCode;
 echo $packagistResponse->statusCode;
@@ -189,6 +188,68 @@ This is executed as:
 https://example.com/docs?lang=en&version=2.x#install
 ```
 
+### Request Body
+
+`Request` can also hold a request body. The body is converted into `CURLOPT_POSTFIELDS` when the request is executed.
+
+Use `body()` when you already have a raw string payload:
+
+```php
+<?php
+
+use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Enum\RequestContentType;
+
+$request = Request::post('https://api.example.com/messages')
+    ->body('plain text message', RequestContentType::PlainText);
+```
+
+Use `bodyFromFile()` when the request body should be read from a local file:
+
+```php
+$request = Request::put('https://api.example.com/documents/1')
+    ->bodyFromFile(__DIR__ . '/payload.txt', RequestContentType::PlainText);
+```
+
+`bodyFromFile()` reads the file contents and sends them as the request body. It is useful for APIs that expect raw text, JSON, XML, or binary-like payloads in the body. It is not a multipart file upload helper.
+
+Use `json()` to encode an array as JSON. The default `Content-Type` is `application/json`.
+
+```php
+$request = Request::post('https://api.example.com/users')
+    ->headers([
+        'Accept' => 'application/json',
+    ])
+    ->json([
+        'name' => 'Taro',
+        'email' => 'taro@example.com',
+    ]);
+```
+
+Use `form()` for `application/x-www-form-urlencoded` payloads:
+
+```php
+$request = Request::post('https://api.example.com/token')
+    ->form([
+        'grant_type' => 'client_credentials',
+        'client_id' => 'example-client',
+    ]);
+```
+
+When a body helper is used, PHP Simple cURL sets the matching `Content-Type` automatically unless you explicitly provide one with `headers()`.
+
+```php
+$request = Request::post('https://api.example.com/users')
+    ->headers([
+        'Content-Type' => 'application/vnd.api+json',
+    ])
+    ->json([
+        'name' => 'Taro',
+    ]);
+```
+
+Multipart uploads and stream-based request bodies are planned for a later implementation. They are intentionally not part of the current public request body API yet.
+
 Supported request factory methods:
 
 - `Request::get()`
@@ -243,15 +304,15 @@ $baseOptions = CurlOptions::create()->timeout(10);
 $redirectOptions = $baseOptions->followRedirects();
 ```
 
-## Pending Request
+## Sending Requests
 
-`PendingRequest` combines a `Request` and optional `CurlOptions`. Clients receive this object.
+Clients receive the object returned by `Request::withOptions()` or `Request::asConfigured()`. In typical usage, you can pass it directly to the client.
 
 ```php
-$pendingRequest = $request->withOptions($options);
+$response = $client->send($request->withOptions($options));
 
 // If no custom options are required, default CurlOptions are used internally.
-$pendingRequest = $request->asPending();
+$response = $client->send($request->asConfigured());
 ```
 
 ## Config Objects

@@ -6,6 +6,7 @@ namespace Ennacx\SimpleCurl\Test\Integration;
 use Ennacx\SimpleCurl\Client\SingleClient;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\Request;
+use Throwable;
 
 /**
  * SingleClientがローカルHTTP serverへ実リクエストできることを検証する。
@@ -16,14 +17,18 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      * JSONレスポンスを取得し、ステータス・ヘッダー・JSON helperが連動することを検証する。
      *
      * @return void
+     * @throws Throwable
      */
     public function testSendReturnsJsonResponseFromLocalServer(): void {
 
-        $pendingRequest = Request::get(self::url('/json'))
+        $configuredRequest = Request::get(self::url('/json'))
             ->headers(['Accept' => 'application/json'])
-            ->withOptions(CurlOptions::create()->timeout(5));
+            ->withOptions(
+                CurlOptions::create()
+                    ->timeout(5)
+            );
 
-        $response = (new SingleClient())->send($pendingRequest);
+        $response = (new SingleClient())->send($configuredRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
@@ -41,13 +46,18 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      * followRedirects()を有効にした場合にリダイレクト先のレスポンスを取得できることを検証する。
      *
      * @return void
+     * @throws Throwable
      */
     public function testSendFollowsRedirectWhenEnabled(): void {
 
-        $pendingRequest = Request::get(self::url('/redirect'))
-            ->withOptions(CurlOptions::create()->timeout(5)->followRedirects());
+        $configuredRequest = Request::get(self::url('/redirect'))
+            ->withOptions(
+                CurlOptions::create()
+                    ->timeout(5)
+                    ->followRedirects()
+            );
 
-        $response = (new SingleClient())->send($pendingRequest);
+        $response = (new SingleClient())->send($configuredRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
@@ -59,10 +69,11 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      * ボディを取得せず、レスポンスヘッダーだけを保持できることを検証する。
      *
      * @return void
+     * @throws Throwable
      */
     public function testSendCanCaptureHeadersWithoutBody(): void {
 
-        $pendingRequest = Request::get(self::url('/text'))
+        $configuredRequest = Request::get(self::url('/text'))
             ->withOptions(
                 CurlOptions::create()
                     ->captureBody(false)
@@ -70,7 +81,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
                     ->timeout(5)
             );
 
-        $response = (new SingleClient())->send($pendingRequest);
+        $response = (new SingleClient())->send($configuredRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
@@ -83,13 +94,17 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      * HTTP 4xxがcURLエラーではなくResponse上のHTTPエラーとして扱われることを検証する。
      *
      * @return void
+     * @throws Throwable
      */
     public function testSendReturnsHttpErrorResponse(): void {
 
-        $pendingRequest = Request::get(self::url('/status/404'))
-            ->withOptions(CurlOptions::create()->timeout(5));
+        $configuredRequest = Request::get(self::url('/status/404'))
+            ->withOptions(
+                CurlOptions::create()
+                    ->timeout(5)
+            );
 
-        $response = (new SingleClient())->send($pendingRequest);
+        $response = (new SingleClient())->send($configuredRequest);
 
         self::assertNull($response->error);
         self::assertSame(404, $response->statusCode);

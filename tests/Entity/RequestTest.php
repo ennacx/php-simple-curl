@@ -4,14 +4,15 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Entity;
 
 use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\PendingRequest;
+use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
+use Ennacx\SimpleCurl\Enum\RequestContentType;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Requestの生成、入力検証、PendingRequest化を検証する。
+ * Requestの生成、入力検証、ConfiguredRequest化を検証する。
  */
 final class RequestTest extends TestCase {
 
@@ -133,32 +134,70 @@ final class RequestTest extends TestCase {
     }
 
     /**
-     * CurlOptions付きのPendingRequestを生成できることを検証する。
+     * ファイル内容をリクエストボディーとして設定でき、元のRequestを変更しないことを検証する。
      *
      * @return void
      */
-    public function testWithOptionsCreatesPendingRequest(): void {
+    public function testBodyFromFileCreatesRequestBodyFromReadableFile(): void {
 
-        $request = Request::get('https://example.com');
-        $options = CurlOptions::create()->timeout(10);
-        $pendingRequest = $request->withOptions($options);
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-request-');
+        self::assertIsString($path);
 
-        self::assertInstanceOf(PendingRequest::class, $pendingRequest);
-        self::assertSame($request, $pendingRequest->request);
-        self::assertSame($options, $pendingRequest->options);
+        file_put_contents($path, "file body\n");
+
+        try{
+            $request = Request::post('https://example.com/upload');
+            $updated = $request->bodyFromFile($path, RequestContentType::PlainText);
+
+            self::assertNull($request->requestBody);
+            self::assertNull($request->requestContentType);
+            self::assertSame("file body\n", $updated->requestBody);
+            self::assertSame(RequestContentType::PlainText, $updated->requestContentType);
+        } finally{
+            unlink($path);
+        }
     }
 
     /**
-     * CurlOptionsなしのPendingRequestを生成できることを検証する。
+     * 存在しないファイルをリクエストボディーに指定した場合に例外を投げることを検証する。
      *
      * @return void
      */
-    public function testAsPendingCreatesPendingRequestWithDefaultOptions(): void {
+    public function testBodyFromFileThrowsExceptionForMissingFile(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        Request::post('https://example.com/upload')
+            ->bodyFromFile(sys_get_temp_dir() . '/simple-curl-missing-file');
+    }
+
+    /**
+     * CurlOptions付きのConfiguredRequestを生成できることを検証する。
+     *
+     * @return void
+     */
+    public function testWithOptionsCreatesConfiguredRequest(): void {
 
         $request = Request::get('https://example.com');
-        $pendingRequest = $request->asPending();
+        $options = CurlOptions::create()->timeout(10);
+        $configuredRequest = $request->withOptions($options);
 
-        self::assertSame($request, $pendingRequest->request);
-        self::assertNull($pendingRequest->options);
+        self::assertInstanceOf(ConfiguredRequest::class, $configuredRequest);
+        self::assertSame($request, $configuredRequest->request);
+        self::assertSame($options, $configuredRequest->options);
+    }
+
+    /**
+     * CurlOptionsなしのConfiguredRequestを生成できることを検証する。
+     *
+     * @return void
+     */
+    public function testAsConfiguredCreatesConfiguredRequestWithDefaultOptions(): void {
+
+        $request = Request::get('https://example.com');
+        $configuredRequest = $request->asConfigured();
+
+        self::assertSame($request, $configuredRequest->request);
+        self::assertNull($configuredRequest->options);
     }
 }
