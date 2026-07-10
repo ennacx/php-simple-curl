@@ -118,10 +118,10 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         $configuredRequest = Request::get('https://example.com')
             ->headers(['Accept' => 'application/json'])
-            ->withOptions(new CurlOptions(
-                auth: AuthConfig::bearer('token'),
-                timeout: TimeoutConfig::seconds(timeoutSec: 9, connectTimeoutSec: 4),
-                redirect: RedirectConfig::enabled(maxRedirects: 2, autoReferer: false),
+            ->withOptions(CurlOptions::create(
+                AuthConfig::bearer('token'),
+                TimeoutConfig::seconds(timeoutSec: 9, connectTimeoutSec: 4),
+                RedirectConfig::enabled(maxRedirects: 2, autoReferer: false),
             ));
 
         $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);

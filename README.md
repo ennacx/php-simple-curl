@@ -284,18 +284,16 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\SslConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
-$options = new CurlOptions(
-    captureBody: true,
-    captureHeaders: true,
-    proxy: ProxyConfig::http('proxy.example.com', port: 3128),
-    ssl: SslConfig::verified(),
-    auth: AuthConfig::bearer('token'),
-    timeout: TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
-    redirect: RedirectConfig::enabled(maxRedirects: 5),
+$options = CurlOptions::create(
+    AuthConfig::bearer('token'),
+    SslConfig::verified(),
+    ProxyConfig::http('proxy.example.com', port: 3128),
+    TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
+    RedirectConfig::enabled(maxRedirects: 5),
 );
 ```
 
-For simple usage, fluent helpers are available:
+Fluent helpers are also available:
 
 ```php
 $options = CurlOptions::create()
