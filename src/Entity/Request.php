@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlMethod;
+use Ennacx\SimpleCurl\Enum\RequestContentType;
 use Ennacx\SimpleCurl\Static\Utils;
 use InvalidArgumentException;
-use Stringable;
 
 /**
  * cURLで送信するリクエスト内容を表す値オブジェクト。
@@ -28,6 +28,12 @@ final class Request {
     /** @var array<string, mixed> 送信するHTTPヘッダー */
     public array $requestHeaders = [];
 
+    /** @var string|null 送信するリクエストボディー */
+    public ?string $requestBody = null;
+
+    /** @var RequestContentType|null リクエストボディーのContent-Type */
+    public ?RequestContentType $requestContentType = null;
+
     /** @var array<string, mixed> 送信するクエリパラメータ */
     public array $queryParams = [];
 
@@ -44,12 +50,12 @@ final class Request {
 
         $this->id = Utils::uuid_v4();
 
-        $url = self::validateUrl($this->url);
+        $this->url = self::validateUrl($this->url);
 
         // GETクエリ取得
-        $queryString = parse_url($url, PHP_URL_QUERY);
+        $queryString = parse_url($this->url, PHP_URL_QUERY);
         // フラグメント取得
-        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+        $fragment = parse_url($this->url, PHP_URL_FRAGMENT);
 
         // GETクエリが存在する場合
         if($queryString !== null){
@@ -128,13 +134,8 @@ final class Request {
             return $this;
         }
 
-        if($value === null){
-            $paramValue = null;
-        } else if(is_string($value) || is_numeric($value)){
-            $paramValue = trim((string)$value);
-        } else if($value instanceof Stringable){
-            $paramValue = trim($value->__toString());
-        } else{
+        $paramValue = Utils::toString($value);
+        if($paramValue === false){
             throw new InvalidArgumentException(sprintf('Request param "%s" has an invalid value.', $key));
         }
 
@@ -181,24 +182,91 @@ final class Request {
     }
 
     /**
-     * CurlOptionsを指定せず、デフォルト設定で送信待ちリクエストを生成する。
+     * 送信するリクエストボディーを設定する。
      *
-     * @return PendingRequest
+     * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で
+     * `CURLOPT_POSTFIELDS` と既定の `Content-Type` へ変換する。
+     *
+     * @param  string             $body        送信するリクエストボディー
+     * @param  RequestContentType $contentType ボディー形式に対応するContent-Type
+     * @return self
      */
-    public function asPending(): PendingRequest {
+    public function body(string $body, RequestContentType $contentType = RequestContentType::PlainText): self {
 
-        return PendingRequest::create($this, null);
+        if($body === ''){
+            return $this;
+        }
+
+        $clone = clone $this;
+
+        $clone->requestBody        = $body;
+        $clone->requestContentType = $contentType;
+
+        return $clone;
     }
 
     /**
-     * CurlOptionsを付与した送信待ちリクエストを生成する。
+     * ファイルの内容をボディーに設定する。
      *
-     * @param  CurlOptions $options cURL実行時のオプション設定
-     * @return PendingRequest
+     * @param  string             $path
+     * @param  RequestContentType $contentType
+     * @return self
      */
-    public function withOptions(CurlOptions $options): PendingRequest {
+    public function bodyFromFile(string $path, RequestContentType $contentType = RequestContentType::PlainText): self {
 
-        return PendingRequest::create($this, $options);
+        if(!file_exists($path) || !is_readable($path)){
+            throw new InvalidArgumentException('Target file does not exist or is not readable.');
+        } else if(!is_file($path)){
+            throw new InvalidArgumentException('Target path is not a file.');
+        }
+
+        $content = file_get_contents($path);
+
+        if($content === false){
+            throw new InvalidArgumentException('Failed to read target file.');
+        }
+
+        return $this->body($content, $contentType);
+    }
+
+    /**
+     * 配列をJSON文字列へ変換し、JSONリクエストボディーとして設定する。
+     *
+     * 既定では `JSON_THROW_ON_ERROR` を有効にし、Content-Typeには `application/json` を使用する。
+     *
+     * @param  array<string|int, mixed> $input     JSON化する値
+     * @param  int                      $jsonFlags `json_encode()` へ渡すJSONフラグ
+     * @param  boolean                  $throw     JSON変換失敗時に例外を投げる場合はtrue
+     * @return self
+     */
+    public function json(array $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
+
+        if($throw){
+            $jsonFlags |= JSON_THROW_ON_ERROR;
+        }
+
+        $json = json_encode($input, $jsonFlags);
+
+        if($json === false){
+            return $this;
+        }
+
+        $clone = clone $this;
+
+        return $clone->body($json, contentType: RequestContentType::Json);
+    }
+
+    /**
+     * 配列を `application/x-www-form-urlencoded` 形式のリクエストボディーとして設定する。
+     *
+     * @param  array<string|int, mixed> $input フォーム送信用の値
+     * @return self
+     */
+    public function form(array $input): self {
+
+        $clone = clone $this;
+
+        return $clone->body(http_build_query($input), RequestContentType::FormUrlEncoded);
     }
 
     /**
@@ -223,6 +291,27 @@ final class Request {
     }
 
     /**
+     * CurlOptionsを指定せず、デフォルト設定で送信待ちリクエストを生成する。
+     *
+     * @return ConfiguredRequest
+     */
+    public function asConfigured(): ConfiguredRequest {
+
+        return ConfiguredRequest::create($this, null);
+    }
+
+    /**
+     * CurlOptionsを付与した送信待ちリクエストを生成する。
+     *
+     * @param  CurlOptions $options cURL実行時のオプション設定
+     * @return ConfiguredRequest
+     */
+    public function withOptions(CurlOptions $options): ConfiguredRequest {
+
+        return ConfiguredRequest::create($this, $options);
+    }
+
+    /**
      * 送信ヘッダーを検証し、文字列値の連想配列へ正規化する。
      *
      * @param  array<string, mixed> $headers
@@ -236,11 +325,8 @@ final class Request {
                 throw new InvalidArgumentException('Request header name must be a non-empty string.');
             }
 
-            if(is_string($value) || is_numeric($value)){
-                $headerValue = trim((string)$value);
-            } else if($value instanceof Stringable){
-                $headerValue = trim($value->__toString());
-            } else{
+            $headerValue = Utils::toString($value);
+            if($headerValue === false){
                 throw new InvalidArgumentException(sprintf('Request header "%s" has an invalid value.', $name));
             }
 
