@@ -286,27 +286,6 @@ final class Request {
     }
 
     /**
-     * URLとして利用できる最低限の形式か検証する。
-     *
-     * @param  string $url
-     * @return string
-     */
-    private static function validateUrl(string $url): string {
-
-        $url = trim($url);
-        if($url === ''){
-            throw new InvalidArgumentException('Request URL must not be empty.');
-        }
-
-        $parts = parse_url($url);
-        if($parts === false || empty($parts['scheme'])){
-            throw new InvalidArgumentException(sprintf('Invalid request URL: %s', $url));
-        }
-
-        return $url;
-    }
-
-    /**
      * CurlOptionsを指定せず、デフォルト設定で送信待ちリクエストを生成する。
      *
      * @return ConfiguredRequest
@@ -325,6 +304,27 @@ final class Request {
     public function withOptions(CurlOptions $options): ConfiguredRequest {
 
         return ConfiguredRequest::create($this, $options);
+    }
+
+    /**
+     * URLとして利用できる最低限の形式か検証する。
+     *
+     * @param  string $url
+     * @return string
+     */
+    private static function validateUrl(string $url): string {
+
+        $url = trim($url);
+        if($url === ''){
+            throw new InvalidArgumentException('Request URL must not be empty.');
+        }
+
+        $parts = parse_url($url);
+        if($parts === false || empty($parts['scheme'])){
+            throw new InvalidArgumentException(sprintf('Invalid request URL: %s', $url));
+        }
+
+        return $url;
     }
 
     /**

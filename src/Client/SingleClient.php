@@ -47,14 +47,17 @@ final readonly class SingleClient {
             throw new RuntimeException('cURL initialize failed.');
         }
 
+        // `CURLOPT_*` の設定
         if(!curl_setopt_array($ch, $this->optionsFactory->fromConfiguredRequest($configuredRequest))){
             throw new InvalidArgumentException('Invalid cURL option or value included.');
         }
 
+        // cURL実行
         $raw = curl_exec($ch);
 
         // PHP 8.0以降、CurlHandle はオブジェクトとして管理されるため、curl_close() は呼ばず、スコープアウト時のGCに任せる
 
+        // 実行結果からResponseを生成
         return $this->responseFactory->fromCurlResult($ch, $raw, $configuredRequest);
     }
 }

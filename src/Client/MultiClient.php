@@ -46,9 +46,10 @@ final readonly class MultiClient {
 
         // レスポンス返却用
         $responses = [];
-        $handles = [];
+        $handles   = [];
 
         try{
+            // 並列処理するcURLそれぞれにハンドラーを設定
             foreach($configuredRequests as $configuredRequest){
                 $ch = curl_init();
 
@@ -56,42 +57,55 @@ final readonly class MultiClient {
                     throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request-ID: %s', $configuredRequest->request->id));
                 }
 
+                // ループ中の Request-ID 取得
                 $requestId = $configuredRequest->request->id;
 
                 if(!curl_setopt_array($ch, $this->optionsFactory->fromConfiguredRequest($configuredRequest))){
                     throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
                 }
 
+                // cURLハンドラーを追加
                 $result = curl_multi_add_handle($cmh, $ch);
+
                 if($result !== MultiCurlError::OK->value){
                     throw new RuntimeException(sprintf('Failed to add cURL handle. Request-ID: %s', $requestId));
                 }
 
+                // レスポンス整理用にマッピング配列を生成
                 $key = $this->generateKey($ch);
                 $handles[$key] = [
-                    'handle'         => $ch,
+                    'handle'            => $ch,
                     'configuredRequest' => $configuredRequest,
                 ];
             }
 
+            // cURLの並列実行
             $result = $this->exec($cmh, $running);
+
             if($result !== MultiCurlError::OK->value){
                 throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
             }
 
+            // 完了しているハンドラーがあれば回収してレスポンスを生成
             $this->drainCompleted($cmh, $handles, $responses);
 
+            // 実行中のハンドラーがいる場合
             while($running > 0){
+                // 5秒、もしくはソケットの再開まで待機
                 $selected = curl_multi_select($cmh, 5.0);
+
                 if($selected === -1){
                     usleep(10000);
                 }
 
+                // cURLの並列実行で実行中のハンドラー数を更新
                 $result = $this->exec($cmh, $running);
+
                 if($result !== MultiCurlError::OK->value){
                     throw new RuntimeException('The request failed during multi execution.');
                 }
 
+                // 完了しているハンドラーがあれば回収してレスポンスを生成
                 $this->drainCompleted($cmh, $handles, $responses);
             }
         } catch(Throwable $e){
@@ -99,6 +113,7 @@ final readonly class MultiClient {
         } finally{
             // PHP 8.0以降、CurlHandle/CurlMultiHandle はオブジェクトとして管理されるため、curl_close()/curl_multi_close() は呼ばず、スコープアウト時のGCに任せる
 
+            // マルチハンドラーにハンドラーが残り続けている場合は除去
             foreach($handles as $entry){
                 if(isset($entry['handle']) && $entry['handle'] instanceof CurlHandle){
                     curl_multi_remove_handle($cmh, $entry['handle']);
@@ -154,19 +169,26 @@ final readonly class MultiClient {
             $ch = $raised['handle'];
             $key = $this->generateKey($ch);
 
-            // 既にdrain済みの場合は取り外して次のハンドラーへ
+            // 既にdrain済みの場合はマルチハンドラーから除去して次のハンドラーへ
             if(!array_key_exists($key, $handles)){
                 curl_multi_remove_handle($cmh, $ch);
 
                 continue;
             }
 
+            // マッピング配列からループ中のハンドラーに対応するリクエストを取得
             $configuredRequest = $handles[$key]['configuredRequest'];
+
             $result = $raised['result'];
             $raw = ($result === CURLE_OK) ? curl_multi_getcontent($ch) : false;
 
-            $responses[$configuredRequest->request->id] = $this->responseFactory->fromCurlResult($ch, $raw, $configuredRequest, $result);
+            // ループ中の Request-ID 取得
+            $requestId = $configuredRequest->request->id;
 
+            // cURL実行結果からResponseを生成
+            $responses[$requestId] = $this->responseFactory->fromCurlResult($ch, $raw, $configuredRequest, $result);
+
+            // マルチハンドラーからループ中のハンドラーを除去
             curl_multi_remove_handle($cmh, $ch);
 
             // CurlHandleの解放はスコープアウトに任せる
