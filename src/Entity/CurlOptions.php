@@ -17,13 +17,14 @@ final readonly class CurlOptions {
     /**
      * コンストラクタ
      *
-     * @param boolean $captureHeaders レスポンスヘッダーをResponseに保持するか
-     * @param boolean $captureBody    レスポンスボディをResponseに保持するか
-     * @param array<class-string<CurlOptionsApplierImpl>, CurlOptionsApplierImpl> $config `CurlOptionsApplierImpl` のリスト
+     * @template T of CurlOptionsApplierImpl
+     * @param boolean                   $captureHeaders レスポンスヘッダーをResponseに保持するか
+     * @param boolean                   $captureBody    レスポンスボディをResponseに保持するか
+     * @param array<class-string<T>, T> $config         `CurlOptionsApplierImpl` のリスト
      */
     public function __construct(
-        public bool  $captureHeaders = true,
-        public bool  $captureBody    = true,
+        public  bool  $captureHeaders = true,
+        public  bool  $captureBody    = true,
         private array $config         = [],
     ){
     }
@@ -31,7 +32,8 @@ final readonly class CurlOptions {
     /**
      * デフォルト設定のCurlOptionsを生成する。
      *
-     * @param  CurlOptionsApplierImpl[] $config cURLオプションを保持するConfig
+     * @template T of CurlOptionsApplierImpl
+     * @param  list<T> $config cURLオプションを保持するConfig
      * @return self
      */
     public static function create(CurlOptionsApplierImpl ...$config): self {

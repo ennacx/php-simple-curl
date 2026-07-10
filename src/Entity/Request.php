@@ -49,8 +49,7 @@ final class Request {
      */
     public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
 
-        $this->id = Utils::uuid_v4();
-
+        $this->id  = Utils::uuid_v4();
         $this->url = self::validateUrl($this->url);
 
         // GETクエリ取得
@@ -176,6 +175,7 @@ final class Request {
         $clone = clone $this;
 
         foreach($params as $key => $value){
+            // `param()` 内でcloneしてしまっているため `$clone` に都度代入
             $clone = $clone->param($key, $value, $overwrite);
         }
 
