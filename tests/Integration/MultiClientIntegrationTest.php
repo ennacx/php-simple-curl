@@ -23,11 +23,11 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
         $json = Request::get(self::url('/json'))
             ->headers(['Accept' => 'application/json'])
-            ->withOptions($options);
+            ->prepare($options);
         $text = Request::get(self::url('/text'))
-            ->withOptions($options);
+            ->prepare($options);
         $missing = Request::get(self::url('/status/404'))
-            ->withOptions($options);
+            ->prepare($options);
 
         $responses = (new MultiClient())->sendAll($json, $text, $missing);
 
@@ -44,5 +44,30 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
         self::assertTrue($responses[$missing->request->id]->isClientError());
         self::assertTrue($responses[$missing->request->id]->isError());
+    }
+
+    /**
+     * Requestを直接渡した場合に、各Requestが内部でPreparedRequestへ変換されて並列実行できることを検証する。
+     *
+     * @return void
+     */
+    public function testSendAllAcceptsRequestsAndPreparesThemInternally(): void {
+
+        $json = Request::get(self::url('/json'))
+            ->headers(['Accept' => 'application/json']);
+        $text = Request::get(self::url('/text'));
+
+        $responses = (new MultiClient())->sendAll($json, $text);
+
+        self::assertCount(2, $responses);
+        self::assertArrayHasKey($json->id, $responses);
+        self::assertArrayHasKey($text->id, $responses);
+
+        self::assertTrue($responses[$json->id]->isSuccessful());
+        self::assertSame('GET', $responses[$json->id]->json()['method']);
+        self::assertSame('application/json', $responses[$json->id]->json()['accept']);
+
+        self::assertTrue($responses[$text->id]->isSuccessful());
+        self::assertSame('hello from fixture', $responses[$text->id]->body);
     }
 }

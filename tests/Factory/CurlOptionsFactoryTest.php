@@ -8,27 +8,27 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Enum\RequestContentType;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use PHPUnit\Framework\TestCase;
 
 /**
- * CurlOptionsFactoryがConfiguredRequestをcURLオプション配列へ変換する処理を検証する。
+ * CurlOptionsFactoryがPreparedRequestをcURLオプション配列へ変換する処理を検証する。
  */
 final class CurlOptionsFactoryTest extends TestCase {
 
     /**
-     * デフォルト設定のConfiguredRequestから基本cURLオプションを生成できることを検証する。
+     * デフォルト設定のPreparedRequestから基本cURLオプションを生成できることを検証する。
      *
      * @return void
      */
-    public function testBuildsDefaultOptionsFromConfiguredRequest(): void {
+    public function testBuildsDefaultOptionsFromPreparedRequest(): void {
 
-        $configuredRequest = Request::get('https://example.com')
+        $preparedRequest = Request::get('https://example.com')
             ->headers(['Accept' => 'text/html'])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('https://example.com', $options[CURLOPT_URL]);
         self::assertTrue($options[CURLOPT_RETURNTRANSFER]);
@@ -44,11 +44,11 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsUrlWithQueryParameters(): void {
 
-        $configuredRequest = Request::get('https://example.com/search?b=2&a=1')
+        $preparedRequest = Request::get('https://example.com/search?b=2&a=1')
             ->param('c', '3')
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
         $urlParts = self::parseUrlWithQuery($options[CURLOPT_URL]);
 
         self::assertSame('https', $urlParts['scheme']);
@@ -68,14 +68,14 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsUrlWithQueryParametersBeforeFragment(): void {
 
-        $configuredRequest = Request::get('https://example.com/path?foo=1#section')
+        $preparedRequest = Request::get('https://example.com/path?foo=1#section')
             ->params([
                 'bar' => '2',
                 'baz' => '3',
             ])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
         $urlParts = self::parseUrlWithQuery($options[CURLOPT_URL]);
 
         self::assertSame('https', $urlParts['scheme']);
@@ -96,14 +96,14 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testDisablesReturnTransferWhenBodyAndHeadersAreNotCaptured(): void {
 
-        $configuredRequest = Request::get('https://example.com')
-            ->withOptions(
+        $preparedRequest = Request::get('https://example.com')
+            ->prepare(
                 CurlOptions::create()
                     ->captureBody(false)
                     ->captureHeaders(false)
             );
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertFalse($options[CURLOPT_RETURNTRANSFER]);
         self::assertFalse($options[CURLOPT_HEADER]);
@@ -116,15 +116,15 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testAppliesTimeoutRedirectAndAuthHeaders(): void {
 
-        $configuredRequest = Request::get('https://example.com')
+        $preparedRequest = Request::get('https://example.com')
             ->headers(['Accept' => 'application/json'])
-            ->withOptions(CurlOptions::create(
+            ->prepare(CurlOptions::create(
                 AuthConfig::bearer('token'),
                 TimeoutConfig::seconds(timeoutSec: 9, connectTimeoutSec: 4),
                 RedirectConfig::enabled(maxRedirects: 2, autoReferer: false),
             ));
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame(9, $options[CURLOPT_TIMEOUT]);
         self::assertSame(4, $options[CURLOPT_CONNECTTIMEOUT]);
@@ -144,14 +144,14 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testAppliesClientHeaders(): void {
 
-        $configuredRequest = Request::get('https://example.com')
-            ->withOptions(
+        $preparedRequest = Request::get('https://example.com')
+            ->prepare(
                 CurlOptions::create()
                     ->userAgent('php-simple-curl-test/1.0')
                     ->referer('https://example.com/from')
             );
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame([
             'User-Agent: php-simple-curl-test/1.0',
@@ -166,18 +166,18 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testKeepsUserDefinedClientHeaders(): void {
 
-        $configuredRequest = Request::get('https://example.com')
+        $preparedRequest = Request::get('https://example.com')
             ->headers([
                 'User-Agent' => 'custom-agent/2.0',
                 'Referer'    => 'https://example.com/custom',
             ])
-            ->withOptions(
+            ->prepare(
                 CurlOptions::create()
                     ->userAgent('php-simple-curl-test/1.0')
                     ->referer('https://example.com/from')
             );
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame([
             'User-Agent: custom-agent/2.0',
@@ -192,11 +192,11 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsPlainTextRequestBodyOptions(): void {
 
-        $configuredRequest = Request::post('https://example.com/messages')
-            ->body('plain text message', RequestContentType::PlainText)
-            ->asConfigured();
+        $preparedRequest = Request::post('https://example.com/messages')
+            ->body('plain text message', ContentType::PlainText)
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('plain text message', $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: text/plain'], $options[CURLOPT_HTTPHEADER]);
@@ -215,11 +215,11 @@ final class CurlOptionsFactoryTest extends TestCase {
         file_put_contents($path, "line 1\nline 2\n");
 
         try{
-            $configuredRequest = Request::post('https://example.com/upload')
-                ->bodyFromFile($path, RequestContentType::PlainText)
-                ->asConfigured();
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->bodyFromFile($path, ContentType::PlainText)
+                ->prepare();
 
-            $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
             self::assertSame("line 1\nline 2\n", $options[CURLOPT_POSTFIELDS]);
             self::assertSame(['Content-Type: text/plain'], $options[CURLOPT_HTTPHEADER]);
@@ -235,11 +235,11 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsZeroStringRequestBodyOptions(): void {
 
-        $configuredRequest = Request::post('https://example.com/messages')
+        $preparedRequest = Request::post('https://example.com/messages')
             ->body('0')
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('0', $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: text/plain'], $options[CURLOPT_HTTPHEADER]);
@@ -252,14 +252,14 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsJsonRequestBodyOptions(): void {
 
-        $configuredRequest = Request::post('https://example.com/users')
+        $preparedRequest = Request::post('https://example.com/users')
             ->json([
                 'name' => 'Taro',
                 'tags' => ['php', 'curl'],
             ])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('{"name":"Taro","tags":["php","curl"]}', $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: application/json'], $options[CURLOPT_HTTPHEADER]);
@@ -273,11 +273,11 @@ final class CurlOptionsFactoryTest extends TestCase {
     public function testBuildsJsonRequestBodyOptionsFromJsonString(): void {
 
         $json = '{"name":"Taro","tags":["php","curl"]}';
-        $configuredRequest = Request::post('https://example.com/users')
+        $preparedRequest = Request::post('https://example.com/users')
             ->json($json)
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame($json, $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: application/json'], $options[CURLOPT_HTTPHEADER]);
@@ -290,14 +290,14 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testBuildsFormRequestBodyOptions(): void {
 
-        $configuredRequest = Request::post('https://example.com/token')
+        $preparedRequest = Request::post('https://example.com/token')
             ->form([
                 'grant_type' => 'client_credentials',
-                'client_id' => 'example-client',
+                'client_id'  => 'example-client',
             ])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('grant_type=client_credentials&client_id=example-client', $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: application/x-www-form-urlencoded'], $options[CURLOPT_HTTPHEADER]);
@@ -310,12 +310,12 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testKeepsUserDefinedContentTypeForRequestBody(): void {
 
-        $configuredRequest = Request::post('https://example.com/users')
+        $preparedRequest = Request::post('https://example.com/users')
             ->headers(['Content-Type' => 'application/vnd.api+json'])
             ->json(['name' => 'Taro'])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('{"name":"Taro"}', $options[CURLOPT_POSTFIELDS]);
         self::assertSame(['Content-Type: application/vnd.api+json'], $options[CURLOPT_HTTPHEADER]);
@@ -328,12 +328,12 @@ final class CurlOptionsFactoryTest extends TestCase {
      */
     public function testAddsDefaultContentTypeWhenOnlyContentTypeOptionsHeaderExists(): void {
 
-        $configuredRequest = Request::post('https://example.com/users')
+        $preparedRequest = Request::post('https://example.com/users')
             ->headers(['X-Content-Type-Options' => 'nosniff'])
             ->json(['name' => 'Taro'])
-            ->asConfigured();
+            ->prepare();
 
-        $options = (new CurlOptionsFactory())->fromConfiguredRequest($configuredRequest);
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
         self::assertSame('{"name":"Taro"}', $options[CURLOPT_POSTFIELDS]);
         self::assertSame([

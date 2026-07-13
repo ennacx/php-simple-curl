@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 /**
- * RequestとCurlOptionsを組み合わせた設定済みリクエスト。
+ * RequestとCurlOptionsを組み合わせた送信準備済みリクエスト。
  */
-final readonly class ConfiguredRequest {
+final readonly class PreparedRequest {
 
     /**
      * コンストラクタ
@@ -18,7 +18,7 @@ final readonly class ConfiguredRequest {
     }
 
     /**
-     * 設定済みリクエストを生成する。
+     * 送信準備済みリクエストを生成する。
      *
      * @param  Request          $request
      * @param  CurlOptions|null $options
