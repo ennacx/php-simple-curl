@@ -8,8 +8,10 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Entity\RequestAttachment;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -377,6 +379,139 @@ final class CurlOptionsFactoryTest extends TestCase {
             'X-Content-Type-Options: nosniff',
             'Content-Type: application/json',
         ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * 添付ファイルをmultipart/form-data用のPOSTFIELDSへ変換できることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsMultipartPostFieldsFromAttachment(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('file', $path, 'sample.txt', 'text/plain'))
+                ->prepare();
+
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+            self::assertArrayHasKey(CURLOPT_POSTFIELDS, $options);
+            self::assertIsArray($options[CURLOPT_POSTFIELDS]);
+            self::assertArrayHasKey('file', $options[CURLOPT_POSTFIELDS]);
+            self::assertInstanceOf(\CURLFile::class, $options[CURLOPT_POSTFIELDS]['file']);
+            self::assertArrayNotHasKey(CURLOPT_HTTPHEADER, $options);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * 添付ファイルがある場合、ユーザー指定のContent-Typeを削除してcURLにboundary生成を任せることを検証する。
+     *
+     * @return void
+     */
+    public function testRemovesUserDefinedContentTypeForMultipartRequest(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->headers([
+                    'Content-Type' => 'multipart/form-data',
+                    'Accept'       => 'application/json',
+                ])
+                ->attach(new RequestAttachment('file', $path))
+                ->prepare();
+
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+            self::assertSame(['Accept: application/json'], $options[CURLOPT_HTTPHEADER]);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * フォーム項目と添付ファイルをmultipart/form-data用のPOSTFIELDSへ統合できることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsMultipartPostFieldsWithFormFields(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->form(['name' => 'Taro'])
+                ->attach(new RequestAttachment('file', $path))
+                ->prepare();
+
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+            self::assertIsArray($options[CURLOPT_POSTFIELDS]);
+            self::assertSame('Taro', $options[CURLOPT_POSTFIELDS]['name']);
+            self::assertInstanceOf(\CURLFile::class, $options[CURLOPT_POSTFIELDS]['file']);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * 添付ファイル名とフォーム項目名が重複した場合に上書きを抑止できることを検証する。
+     *
+     * @return void
+     */
+    public function testCanKeepFormFieldWhenAttachmentNameDuplicates(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->form(['file' => 'keep me'], overwrite: false)
+                ->attach(new RequestAttachment('file', $path))
+                ->prepare();
+
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+            self::assertSame('keep me', $options[CURLOPT_POSTFIELDS]['file']);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * 添付ファイルとJSONボディは同時に送信できないことを検証する。
+     *
+     * @return void
+     */
+    public function testMultipartRejectsJsonBody(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->json(['name' => 'Taro'])
+                ->attach(new RequestAttachment('file', $path))
+                ->prepare();
+
+            $this->expectException(LogicException::class);
+
+            (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+        } finally{
+            unlink($path);
+        }
     }
 
     /**

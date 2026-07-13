@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Factory;
 
+use CURLFile;
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
+use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
+use LogicException;
 
 /**
  * PreparedRequestをcURLオプション配列へ変換するFactory。
@@ -51,12 +55,21 @@ final class CurlOptionsFactory {
         $headers  = $preparedRequest->request->requestHeaders;
 
         // リクエストボディの付与
-        if($preparedRequest->request->requestBody !== null){
-            $options[CURLOPT_POSTFIELDS] = $preparedRequest->request->requestBody;
+        if($preparedRequest->request->requestBody !== null || $preparedRequest->request->attachments !== []){
+            $body = $this->buildPostFields($preparedRequest->request);
+            if($body !== null){
+                $options[CURLOPT_POSTFIELDS] = $body;
+            }
+
+            unset($body);
         }
 
+        // multi-part形式の場合はContent-Typeを削除する (cURL側に任せて強制しない)
+        if($preparedRequest->request->attachments !== [] && HeaderUtils::has($headers, 'Content-Type')){
+            HeaderUtils::remove($headers, 'Content-Type');
+        }
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
-        if($preparedRequest->request->contentType !== null){
+        else if($preparedRequest->request->contentType !== null && $preparedRequest->request->contentType !== ContentType::MultipartFormData){
             if(!HeaderUtils::has($headers, 'Content-Type')){
                 $headers['Content-Type'] = $preparedRequest->request->contentType->value;
             }
@@ -80,6 +93,84 @@ final class CurlOptionsFactory {
         }
 
         return $options;
+    }
+
+    /**
+     * Requestに保持されたボディ情報を `CURLOPT_POSTFIELDS` へ渡せる形式へ変換する。
+     *
+     * 添付ファイルがある場合はmultipart/form-data用の配列を生成し、
+     * 添付ファイルがない場合はContent-Typeに応じて文字列ボディを生成する。
+     *
+     * @param  Request $request
+     * @return string|array|null
+     */
+    private function buildPostFields(Request $request): string|array|null {
+
+        if(!empty($request->attachments)){
+            return $this->buildMultipart($request);
+        }
+
+        if($request->requestBody === null){
+            return null;
+        }
+
+        return match($request->requestBody->contentType){
+            ContentType::Json => json_encode(
+                $request->requestBody->body,
+                $request->requestBody->options['flags'] ?? JSON_UNESCAPED_SLASHES,
+            ) ?: null,
+
+            ContentType::FormUrlEncoded => http_build_query(
+                $request->requestBody->body,
+            ),
+
+            default => (is_array($request->requestBody->body)) ?
+                throw new LogicException('Array body requires an encodable content type.') :
+                $request->requestBody->body,
+        };
+    }
+
+    /**
+     * 添付ファイルとフォーム項目をmultipart/form-data用の配列へ変換する。
+     *
+     * cURLは配列とCURLFileを受け取るとboundary付きContent-Typeを生成するため、
+     * 呼び出し元ではユーザー指定のContent-Typeヘッダーを削除する。
+     *
+     * @param  Request $request
+     * @return array<string, mixed>
+     */
+    private function buildMultipart(Request $request): array {
+
+        $fields = [];
+
+        $body = $request->requestBody;
+
+        if($body !== null){
+            if(!is_array($body->body)){
+                throw new LogicException('Multipart form fields must be an array.');
+            }
+            if($body->contentType !== ContentType::FormUrlEncoded){
+                throw new LogicException('Attachments can only be combined with form fields.');
+            }
+
+            $fields = $body->body;
+        }
+
+        $overwrite = $body?->options['overwrite'] ?? true;
+
+        foreach($request->attachments as $attachment){
+            if(array_key_exists($attachment->name, $fields) && !$overwrite){
+                continue;
+            }
+
+            $fields[$attachment->name] = new CURLFile(
+                $attachment->path,
+                $attachment->mimeType,
+                $attachment->filename,
+            );
+        }
+
+        return $fields;
     }
 
     /**

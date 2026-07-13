@@ -29,8 +29,11 @@ final class Request {
     /** @var array<string, mixed> 送信するHTTPヘッダー */
     public array $requestHeaders = [];
 
-    /** @var string|null 送信するリクエストボディー */
-    public ?string $requestBody = null;
+    /** @var RequestBody|null 送信するリクエストボディー */
+    public ?RequestBody $requestBody = null;
+
+    /** @var list<RequestAttachment> 添付ファイルの配列 */
+    public array $attachments = [];
 
     /** @var ContentType|null リクエストボディーのContent-Type */
     public ?ContentType $contentType = null;
@@ -237,11 +240,12 @@ final class Request {
      * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で
      * `CURLOPT_POSTFIELDS` と既定の `Content-Type` へ変換する。
      *
-     * @param  string      $body        送信するリクエストボディー
-     * @param  ContentType $contentType ボディー形式に対応するContent-Type
+     * @param  array|string $body        送信するリクエストボディー
+     * @param  ContentType  $contentType ボディー形式に対応するContent-Type
+     * @param  array        $options     リクエストボディーのオプション
      * @return self
      */
-    public function body(string $body, ContentType $contentType = ContentType::PlainText): self {
+    public function body(array|string $body, ContentType $contentType = ContentType::PlainText, array $options = []): self {
 
         if($body === ''){
             return $this;
@@ -249,7 +253,7 @@ final class Request {
 
         $clone = clone $this;
 
-        $clone->requestBody        = $body;
+        $clone->requestBody = new RequestBody($body, $contentType, $options);
         $clone->contentType = $contentType;
 
         return $clone;
@@ -258,25 +262,13 @@ final class Request {
     /**
      * ファイルの内容をボディーに設定する。
      *
-     * @param  string      $path
-     * @param  ContentType $contentType
+     * @param  string      $path        ファイルパス
+     * @param  ContentType $contentType Content-Type (Enum)
      * @return self
+     * @throws InvalidArgumentException ファイルが存在しない、または読取不可の場合
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
-
-        if(!file_exists($path) || !is_readable($path)){
-            throw new InvalidArgumentException('Target file does not exist or is not readable.');
-        } else if(!is_file($path)){
-            throw new InvalidArgumentException('Target path is not a file.');
-        }
-
-        $content = file_get_contents($path);
-
-        if($content === false){
-            throw new InvalidArgumentException('Failed to read target file.');
-        }
-
-        return $this->body($content, $contentType);
+        return $this->body(Utils::getFileContents($path), $contentType);
     }
 
     /**
@@ -294,9 +286,7 @@ final class Request {
 
         if(is_string($input)){
             try{
-                json_decode($input, true, flags: JSON_THROW_ON_ERROR);
-
-                $json = $input;
+                $inputArray = json_decode($input, true, flags: JSON_THROW_ON_ERROR);
             } catch(JsonException $e){
                 if($throw){
                     throw $e;
@@ -309,29 +299,48 @@ final class Request {
                 $jsonFlags |= JSON_THROW_ON_ERROR;
             }
 
-            $json = json_encode($input, $jsonFlags);
-        }
-
-        if($json === false){
-            return $this;
+            $inputArray = $input;
         }
 
         $clone = clone $this;
 
-        return $clone->body($json, contentType: ContentType::Json);
+        return $clone->body($inputArray, contentType: ContentType::Json, options: ['flags' => $jsonFlags]);
     }
 
     /**
      * 配列を `application/x-www-form-urlencoded` 形式のリクエストボディーとして設定する。
      *
-     * @param  array<string|int, mixed> $input フォーム送信用の値
+     * @param  array<string|int, mixed> $input     フォーム送信用の値
+     * @param  boolean                  $overwrite ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
      * @return self
      */
-    public function form(array $input): self {
+    public function form(array $input, bool $overwrite = true): self {
 
         $clone = clone $this;
 
-        return $clone->body(http_build_query($input), ContentType::FormUrlEncoded);
+        return $clone->body($input, contentType: ContentType::FormUrlEncoded, options: ['overwrite' => $overwrite]);
+    }
+
+    /**
+     * multipart/form-dataで送信する添付ファイルを追加する。
+     *
+     * 添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
+     * Factory側でユーザー指定のContent-Typeヘッダーを削除する。
+     *
+     * @param  RequestAttachment $attachment 添付ファイル情報
+     * @return self
+     * @throws InvalidArgumentException 添付ファイルが存在しない、または読取不可の場合
+     */
+    public function attach(RequestAttachment $attachment): self {
+
+        Utils::getFileContents($attachment->path);
+
+        $clone = clone $this;
+
+        $clone->attachments[] = $attachment;
+        $clone->contentType = ContentType::MultipartFormData;
+
+        return $clone;
     }
 
     /**
@@ -341,7 +350,6 @@ final class Request {
      * @return PreparedRequest
      */
     public function prepare(?CurlOptions $options = null): PreparedRequest {
-
         return PreparedRequest::create($this, $options);
     }
 

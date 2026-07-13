@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Static;
 
+use InvalidArgumentException;
 use Random\RandomException;
 use RuntimeException;
 use Stringable;
@@ -75,6 +76,30 @@ final class Utils {
         }
 
         return false;
+    }
+
+    /**
+     * ファイルの存在と読み取り可能かをチェックし、取得できればファイルの内容を返す。
+     *
+     * @param  string                   $path 対象ファイルパス
+     * @return string                         ファイルの内容
+     * @throws InvalidArgumentException       ファイルが存在しない・読取不可・読取失敗
+     */
+    public static function getFileContents(string $path): string {
+
+        if(!file_exists($path) || !is_readable($path)){
+            throw new InvalidArgumentException('Target file does not exist or is not readable.');
+        } else if(!is_file($path)){
+            throw new InvalidArgumentException('Target path is not a file.');
+        }
+
+        $contents = file_get_contents($path);
+
+        if($contents === false){
+            throw new InvalidArgumentException('Failed to read target file.');
+        }
+
+        return $contents;
     }
 
     /**
