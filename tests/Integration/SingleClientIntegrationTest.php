@@ -21,20 +21,42 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      */
     public function testSendReturnsJsonResponseFromLocalServer(): void {
 
-        $configuredRequest = Request::get(self::url('/json'))
+        $preparedRequest = Request::get(self::url('/json'))
             ->headers(['Accept' => 'application/json'])
-            ->withOptions(
+            ->prepare(
                 CurlOptions::create()
                     ->timeout(5)
             );
 
-        $response = (new SingleClient())->send($configuredRequest);
+        $response = (new SingleClient())->send($preparedRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
         self::assertTrue($response->isSuccessful());
         self::assertTrue($response->hasHeader('content-type'));
         self::assertStringContainsString('application/json', (string)$response->header('content-type'));
+        self::assertSame([
+            'ok' => true,
+            'method' => 'GET',
+            'accept' => 'application/json',
+        ], $response->json());
+    }
+
+    /**
+     * Requestを直接渡した場合に、内部でPreparedRequestへ変換されて実行できることを検証する。
+     *
+     * @return void
+     * @throws Throwable
+     */
+    public function testSendAcceptsRequestAndPreparesItInternally(): void {
+
+        $request = Request::get(self::url('/json'))
+            ->headers(['Accept' => 'application/json']);
+
+        $response = (new SingleClient())->send($request);
+
+        self::assertNull($response->error);
+        self::assertTrue($response->isSuccessful());
         self::assertSame([
             'ok' => true,
             'method' => 'GET',
@@ -50,14 +72,14 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      */
     public function testSendFollowsRedirectWhenEnabled(): void {
 
-        $configuredRequest = Request::get(self::url('/redirect'))
-            ->withOptions(
+        $preparedRequest = Request::get(self::url('/redirect'))
+            ->prepare(
                 CurlOptions::create()
                     ->timeout(5)
                     ->followRedirects()
             );
 
-        $response = (new SingleClient())->send($configuredRequest);
+        $response = (new SingleClient())->send($preparedRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
@@ -73,15 +95,15 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      */
     public function testSendCanCaptureHeadersWithoutBody(): void {
 
-        $configuredRequest = Request::get(self::url('/text'))
-            ->withOptions(
+        $preparedRequest = Request::get(self::url('/text'))
+            ->prepare(
                 CurlOptions::create()
                     ->captureBody(false)
                     ->captureHeaders(true)
                     ->timeout(5)
             );
 
-        $response = (new SingleClient())->send($configuredRequest);
+        $response = (new SingleClient())->send($preparedRequest);
 
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
@@ -98,13 +120,13 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
      */
     public function testSendReturnsHttpErrorResponse(): void {
 
-        $configuredRequest = Request::get(self::url('/status/404'))
-            ->withOptions(
+        $preparedRequest = Request::get(self::url('/status/404'))
+            ->prepare(
                 CurlOptions::create()
                     ->timeout(5)
             );
 
-        $response = (new SingleClient())->send($configuredRequest);
+        $response = (new SingleClient())->send($preparedRequest);
 
         self::assertNull($response->error);
         self::assertSame(404, $response->statusCode);

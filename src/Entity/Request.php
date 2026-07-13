@@ -13,13 +13,13 @@ use JsonException;
  * cURLで送信するリクエスト内容を表す値オブジェクト。
  *
  * `CurlMethod` の列挙子を小文字にした静的Factoryを提供する。
- * @method static get(string $url)
- * @method static post(string $url)
- * @method static put(string $url)
- * @method static delete(string $url)
- * @method static patch(string $url)
- * @method static head(string $url)
- * @method static options(string $url)
+ * @method static self get(string $url)
+ * @method static self post(string $url)
+ * @method static self put(string $url)
+ * @method static self delete(string $url)
+ * @method static self patch(string $url)
+ * @method static self head(string $url)
+ * @method static self options(string $url)
  */
 final class Request {
 
@@ -286,24 +286,14 @@ final class Request {
     }
 
     /**
-     * CurlOptionsを指定せず、デフォルト設定で送信待ちリクエストを生成する。
+     * 任意にCurlOptionsを付与し送信待ちリクエストを生成する。
      *
-     * @return ConfiguredRequest
+     * @param  CurlOptions|null $options cURL実行時のオプション設定
+     * @return PreparedRequest
      */
-    public function asConfigured(): ConfiguredRequest {
+    public function prepare(?CurlOptions $options = null): PreparedRequest {
 
-        return ConfiguredRequest::create($this, null);
-    }
-
-    /**
-     * CurlOptionsを付与した送信待ちリクエストを生成する。
-     *
-     * @param  CurlOptions $options cURL実行時のオプション設定
-     * @return ConfiguredRequest
-     */
-    public function withOptions(CurlOptions $options): ConfiguredRequest {
-
-        return ConfiguredRequest::create($this, $options);
+        return PreparedRequest::create($this, $options);
     }
 
     /**

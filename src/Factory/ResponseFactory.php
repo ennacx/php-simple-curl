@@ -5,7 +5,7 @@ namespace Ennacx\SimpleCurl\Factory;
 
 use CurlHandle;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
+use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use InvalidArgumentException;
@@ -21,20 +21,20 @@ final class ResponseFactory {
     /**
      * CurlHandleのメタ情報と実行結果からResponseを生成する。
      *
-     * @param  CurlHandle        $ch             実行済みのcURLハンドラー
-     * @param  bool|string       $raw            curl_exec()またはcurl_multi_getcontent()の戻り値
-     * @param  ConfiguredRequest $configuredRequest 実行に使用した設定済みリクエスト
-     * @param  int|null          $resultCode     `curl_multi_info_read()`のresult。単一実行時はnull
+     * @param  CurlHandle      $ch              実行済みのcURLハンドラー
+     * @param  bool|string     $raw             curl_exec()またはcurl_multi_getcontent()の戻り値
+     * @param  PreparedRequest $preparedRequest 実行に使用した設定済みリクエスト
+     * @param  int|null        $resultCode      `curl_multi_info_read()`のresult。単一実行時はnull
      * @return Response
      */
-    public function fromCurlResult(CurlHandle $ch, bool|string $raw, ConfiguredRequest $configuredRequest, ?int $resultCode = null): Response {
+    public function fromCurlResult(CurlHandle $ch, bool|string $raw, PreparedRequest $preparedRequest, ?int $resultCode = null): Response {
 
         $info = curl_getinfo($ch);
         if(!is_array($info)){
             throw new RuntimeException('Invalid curl info');
         }
 
-        $options      = $configuredRequest->options ?? CurlOptions::create();
+        $options      = $preparedRequest->options ?? CurlOptions::create();
         $errno        = $resultCode ?? curl_errno($ch);
         $error        = ($errno !== CURLE_OK) ? (CurlError::tryFrom($errno) ?? CurlError::OTHER) : null;
         $errorMessage = ($errno !== CURLE_OK) ? curl_error($ch) : '';

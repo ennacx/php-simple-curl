@@ -5,7 +5,8 @@ namespace Ennacx\SimpleCurl\Client;
 
 use CurlHandle;
 use CurlMultiHandle;
-use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
+use Ennacx\SimpleCurl\Entity\PreparedRequest;
+use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
@@ -15,7 +16,7 @@ use RuntimeException;
 use Throwable;
 
 /**
- * 複数の `ConfiguredRequest` をcURL Multiで並列実行するクライアント。
+ * 複数のリクエストをcURL Multiで並列実行するクライアント。
  * 各リクエストのcURLハンドラーをMultiハンドラーへ登録し、完了したものから `Response` へ変換する。
  */
 final readonly class MultiClient {
@@ -23,7 +24,7 @@ final readonly class MultiClient {
     /**
      * コンストラクタ
      *
-     * @param CurlOptionsFactory $optionsFactory  ConfiguredRequestからcURLオプションを生成するFactory
+     * @param CurlOptionsFactory $optionsFactory  PreparedRequestからcURLオプションを生成するFactory
      * @param ResponseFactory    $responseFactory cURL実行結果からResponseを生成するFactory
      */
     public function __construct(
@@ -33,14 +34,19 @@ final readonly class MultiClient {
     }
 
     /**
-     * 指定されたConfiguredRequest群を並列実行し、Request-IDをキーにしたResponse配列を返す。
-     * ※返却配列のキーには各ConfiguredRequestが保持する `Request::$id` を使用する。
+     * 指定されたRequestまたはPreparedRequest群を並列実行し、Request-IDをキーにしたResponse配列を返す。
+     * ※返却配列のキーには各PreparedRequestが保持する `Request::$id` を使用する。
      *
-     * @param  ConfiguredRequest ...$configuredRequests 実行対象のConfiguredRequest
+     * @param  Request|PreparedRequest ...$preparedRequests 実行対象のPreparedRequest
      * @return array<string, Response>
      * @throws Throwable
      */
-    public function sendAll(ConfiguredRequest ...$configuredRequests): array {
+    public function sendAll(Request|PreparedRequest ...$preparedRequests): array {
+
+        // Requestの変換
+        $preparedRequests = array_map(function(Request|PreparedRequest $preparedRequest): PreparedRequest {
+            return ($preparedRequest instanceof Request) ? $preparedRequest->prepare() : $preparedRequest;
+        }, $preparedRequests);
 
         $cmh = curl_multi_init();
 
@@ -50,17 +56,17 @@ final readonly class MultiClient {
 
         try{
             // 並列処理するcURLそれぞれにハンドラーを設定
-            foreach($configuredRequests as $configuredRequest){
+            foreach($preparedRequests as $preparedRequest){
                 $ch = curl_init();
 
                 if($ch === false){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request-ID: %s', $configuredRequest->request->id));
+                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request-ID: %s', $preparedRequest->request->id));
                 }
 
                 // ループ中の Request-ID 取得
-                $requestId = $configuredRequest->request->id;
+                $requestId = $preparedRequest->request->id;
 
-                if(!curl_setopt_array($ch, $this->optionsFactory->fromConfiguredRequest($configuredRequest))){
+                if(!curl_setopt_array($ch, $this->optionsFactory->fromPreparedRequest($preparedRequest))){
                     throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
                 }
 
@@ -74,8 +80,8 @@ final readonly class MultiClient {
                 // レスポンス整理用にマッピング配列を生成
                 $key = $this->generateKey($ch);
                 $handles[$key] = [
-                    'handle'            => $ch,
-                    'configuredRequest' => $configuredRequest,
+                    'handle'          => $ch,
+                    'preparedRequest' => $preparedRequest,
                 ];
             }
 
@@ -158,9 +164,9 @@ final readonly class MultiClient {
      * 完了したハンドラーを回収し、Responseを生成して返却配列へ格納する。
      * 回収したハンドラーはMultiハンドラーから取り外す。
      *
-     * @param  CurlMultiHandle                                                             $cmh
-     * @param  array<int, array{handle: CurlHandle, configuredRequest: ConfiguredRequest}> $handles
-     * @param  array<string, Response>                                                     $responses
+     * @param  CurlMultiHandle                                                         $cmh
+     * @param  array<int, array{handle: CurlHandle, preparedRequest: PreparedRequest}> $handles
+     * @param  array<string, Response>                                                 $responses
      * @return void
      */
     private function drainCompleted(CurlMultiHandle $cmh, array &$handles, array &$responses): void {
@@ -177,16 +183,16 @@ final readonly class MultiClient {
             }
 
             // マッピング配列からループ中のハンドラーに対応するリクエストを取得
-            $configuredRequest = $handles[$key]['configuredRequest'];
+            $preparedRequest = $handles[$key]['preparedRequest'];
 
             $result = $raised['result'];
             $raw = ($result === CURLE_OK) ? curl_multi_getcontent($ch) : false;
 
             // ループ中の Request-ID 取得
-            $requestId = $configuredRequest->request->id;
+            $requestId = $preparedRequest->request->id;
 
             // cURL実行結果からResponseを生成
-            $responses[$requestId] = $this->responseFactory->fromCurlResult($ch, $raw, $configuredRequest, $result);
+            $responses[$requestId] = $this->responseFactory->fromCurlResult($ch, $raw, $preparedRequest, $result);
 
             // マルチハンドラーからループ中のハンドラーを除去
             curl_multi_remove_handle($cmh, $ch);

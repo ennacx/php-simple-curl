@@ -5,38 +5,38 @@ namespace Ennacx\SimpleCurl\Factory;
 
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
+use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
 
 /**
- * ConfiguredRequestをcURLオプション配列へ変換するFactory。
+ * PreparedRequestをcURLオプション配列へ変換するFactory。
  *
  * Request本体、CurlOptions、各Configを集約し、`curl_setopt_array()` に渡せる形式へ変換する。
  */
 final class CurlOptionsFactory {
 
     /**
-     * ConfiguredRequest本体と各Configから `curl_setopt_array()` 用の配列を生成する。
+     * PreparedRequest本体と各Configから `curl_setopt_array()` 用の配列を生成する。
      *
      * レスポンスボディまたはヘッダーを取得する場合のみ `CURLOPT_RETURNTRANSFER` を有効にする。
      * 送信ヘッダーはRequestのヘッダーとConfigが追加したヘッダーを統合して設定する。
      *
-     * @param  ConfiguredRequest $configuredRequest
+     * @param  PreparedRequest   $preparedRequest
      * @return array<int, mixed>
      */
-    public function fromConfiguredRequest(ConfiguredRequest $configuredRequest): array {
+    public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
-        $curlOptions = $configuredRequest->options ?? CurlOptions::create();
+        $curlOptions = $preparedRequest->options ?? CurlOptions::create();
 
         // GETクエリ付与
-        $url = $configuredRequest->request->url;
-        if(!empty($configuredRequest->request->queryParams)){
-            $url .= '?' . http_build_query($configuredRequest->request->queryParams);
+        $url = $preparedRequest->request->url;
+        if(!empty($preparedRequest->request->queryParams)){
+            $url .= '?' . http_build_query($preparedRequest->request->queryParams);
         }
 
         // フラグメント付与 (URLの仕様上、必ずGETクエリの後にすること)
-        if(isset($configuredRequest->request->fragment)){
-            $url .= '#' . $configuredRequest->request->fragment;
+        if(isset($preparedRequest->request->fragment)){
+            $url .= '#' . $preparedRequest->request->fragment;
         }
 
         // 基本設定
@@ -47,18 +47,18 @@ final class CurlOptionsFactory {
         ];
 
         // HTTPメソッド設定の追加
-        $options += $configuredRequest->request->method->toCurlOptions();
-        $headers  = $configuredRequest->request->requestHeaders;
+        $options += $preparedRequest->request->method->toCurlOptions();
+        $headers  = $preparedRequest->request->requestHeaders;
 
         // リクエストボディの付与
-        if($configuredRequest->request->requestBody !== null){
-            $options[CURLOPT_POSTFIELDS] = $configuredRequest->request->requestBody;
+        if($preparedRequest->request->requestBody !== null){
+            $options[CURLOPT_POSTFIELDS] = $preparedRequest->request->requestBody;
         }
 
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
-        if($configuredRequest->request->requestContentType !== null){
+        if($preparedRequest->request->requestContentType !== null){
             if(!HeaderUtils::has($headers, 'Content-Type')){
-                $headers['Content-Type'] = $configuredRequest->request->requestContentType->getContentType();
+                $headers['Content-Type'] = $preparedRequest->request->requestContentType->getContentType();
             }
         }
 

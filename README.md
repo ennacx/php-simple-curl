@@ -38,7 +38,7 @@ composer require ennacx/php-simple-curl:^2.0@beta
 
 1. Create a `Request` with the HTTP method, URL, and request headers.
 2. Create `CurlOptions` for timeout, SSL, proxy, auth, redirect, and response capture settings.
-3. Pass the request to `SingleClient::send()` or `MultiClient::sendAll()` with `Request::withOptions()` or `Request::asConfigured()`.
+3. Pass the request to `SingleClient::send()` or `MultiClient::sendAll()` with `Request::Prepare()`.
 4. Read the returned `Response` object.
 
 ## Single Request
@@ -63,7 +63,7 @@ $options = CurlOptions::create()
     ->captureHeaders();
 
 $client = new SingleClient();
-$response = $client->send($request->withOptions($options));
+$response = $client->send($request->prepare($options));
 
 echo $response->statusCode;
 echo $response->body;
@@ -84,7 +84,7 @@ if($response->error !== null){
 
 ## Multiple Requests
 
-`MultiClient::sendAll()` executes multiple configured requests with cURL multi and returns responses keyed by each request ID.
+`MultiClient::sendAll()` executes multiple prepared requests with cURL multi and returns responses keyed by each request ID.
 
 ```php
 <?php
@@ -101,10 +101,10 @@ $phpRequest = Request::get('https://www.php.net/');
 $packagistRequest = Request::get('https://packagist.org/');
 
 $php = $phpRequest
-    ->withOptions($options);
+    ->prepare($options);
 
 $packagist = $packagistRequest
-    ->withOptions($options);
+    ->prepare($options);
 
 $client = new MultiClient();
 $responses = $client->sendAll($php, $packagist);
@@ -314,13 +314,13 @@ $redirectOptions = $baseOptions->followRedirects();
 
 ## Sending Requests
 
-Clients receive the object returned by `Request::withOptions()` or `Request::asConfigured()`. In typical usage, you can pass it directly to the client.
+Clients receive the object returned by `Request::prepare()`. In typical usage, you can pass it directly to the client.
 
 ```php
-$response = $client->send($request->withOptions($options));
+$response = $client->send($request->prepare($options));
 
 // If no custom options are required, default CurlOptions are used internally.
-$response = $client->send($request->asConfigured());
+$response = $client->send($request->prepare());
 ```
 
 ## Config Objects

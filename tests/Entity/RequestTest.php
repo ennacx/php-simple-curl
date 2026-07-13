@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Entity;
 
 use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\ConfiguredRequest;
+use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\RequestContentType;
@@ -13,7 +13,7 @@ use JsonException;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Requestの生成、入力検証、ConfiguredRequest化を検証する。
+ * Requestの生成、入力検証、PreparedRequest化を検証する。
  */
 final class RequestTest extends TestCase {
 
@@ -202,32 +202,32 @@ final class RequestTest extends TestCase {
     }
 
     /**
-     * CurlOptions付きのConfiguredRequestを生成できることを検証する。
+     * CurlOptions付きのPreparedRequestを生成できることを検証する。
      *
      * @return void
      */
-    public function testWithOptionsCreatesConfiguredRequest(): void {
+    public function testPrepareCreatesPreparedRequestWithOptions(): void {
 
         $request = Request::get('https://example.com');
         $options = CurlOptions::create()->timeout(10);
-        $configuredRequest = $request->withOptions($options);
+        $preparedRequest = $request->prepare($options);
 
-        self::assertInstanceOf(ConfiguredRequest::class, $configuredRequest);
-        self::assertSame($request, $configuredRequest->request);
-        self::assertSame($options, $configuredRequest->options);
+        self::assertInstanceOf(PreparedRequest::class, $preparedRequest);
+        self::assertSame($request, $preparedRequest->request);
+        self::assertSame($options, $preparedRequest->options);
     }
 
     /**
-     * CurlOptionsなしのConfiguredRequestを生成できることを検証する。
+     * CurlOptionsなしのPreparedRequestを生成できることを検証する。
      *
      * @return void
      */
-    public function testAsConfiguredCreatesConfiguredRequestWithDefaultOptions(): void {
+    public function testPrepareCreatesPreparedRequestWithDefaultOptions(): void {
 
         $request = Request::get('https://example.com');
-        $configuredRequest = $request->asConfigured();
+        $preparedRequest = $request->prepare();
 
-        self::assertSame($request, $configuredRequest->request);
-        self::assertNull($configuredRequest->options);
+        self::assertSame($request, $preparedRequest->request);
+        self::assertNull($preparedRequest->options);
     }
 }
