@@ -136,13 +136,48 @@ echo $packagistResponse->statusCode;
 <?php
 
 use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Enum\ContentType;
 
 $request = Request::post('https://api.example.com/users')
+    ->accept(ContentType::Json)
     ->headers([
-        'Accept'       => 'application/json',
         'Content-Type' => 'application/json',
     ]);
 ```
+
+### Accept Header
+
+Use `accept()` or `accepts()` to add an `Accept` header from common `ContentType` values or custom media type strings.
+
+```php
+<?php
+
+use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Enum\ContentType;
+
+$request = Request::get('https://api.example.com/users')
+    ->accept(ContentType::Json);
+
+$request = Request::get('https://api.example.com/users')
+    ->accepts(ContentType::Json, 'application/vnd.api+json');
+```
+
+The second request sends:
+
+```text
+Accept: application/json, application/vnd.api+json
+```
+
+If you need a custom `Accept` header with quality values, set it explicitly with `headers()`:
+
+```php
+$request = Request::get('https://api.example.com/users')
+    ->headers([
+        'Accept' => 'application/json;q=1.0, text/html;q=0.8',
+    ]);
+```
+
+An explicitly provided `Accept` header is kept and is not overwritten by `accept()` or `accepts()`.
 
 ### Query Parameters
 
@@ -232,9 +267,7 @@ Use `json()` to encode an array as JSON. The default `Content-Type` is `applicat
 
 ```php
 $request = Request::post('https://api.example.com/users')
-    ->headers([
-        'Accept' => 'application/json',
-    ])
+    ->accept(ContentType::Json)
     ->json([
         'name'  => 'Taro',
         'email' => 'taro@example.com',

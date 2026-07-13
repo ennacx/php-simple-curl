@@ -35,6 +35,9 @@ final class Request {
     /** @var ContentType|null リクエストボディーのContent-Type */
     public ?ContentType $contentType = null;
 
+    /** @var string[] Acceptヘッダーとして送信するメディアタイプ */
+    public array $acceptHeaders = [];
+
     /** @var array<string, mixed> 送信するクエリパラメータ */
     public array $queryParams = [];
 
@@ -118,6 +121,52 @@ final class Request {
         $this->requestHeaders = self::validateHeaders($headers);
 
         return $this;
+    }
+
+    /**
+     * Acceptヘッダーへ送信可能なメディアタイプを追加する。
+     *
+     * `ContentType` enumだけでなく、`application/vnd.api+json` のような任意のメディアタイプ文字列も指定できる。
+     * 同じ値が既に追加されている場合は、現在のRequestをそのまま返す。
+     *
+     * @param  ContentType|string $contentType Acceptヘッダーに追加するメディアタイプ
+     * @return self
+     */
+    public function accept(ContentType|string $contentType): self {
+
+        $contentType = ($contentType instanceof ContentType) ? $contentType->value : trim($contentType);
+
+        if($contentType === ''){
+            throw new InvalidArgumentException('Accept type must not be empty.');
+        }
+
+        if(in_array($contentType, $this->acceptHeaders, true)){
+            return $this;
+        }
+
+        $clone = clone $this;
+
+        $clone->acceptHeaders[] = $contentType;
+
+        return $clone;
+    }
+
+    /**
+     * 複数のメディアタイプをAcceptヘッダーへ追加する。
+     *
+     * @param  ContentType|string ...$contentTypes Acceptヘッダーに追加するメディアタイプ
+     * @return self
+     */
+    public function accepts(ContentType|string ...$contentTypes): self {
+
+        $clone = clone $this;
+
+        foreach($contentTypes as $contentType){
+            // `accept()` 内でcloneしてしまっているため `$clone` に都度代入
+            $clone = $clone->accept($contentType);
+        }
+
+        return $clone;
     }
 
     /**

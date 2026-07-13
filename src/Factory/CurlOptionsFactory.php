@@ -62,6 +62,13 @@ final class CurlOptionsFactory {
             }
         }
 
+        // ユーザーがAcceptを指定している場合は設定
+        if(!empty($preparedRequest->request->acceptHeaders)){
+            if(!HeaderUtils::has($headers, 'Accept')){
+                $headers['Accept'] = implode(', ', $preparedRequest->request->acceptHeaders);
+            }
+        }
+
         // 各Configの設定内容をcURL形式のオプションに変換して付与
         foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplierImpl)) as $config){
             $config->applyToCurlOptions($options, $headers);
