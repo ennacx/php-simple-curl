@@ -51,6 +51,59 @@ final class RequestTest extends TestCase {
     }
 
     /**
+     * accept()でAcceptヘッダー用のメディアタイプを追加でき、元のRequestを変更しないことを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptAddsAcceptedContentTypeAndKeepsOriginalRequest(): void {
+
+        $request = Request::get('https://example.com');
+        $updated = $request
+            ->accept(ContentType::Json)
+            ->accept('application/vnd.api+json');
+
+        self::assertSame([], $request->acceptHeaders);
+        self::assertSame([
+            'application/json',
+            'application/vnd.api+json',
+        ], $updated->acceptHeaders);
+    }
+
+    /**
+     * accepts()で複数のメディアタイプを追加でき、重複した値は追加しないことを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptsAddsMultipleTypesAndSkipsDuplicates(): void {
+
+        $request = Request::get('https://example.com')
+            ->accepts(
+                ContentType::Json,
+                'text/html',
+                ContentType::Json,
+                ' text/html '
+            );
+
+        self::assertSame([
+            'application/json',
+            'text/html',
+        ], $request->acceptHeaders);
+    }
+
+    /**
+     * 空のメディアタイプをAcceptヘッダーに追加しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForEmptyType(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        Request::get('https://example.com')
+            ->accept('   ');
+    }
+
+    /**
      * URLに含まれる既存クエリがRequest生成時にqueryParamsへ分離されることを検証する。
      *
      * @return void

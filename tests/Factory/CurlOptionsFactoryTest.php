@@ -186,6 +186,43 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * Requestのaccept()で指定したメディアタイプがAcceptヘッダーへ反映されることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsAcceptHeaderFromRequestAcceptTypes(): void {
+
+        $preparedRequest = Request::get('https://example.com')
+            ->accepts(ContentType::Json, 'application/vnd.api+json')
+            ->prepare();
+
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+        self::assertSame([
+            'Accept: application/json, application/vnd.api+json',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * Requestで明示されたAcceptヘッダーはaccept()で上書きしないことを検証する。
+     *
+     * @return void
+     */
+    public function testKeepsUserDefinedAcceptHeader(): void {
+
+        $preparedRequest = Request::get('https://example.com')
+            ->headers(['Accept' => 'application/problem+json'])
+            ->accept(ContentType::Json)
+            ->prepare();
+
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+        self::assertSame([
+            'Accept: application/problem+json',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
      * プレーンテキストのリクエストボディがcURLオプションへ反映されることを検証する。
      *
      * @return void
