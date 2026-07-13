@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlMethod;
-use Ennacx\SimpleCurl\Enum\RequestContentType;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Static\Utils;
 use InvalidArgumentException;
 use JsonException;
@@ -32,8 +32,8 @@ final class Request {
     /** @var string|null 送信するリクエストボディー */
     public ?string $requestBody = null;
 
-    /** @var RequestContentType|null リクエストボディーのContent-Type */
-    public ?RequestContentType $requestContentType = null;
+    /** @var ContentType|null リクエストボディーのContent-Type */
+    public ?ContentType $contentType = null;
 
     /** @var array<string, mixed> 送信するクエリパラメータ */
     public array $queryParams = [];
@@ -188,11 +188,11 @@ final class Request {
      * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で
      * `CURLOPT_POSTFIELDS` と既定の `Content-Type` へ変換する。
      *
-     * @param  string             $body        送信するリクエストボディー
-     * @param  RequestContentType $contentType ボディー形式に対応するContent-Type
+     * @param  string      $body        送信するリクエストボディー
+     * @param  ContentType $contentType ボディー形式に対応するContent-Type
      * @return self
      */
-    public function body(string $body, RequestContentType $contentType = RequestContentType::PlainText): self {
+    public function body(string $body, ContentType $contentType = ContentType::PlainText): self {
 
         if($body === ''){
             return $this;
@@ -201,7 +201,7 @@ final class Request {
         $clone = clone $this;
 
         $clone->requestBody        = $body;
-        $clone->requestContentType = $contentType;
+        $clone->contentType = $contentType;
 
         return $clone;
     }
@@ -209,11 +209,11 @@ final class Request {
     /**
      * ファイルの内容をボディーに設定する。
      *
-     * @param  string             $path
-     * @param  RequestContentType $contentType
+     * @param  string      $path
+     * @param  ContentType $contentType
      * @return self
      */
-    public function bodyFromFile(string $path, RequestContentType $contentType = RequestContentType::PlainText): self {
+    public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
 
         if(!file_exists($path) || !is_readable($path)){
             throw new InvalidArgumentException('Target file does not exist or is not readable.');
@@ -269,7 +269,7 @@ final class Request {
 
         $clone = clone $this;
 
-        return $clone->body($json, contentType: RequestContentType::Json);
+        return $clone->body($json, contentType: ContentType::Json);
     }
 
     /**
@@ -282,7 +282,7 @@ final class Request {
 
         $clone = clone $this;
 
-        return $clone->body(http_build_query($input), RequestContentType::FormUrlEncoded);
+        return $clone->body(http_build_query($input), ContentType::FormUrlEncoded);
     }
 
     /**

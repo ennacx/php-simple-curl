@@ -38,8 +38,10 @@ composer require ennacx/php-simple-curl:^2.0@beta
 
 1. Create a `Request` with the HTTP method, URL, and request headers.
 2. Create `CurlOptions` for timeout, SSL, proxy, auth, redirect, and response capture settings.
-3. Pass the request to `SingleClient::send()` or `MultiClient::sendAll()` with `Request::Prepare()`.
+3. Pass the request to `SingleClient::send()` or `MultiClient::sendAll()`.
 4. Read the returned `Response` object.
+
+You may pass either a plain `Request` or the object returned by `Request::prepare()` to client `send*()` methods. When a plain `Request` is passed, the client prepares it internally with default `CurlOptions`.
 
 ## Single Request
 
@@ -63,7 +65,12 @@ $options = CurlOptions::create()
     ->captureHeaders();
 
 $client = new SingleClient();
+
+// With custom CurlOptions.
 $response = $client->send($request->prepare($options));
+
+// With default CurlOptions.
+$response = $client->send($request);
 
 echo $response->statusCode;
 echo $response->body;
@@ -84,7 +91,7 @@ if($response->error !== null){
 
 ## Multiple Requests
 
-`MultiClient::sendAll()` executes multiple prepared requests with cURL multi and returns responses keyed by each request ID.
+`MultiClient::sendAll()` executes multiple requests with cURL multi and returns responses keyed by each request ID.
 
 ```php
 <?php
@@ -107,7 +114,12 @@ $packagist = $packagistRequest
     ->prepare($options);
 
 $client = new MultiClient();
+
+// With custom CurlOptions.
 $responses = $client->sendAll($php, $packagist);
+
+// With default CurlOptions.
+$responses = $client->sendAll($phpRequest, $packagistRequest);
 
 $phpResponse = $responses[$phpRequest->id];
 $packagistResponse = $responses[$packagistRequest->id];
@@ -127,7 +139,7 @@ use Ennacx\SimpleCurl\Entity\Request;
 
 $request = Request::post('https://api.example.com/users')
     ->headers([
-        'Accept' => 'application/json',
+        'Accept'       => 'application/json',
         'Content-Type' => 'application/json',
     ]);
 ```
@@ -155,9 +167,9 @@ Use `params()` to add multiple query parameters:
 ```php
 $request = Request::get('https://api.example.com/users')
     ->params([
-        'page' => 1,
+        'page'  => 1,
         'limit' => 20,
-        'sort' => 'name',
+        'sort'  => 'name',
     ]);
 ```
 
@@ -193,23 +205,25 @@ https://example.com/docs?lang=en&version=2.x#install
 
 `Request` can also hold a request body. The body is converted into `CURLOPT_POSTFIELDS` when the request is executed.
 
+`ContentType` represents common HTTP media types. In the current request body API, it is used to choose the default `Content-Type` header for `body()` and `bodyFromFile()`.
+
 Use `body()` when you already have a raw string payload:
 
 ```php
 <?php
 
 use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Enum\RequestContentType;
+use Ennacx\SimpleCurl\Enum\ContentType;
 
 $request = Request::post('https://api.example.com/messages')
-    ->body('plain text message', RequestContentType::PlainText);
+    ->body('plain text message', ContentType::PlainText);
 ```
 
 Use `bodyFromFile()` when the request body should be read from a local file:
 
 ```php
 $request = Request::put('https://api.example.com/documents/1')
-    ->bodyFromFile(__DIR__ . '/payload.txt', RequestContentType::PlainText);
+    ->bodyFromFile(__DIR__ . '/payload.txt', ContentType::PlainText);
 ```
 
 `bodyFromFile()` reads the file contents and sends them as the request body. It is useful for APIs that expect raw text, JSON, XML, or binary-like payloads in the body. It is not a multipart file upload helper.
@@ -222,7 +236,7 @@ $request = Request::post('https://api.example.com/users')
         'Accept' => 'application/json',
     ])
     ->json([
-        'name' => 'Taro',
+        'name'  => 'Taro',
         'email' => 'taro@example.com',
     ]);
 ```
@@ -240,7 +254,7 @@ Use `form()` for `application/x-www-form-urlencoded` payloads:
 $request = Request::post('https://api.example.com/token')
     ->form([
         'grant_type' => 'client_credentials',
-        'client_id' => 'example-client',
+        'client_id'  => 'example-client',
     ]);
 ```
 
@@ -308,19 +322,25 @@ $options = CurlOptions::create()
 Because options are immutable, this does not change the original instance:
 
 ```php
-$baseOptions = CurlOptions::create()->timeout(10);
+$baseOptions     = CurlOptions::create()->timeout(10);
 $redirectOptions = $baseOptions->followRedirects();
 ```
 
 ## Sending Requests
 
-Clients receive the object returned by `Request::prepare()`. In typical usage, you can pass it directly to the client.
+Clients accept either `Request` or `PreparedRequest`.
+
+Use `Request::prepare()` when you want to attach custom `CurlOptions` explicitly:
 
 ```php
 $response = $client->send($request->prepare($options));
+```
 
-// If no custom options are required, default CurlOptions are used internally.
-$response = $client->send($request->prepare());
+If no custom options are required, pass `Request` directly. The client converts it to `PreparedRequest` internally with default `CurlOptions`.
+
+```php
+$response  = $singleClient->send($request);
+$responses = $multiClient->sendAll($requestA, $requestB);
 ```
 
 ## Config Objects
@@ -363,7 +383,7 @@ $insecure = SslConfig::insecure();
 ```php
 use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
 
-$httpProxy = ProxyConfig::http('proxy.example.com', port: 3128);
+$httpProxy  = ProxyConfig::http('proxy.example.com', port: 3128);
 $socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
 ```
 
@@ -372,7 +392,7 @@ $socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
 ```php
 use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
 
-$basic = AuthConfig::basic('user', 'password');
+$basic  = AuthConfig::basic('user', 'password');
 $bearer = AuthConfig::bearer('token');
 ```
 
@@ -381,7 +401,7 @@ $bearer = AuthConfig::bearer('token');
 ```php
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
-$timeout = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
+$timeout   = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
 $timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500);
 ```
 
@@ -390,7 +410,7 @@ $timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500)
 ```php
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 
-$redirect = RedirectConfig::enabled(maxRedirects: 10, autoReferer: true);
+$redirect   = RedirectConfig::enabled(maxRedirects: 10, autoReferer: true);
 $noRedirect = RedirectConfig::disabled();
 ```
 

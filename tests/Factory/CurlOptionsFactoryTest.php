@@ -8,7 +8,7 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Enum\RequestContentType;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -193,7 +193,7 @@ final class CurlOptionsFactoryTest extends TestCase {
     public function testBuildsPlainTextRequestBodyOptions(): void {
 
         $preparedRequest = Request::post('https://example.com/messages')
-            ->body('plain text message', RequestContentType::PlainText)
+            ->body('plain text message', ContentType::PlainText)
             ->prepare();
 
         $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
@@ -216,7 +216,7 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         try{
             $preparedRequest = Request::post('https://example.com/upload')
-                ->bodyFromFile($path, RequestContentType::PlainText)
+                ->bodyFromFile($path, ContentType::PlainText)
                 ->prepare();
 
             $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);

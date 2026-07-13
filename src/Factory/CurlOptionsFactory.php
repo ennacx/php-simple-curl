@@ -56,9 +56,9 @@ final class CurlOptionsFactory {
         }
 
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
-        if($preparedRequest->request->requestContentType !== null){
+        if($preparedRequest->request->contentType !== null){
             if(!HeaderUtils::has($headers, 'Content-Type')){
-                $headers['Content-Type'] = $preparedRequest->request->requestContentType->getContentType();
+                $headers['Content-Type'] = $preparedRequest->request->contentType->value;
             }
         }
 

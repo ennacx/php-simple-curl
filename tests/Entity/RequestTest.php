@@ -7,7 +7,7 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
-use Ennacx\SimpleCurl\Enum\RequestContentType;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use InvalidArgumentException;
 use JsonException;
 use PHPUnit\Framework\TestCase;
@@ -148,12 +148,12 @@ final class RequestTest extends TestCase {
 
         try{
             $request = Request::post('https://example.com/upload');
-            $updated = $request->bodyFromFile($path, RequestContentType::PlainText);
+            $updated = $request->bodyFromFile($path, ContentType::PlainText);
 
             self::assertNull($request->requestBody);
-            self::assertNull($request->requestContentType);
+            self::assertNull($request->contentType);
             self::assertSame("file body\n", $updated->requestBody);
-            self::assertSame(RequestContentType::PlainText, $updated->requestContentType);
+            self::assertSame(ContentType::PlainText, $updated->contentType);
         } finally{
             unlink($path);
         }
@@ -198,7 +198,7 @@ final class RequestTest extends TestCase {
 
         self::assertSame($request, $updated);
         self::assertNull($updated->requestBody);
-        self::assertNull($updated->requestContentType);
+        self::assertNull($updated->contentType);
     }
 
     /**
