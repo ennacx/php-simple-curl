@@ -35,9 +35,10 @@ final readonly class MultiClient {
 
     /**
      * 指定されたRequestまたはPreparedRequest群を並列実行し、Request-IDをキーにしたResponse配列を返す。
-     * ※返却配列のキーには各PreparedRequestが保持する `Request::$id` を使用する。
+     * Requestが渡された場合は、デフォルトのCurlOptionsを使って内部でPreparedRequestへ変換する。
+     * ※返却配列のキーには各Requestの `Request::$id` を使用する。
      *
-     * @param  Request|PreparedRequest ...$preparedRequests 実行対象のPreparedRequest
+     * @param  Request|PreparedRequest ...$preparedRequests 実行対象のRequestまたはPreparedRequest
      * @return array<string, Response>
      * @throws Throwable
      */
