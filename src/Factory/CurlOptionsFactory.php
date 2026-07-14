@@ -3,10 +3,14 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Factory;
 
+use CURLFile;
 use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
+use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
+use LogicException;
 
 /**
  * PreparedRequestをcURLオプション配列へ変換するFactory。
@@ -26,46 +30,45 @@ final class CurlOptionsFactory {
      */
     public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
+        $request     = $preparedRequest->request;
         $curlOptions = $preparedRequest->options ?? CurlOptions::create();
-
-        // GETクエリ付与
-        $url = $preparedRequest->request->url;
-        if(!empty($preparedRequest->request->queryParams)){
-            $url .= '?' . http_build_query($preparedRequest->request->queryParams);
-        }
-
-        // フラグメント付与 (URLの仕様上、必ずGETクエリの後にすること)
-        if(isset($preparedRequest->request->fragment)){
-            $url .= '#' . $preparedRequest->request->fragment;
-        }
 
         // 基本設定
         $options = [
-            CURLOPT_URL            => $url,
+            CURLOPT_URL            => $this->buildUrl($preparedRequest),
             CURLOPT_RETURNTRANSFER => ($curlOptions->captureBody || $curlOptions->captureHeaders),
             CURLOPT_HEADER         => $curlOptions->captureHeaders,
         ];
 
         // HTTPメソッド設定の追加
-        $options += $preparedRequest->request->method->toCurlOptions();
-        $headers  = $preparedRequest->request->requestHeaders;
+        $options += $request->method->toCurlOptions();
+        $headers  = $request->requestHeaders;
 
         // リクエストボディの付与
-        if($preparedRequest->request->requestBody !== null){
-            $options[CURLOPT_POSTFIELDS] = $preparedRequest->request->requestBody;
+        if($request->requestBody !== null || $request->attachmentEntries !== []){
+            $body = $this->buildPostFields($request);
+            if($body !== null){
+                $options[CURLOPT_POSTFIELDS] = $body;
+            }
+
+            unset($body);
         }
 
+        // multi-part形式の場合はContent-Typeを削除する (cURL側に任せて指定させない)
+        if($request->attachmentEntries !== [] && HeaderUtils::has($headers, 'Content-Type')){
+            HeaderUtils::remove($headers, 'Content-Type');
+        }
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
-        if($preparedRequest->request->contentType !== null){
+        else if(!in_array($request->contentType, [null, ContentType::MultipartFormData], true)){
             if(!HeaderUtils::has($headers, 'Content-Type')){
-                $headers['Content-Type'] = $preparedRequest->request->contentType->value;
+                $headers['Content-Type'] = $request->contentType->value;
             }
         }
 
         // ユーザーがAcceptを指定している場合は設定
-        if(!empty($preparedRequest->request->acceptHeaders)){
+        if(!empty($request->acceptHeaders)){
             if(!HeaderUtils::has($headers, 'Accept')){
-                $headers['Accept'] = implode(', ', $preparedRequest->request->acceptHeaders);
+                $headers['Accept'] = implode(', ', $request->acceptHeaders);
             }
         }
 
@@ -80,6 +83,118 @@ final class CurlOptionsFactory {
         }
 
         return $options;
+    }
+
+    /**
+     * PreparedRequestの内容からURLを生成する。
+     *
+     * @param  PreparedRequest $preparedRequest
+     * @return string
+     */
+    private function buildUrl(PreparedRequest $preparedRequest): string {
+
+        $request = $preparedRequest->request;
+
+        // GETクエリ付与
+        $url = $request->url;
+        if(!empty($request->queryParams)){
+            $url .= '?' . http_build_query($request->queryParams);
+        }
+
+        // フラグメント付与 (URLの仕様上、必ずGETクエリの後にすること)
+        if(isset($request->fragment)){
+            $url .= '#' . $request->fragment;
+        }
+
+        return $url;
+    }
+
+    /**
+     * Requestに保持されたボディ情報を `CURLOPT_POSTFIELDS` へ渡せる形式へ変換する。
+     *
+     * 添付ファイルがある場合はmultipart/form-data用の配列を生成し、
+     * 添付ファイルがない場合はContent-Typeに応じて文字列ボディを生成する。
+     *
+     * @param  Request $request
+     * @return string|array|null
+     */
+    private function buildPostFields(Request $request): string|array|null {
+
+        if(!empty($request->attachmentEntries)){
+            return $this->buildMultipart($request);
+        }
+
+        $requestBody = $request->requestBody;
+
+        if($requestBody === null){
+            return null;
+        }
+
+        // リクエスト時のContent-Typeからbodyの変換方法を決定する
+        return match($requestBody->contentType){
+            ContentType::Json => json_encode(
+                $requestBody->body,
+                $requestBody->options['flags'] ?? JSON_UNESCAPED_SLASHES,
+            ) ?: null,
+
+            ContentType::FormUrlEncoded => http_build_query(
+                $requestBody->body,
+            ),
+
+            default => (is_array($requestBody->body)) ?
+                throw new LogicException('Array body requires an encodable content type.') :
+                $requestBody->body,
+        };
+    }
+
+    /**
+     * 添付ファイルとフォーム項目をmultipart/form-data用の配列へ変換する。
+     *
+     * cURLは配列とCURLFileを受け取るとboundary付きContent-Typeを生成するため、
+     * 呼び出し元ではユーザー指定のContent-Typeヘッダーを削除する。
+     *
+     * @param  Request $request
+     * @return array<string, mixed>
+     */
+    private function buildMultipart(Request $request): array {
+
+        $fields = [];
+
+        $requestBody = $request->requestBody;
+
+        // 添付ファイル以外にボディーが設定されている場合
+        if($requestBody !== null){
+            // ボディーは配列であることが必須
+            if(!is_array($requestBody->body)){
+                throw new LogicException('Multipart form fields must be an array.');
+            }
+            // フォームのContent-Typeであること
+            if($requestBody->contentType !== ContentType::FormUrlEncoded){
+                throw new LogicException('Attachments can only be combined with form fields.');
+            }
+
+            // 配列の本文を設定
+            $fields = $requestBody->body;
+        }
+
+        foreach($request->attachmentEntries as $attachmentEntry){
+            $attachment = $attachmentEntry->attachment;
+            $overwrite  = $attachmentEntry->allowOverwrite;
+
+            // NOTE: Request側で避けているので理論上入らないが保険として
+            if(array_key_exists($attachment->name, $fields) && !$overwrite){
+                continue;
+            }
+
+            // 添付ファイルを追加
+            $fields[$attachment->name] = new CURLFile(
+                filename:        $attachment->path,
+                mime_type:       $attachment->mimeType,
+                posted_filename: $attachment->filename,
+            );
+        }
+
+        return $fields;
     }
 
     /**

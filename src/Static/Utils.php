@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Static;
 
+use InvalidArgumentException;
 use Random\RandomException;
 use RuntimeException;
 use Stringable;
@@ -75,6 +76,22 @@ final class Utils {
         }
 
         return false;
+    }
+
+    /**
+     * ファイルが存在し、読み取り可能な通常ファイルであることを検証する。
+     *
+     * @param  string                   $path 対象ファイルパス
+     * @return void
+     * @throws InvalidArgumentException       ファイルが存在しない・読取不可・通常ファイルではない場合
+     */
+    public static function fileCheck(string $path): void {
+
+        if(!file_exists($path) || !is_readable($path)){
+            throw new InvalidArgumentException('Target file does not exist or is not readable.');
+        } else if(!is_file($path)){
+            throw new InvalidArgumentException('Target path is not a file.');
+        }
     }
 
     /**

@@ -28,4 +28,28 @@ final class HeaderUtils {
 
         return false;
     }
+
+    /**
+     * ヘッダー配列に登録されている要素を削除する。
+     *
+     * @param  array  $headers ヘッダー配列
+     * @param  string $name    削除対象
+     * @return void
+     */
+    public static function remove(array &$headers, string $name): void {
+
+        $needle = strtolower($name);
+
+        foreach($headers as $key => $value){
+            if(is_string($key) && strtolower($key) === $needle){
+                unset($headers[$key]);
+
+                continue;
+            }
+
+            if(is_string($value) && str_starts_with(strtolower($value), "{$needle}:")){
+                unset($headers[$key]);
+            }
+        }
+    }
 }
