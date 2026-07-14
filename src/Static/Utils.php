@@ -79,27 +79,19 @@ final class Utils {
     }
 
     /**
-     * ファイルの存在と読み取り可能かをチェックし、取得できればファイルの内容を返す。
+     * ファイルが存在し、読み取り可能な通常ファイルであることを検証する。
      *
      * @param  string                   $path 対象ファイルパス
-     * @return string                         ファイルの内容
-     * @throws InvalidArgumentException       ファイルが存在しない・読取不可・読取失敗
+     * @return void
+     * @throws InvalidArgumentException       ファイルが存在しない・読取不可・通常ファイルではない場合
      */
-    public static function getFileContents(string $path): string {
+    public static function fileCheck(string $path): void {
 
         if(!file_exists($path) || !is_readable($path)){
             throw new InvalidArgumentException('Target file does not exist or is not readable.');
         } else if(!is_file($path)){
             throw new InvalidArgumentException('Target path is not a file.');
         }
-
-        $contents = file_get_contents($path);
-
-        if($contents === false){
-            throw new InvalidArgumentException('Failed to read target file.');
-        }
-
-        return $contents;
     }
 
     /**

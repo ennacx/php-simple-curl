@@ -244,10 +244,36 @@ final class RequestTest extends TestCase {
             $request = Request::post('https://example.com/upload');
             $updated = $request->attach($attachment);
 
-            self::assertSame([], $request->attachments);
+            self::assertSame([], $request->attachmentEntries);
             self::assertNull($request->contentType);
-            self::assertSame([$attachment], $updated->attachments);
-            self::assertSame(ContentType::MultipartFormData, $updated->contentType);
+            self::assertCount(1, $updated->attachmentEntries);
+            self::assertSame($attachment, $updated->attachmentEntries[0]->attachment);
+            self::assertTrue($updated->attachmentEntries[0]->overwrite);
+            self::assertNull($updated->contentType);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * attachFile()で簡易的に添付ファイルを追加できることを検証する。
+     *
+     * @return void
+     */
+    public function testAttachFileAddsAttachmentFromPath(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $request = Request::post('https://example.com/upload')
+                ->attachFile('file', $path, overwrite: false);
+
+            self::assertCount(1, $request->attachmentEntries);
+            self::assertSame('file', $request->attachmentEntries[0]->attachment->name);
+            self::assertSame($path, $request->attachmentEntries[0]->attachment->path);
+            self::assertFalse($request->attachmentEntries[0]->overwrite);
         } finally{
             unlink($path);
         }
@@ -264,6 +290,115 @@ final class RequestTest extends TestCase {
 
         Request::post('https://example.com/upload')
             ->attach(new RequestAttachment('file', sys_get_temp_dir() . '/simple-curl-missing-attachment'));
+    }
+
+    /**
+     * 空のフィールド名で添付しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAttachThrowsExceptionForEmptyName(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $this->expectException(InvalidArgumentException::class);
+
+            Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('   ', $path));
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * overwrite=falseで同名添付ファイルを追加しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAttachThrowsExceptionForDuplicateAttachmentNameWhenOverwriteDisabled(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $this->expectException(InvalidArgumentException::class);
+
+            Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('file', $path), overwrite: false)
+                ->attach(new RequestAttachment('file', $path), overwrite: false);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * overwrite=falseでフォーム項目と同名の添付ファイルを追加しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAttachThrowsExceptionForDuplicateFormFieldWhenOverwriteDisabled(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $this->expectException(InvalidArgumentException::class);
+
+            Request::post('https://example.com/upload')
+                ->form(['file' => 'keep me'])
+                ->attach(new RequestAttachment('file', $path), overwrite: false);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * 添付ファイル設定後に通常ボディを設定しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testBodyThrowsExceptionWhenAttachmentAlreadySet(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $this->expectException(InvalidArgumentException::class);
+
+            Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('file', $path))
+                ->body('plain text');
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * 添付ファイル設定後にJSONボディを設定しようとした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testJsonThrowsExceptionWhenAttachmentAlreadySet(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $this->expectException(InvalidArgumentException::class);
+
+            Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('file', $path))
+                ->json(['name' => 'Taro']);
+        } finally{
+            unlink($path);
+        }
     }
 
     /**

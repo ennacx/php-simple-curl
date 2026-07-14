@@ -11,7 +11,6 @@ use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\RequestAttachment;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
-use LogicException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -465,11 +464,11 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
-     * 添付ファイル名とフォーム項目名が重複した場合に上書きを抑止できることを検証する。
+     * 添付ファイル名とフォーム項目名が重複した場合は、添付ファイル側のoverwrite設定で上書きできることを検証する。
      *
      * @return void
      */
-    public function testCanKeepFormFieldWhenAttachmentNameDuplicates(): void {
+    public function testCanOverwriteFormFieldWhenAttachmentNameDuplicates(): void {
 
         $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
         self::assertIsString($path);
@@ -477,13 +476,13 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         try{
             $preparedRequest = Request::post('https://example.com/upload')
-                ->form(['file' => 'keep me'], overwrite: false)
-                ->attach(new RequestAttachment('file', $path))
+                ->form(['file' => 'replace me'])
+                ->attach(new RequestAttachment('file', $path), overwrite: true)
                 ->prepare();
 
             $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
 
-            self::assertSame('keep me', $options[CURLOPT_POSTFIELDS]['file']);
+            self::assertInstanceOf(\CURLFile::class, $options[CURLOPT_POSTFIELDS]['file']);
         } finally{
             unlink($path);
         }
@@ -501,14 +500,12 @@ final class CurlOptionsFactoryTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $preparedRequest = Request::post('https://example.com/upload')
-                ->json(['name' => 'Taro'])
-                ->attach(new RequestAttachment('file', $path))
-                ->prepare();
+            $request = Request::post('https://example.com/upload')
+                ->json(['name' => 'Taro']);
 
-            $this->expectException(LogicException::class);
+            $this->expectException(\InvalidArgumentException::class);
 
-            (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+            $request->attach(new RequestAttachment('file', $path));
         } finally{
             unlink($path);
         }

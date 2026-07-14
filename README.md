@@ -325,15 +325,22 @@ $request = Request::post('https://api.example.com/upload')
 
 When attachments are present, `Content-Type` is managed by cURL. Any user-defined `Content-Type` header is removed so cURL can generate the required multipart boundary.
 
-If an attachment name conflicts with a form field name, the attachment overwrites the form field by default. Pass `overwrite: false` to `form()` to keep the form field instead:
+If an attachment name conflicts with a form field name or another attachment, the attachment overwrites the existing field by default. Pass `overwrite: false` to `attach()` to reject duplicate names instead:
 
 ```php
 $request = Request::post('https://api.example.com/upload')
-    ->form(['file' => 'keep this value'], overwrite: false)
-    ->attach(new RequestAttachment('file', __DIR__ . '/avatar.png'));
+    ->form(['file' => 'already used'])
+    ->attach(new RequestAttachment('file', __DIR__ . '/avatar.png'), overwrite: false);
 ```
 
-Attachments can be combined with `form()` fields only. JSON or raw body payloads cannot be mixed with file attachments.
+Use `attachFile()` when the default filename and MIME handling are enough:
+
+```php
+$request = Request::post('https://api.example.com/upload')
+    ->attachFile('file', __DIR__ . '/avatar.png');
+```
+
+Attachments can be combined with `form()` fields only. JSON or raw body payloads cannot be mixed with file attachments, and body helpers cannot be called after attachments are set.
 
 Stream-based request bodies are planned for a later implementation. They are intentionally not part of the current public request body API yet.
 

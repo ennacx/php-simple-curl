@@ -45,7 +45,7 @@ final class CurlOptionsFactory {
         $headers  = $request->requestHeaders;
 
         // リクエストボディの付与
-        if($request->requestBody !== null || $request->attachments !== []){
+        if($request->requestBody !== null || $request->attachmentEntries !== []){
             $body = $this->buildPostFields($request);
             if($body !== null){
                 $options[CURLOPT_POSTFIELDS] = $body;
@@ -55,7 +55,7 @@ final class CurlOptionsFactory {
         }
 
         // multi-part形式の場合はContent-Typeを削除する (cURL側に任せて指定させない)
-        if($request->attachments !== [] && HeaderUtils::has($headers, 'Content-Type')){
+        if($request->attachmentEntries !== [] && HeaderUtils::has($headers, 'Content-Type')){
             HeaderUtils::remove($headers, 'Content-Type');
         }
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
@@ -120,7 +120,7 @@ final class CurlOptionsFactory {
      */
     private function buildPostFields(Request $request): string|array|null {
 
-        if(!empty($request->attachments)){
+        if(!empty($request->attachmentEntries)){
             return $this->buildMultipart($request);
         }
 
@@ -177,10 +177,10 @@ final class CurlOptionsFactory {
             $fields = $requestBody->body;
         }
 
-        // ボディーのフォームキーと添付ファイルのキーが重複している場合に上書きするかのフラグ
-        $overwrite = $requestBody?->options['overwrite'] ?? true;
+        foreach($request->attachmentEntries as $attachmentEntry){
+            $attachment = $attachmentEntry->attachment;
+            $overwrite  = $attachmentEntry->overwrite;
 
-        foreach($request->attachments as $attachment){
             if(array_key_exists($attachment->name, $fields) && !$overwrite){
                 continue;
             }

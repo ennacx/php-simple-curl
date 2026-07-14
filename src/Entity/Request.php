@@ -32,8 +32,8 @@ final class Request {
     /** @var RequestBody|null 送信するリクエストボディー */
     public ?RequestBody $requestBody = null;
 
-    /** @var list<RequestAttachment> 添付ファイルの配列 */
-    public array $attachments = [];
+    /** @var list<RequestAttachmentEntry> 添付ファイルの配列 */
+    public array $attachmentEntries = [];
 
     /** @var ContentType|null リクエストボディーのContent-Type */
     public ?ContentType $contentType = null;
@@ -247,8 +247,14 @@ final class Request {
      */
     public function body(array|string $body, ContentType $contentType = ContentType::PlainText, array $options = []): self {
 
-        if($body === ''){
+        // 空ボディーは即リターン
+        if($body === [] || $body === ''){
             return $this;
+        }
+
+        // 既に添付ファイルが存在する場合はテキストボディーを設定できないためエラー
+        if($this->attachmentEntries !== []){
+            throw new InvalidArgumentException('Cannot set body when attachments are set.');
         }
 
         $clone = clone $this;
@@ -269,8 +275,19 @@ final class Request {
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
 
-        // ファイルチェックを兼ねた取得
-        $content = Utils::getFileContents($path);
+        // 既に添付ファイルが存在する場合はテキストボディーを設定できないためエラー
+        if($this->attachmentEntries !== []){
+            throw new InvalidArgumentException('Cannot set file body when attachments are set.');
+        }
+
+        // ファイルチェック
+        Utils::fileCheck($path);
+
+        $content = file_get_contents($path);
+
+        if($content === false){
+            throw new InvalidArgumentException('Failed to read target file.');
+        }
 
         return $this->body($content, $contentType);
     }
@@ -287,6 +304,11 @@ final class Request {
      * @throws JsonException `$throw = true` の時、JSON変換失敗時に投げられる例外
      */
     public function json(array|string $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
+
+        // 既に添付ファイルが存在する場合はJSONボディーを設定できないためエラー
+        if($this->attachmentEntries !== []){
+            throw new InvalidArgumentException('Cannot set JSON body when attachments are set.');
+        }
 
         if(is_string($input)){
             try{
@@ -314,15 +336,14 @@ final class Request {
     /**
      * 配列を `application/x-www-form-urlencoded` 形式のリクエストボディーとして設定する。
      *
-     * @param  array<string|int, mixed> $input     フォーム送信用の値
-     * @param  boolean                  $overwrite ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
+     * @param  array<string|int, mixed> $input フォーム送信用の値
      * @return self
      */
-    public function form(array $input, bool $overwrite = true): self {
+    public function form(array $input): self {
 
         $clone = clone $this;
 
-        return $clone->body($input, contentType: ContentType::FormUrlEncoded, options: ['overwrite' => $overwrite]);
+        return $clone->body($input, contentType: ContentType::FormUrlEncoded);
     }
 
     /**
@@ -334,23 +355,72 @@ final class Request {
      * Factory側でユーザー指定のContent-Typeヘッダーを削除する。
      *
      * @param  RequestAttachment $attachment 添付ファイル情報
+     * @param  boolean           $overwrite  ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
      * @return self
      * @throws InvalidArgumentException 添付ファイルが存在しない、または読取不可の場合
      */
-    public function attach(RequestAttachment $attachment): self {
+    public function attach(RequestAttachment $attachment, bool $overwrite = true): self {
+
+        // フィールド名が空の場合はエラー
+        if(trim($attachment->name) === ''){
+            throw new InvalidArgumentException('Attachment name must not be empty.');
+        }
+
+        // リクエストボディーが設定済みの場合、フォーム形式で無いとエラー
+        if($this->requestBody !== null && $this->requestBody->contentType !== ContentType::FormUrlEncoded){
+            throw new InvalidArgumentException("The attachment cannot be added when the request body is specified.");
+        }
 
         // ファイルチェック
-        Utils::getFileContents($attachment->path);
+        Utils::fileCheck($attachment->path);
+
+        // 上書禁止時の同一名チェック
+        if(!$overwrite){
+            // 添付ファイル側の方
+            $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
+            if(in_array($attachment->name, $attachNames, true)){
+                throw new InvalidArgumentException("The attachment name is already used in attachment.");
+            }
+
+            unset($attachNames);
+
+            // リクエストボディーの方
+            $body = $this->requestBody?->body ?? null;
+            if(is_array($body) && $body !== []){
+                if(array_key_exists($attachment->name, $body)){
+                    throw new InvalidArgumentException("The attachment name is already used in body.");
+                }
+            }
+
+            unset($body);
+        }
 
         $clone = clone $this;
 
         // 添付ファイル配列に追加
-        $clone->attachments[] = $attachment;
+        $clone->attachmentEntries[] = new RequestAttachmentEntry(attachment: $attachment, overwrite: $overwrite);
 
-        // (不要になるが) 念のためmultipartで設定
-        $clone->contentType = ContentType::MultipartFormData;
+        // multipartでのContent-Type指定は強制させないため初期化
+        $clone->contentType = null;
 
         return $clone;
+    }
+
+    /**
+     * multipart/form-dataで送信する添付ファイルを追加する。
+     *
+     *  添付ファイルは、リクエストボディ未指定または `form()` のフォーム項目と組み合わせて送信できる。
+     *
+     *  添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
+     *  Factory側でユーザー指定のContent-Typeヘッダーを削除する。
+     *
+     * @param  string  $name      multipartフィールド名
+     * @param  string  $path      添付するローカルファイルパス
+     * @param  boolean $overwrite ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
+     * @return self
+     */
+    public function attachFile(string $name, string $path, bool $overwrite = true): self {
+        return $this->attach(new RequestAttachment($name, $path), $overwrite);
     }
 
     /**
