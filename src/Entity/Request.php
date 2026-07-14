@@ -237,8 +237,8 @@ final class Request {
     /**
      * 送信するリクエストボディーを設定する。
      *
-     * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で
-     * `CURLOPT_POSTFIELDS` と既定の `Content-Type` へ変換する。
+     * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で `CURLOPT_POSTFIELDS` と、
+     * 既定の `Content-Type` へ変換する。
      *
      * @param  array|string $body        送信するリクエストボディー
      * @param  ContentType  $contentType ボディー形式に対応するContent-Type
@@ -268,7 +268,11 @@ final class Request {
      * @throws InvalidArgumentException ファイルが存在しない、または読取不可の場合
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
-        return $this->body(Utils::getFileContents($path), $contentType);
+
+        // ファイルチェックを兼ねた取得
+        $content = Utils::getFileContents($path);
+
+        return $this->body($content, $contentType);
     }
 
     /**
@@ -324,6 +328,8 @@ final class Request {
     /**
      * multipart/form-dataで送信する添付ファイルを追加する。
      *
+     * 添付ファイルは、リクエストボディ未指定または `form()` のフォーム項目と組み合わせて送信できる。
+     *
      * 添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
      * Factory側でユーザー指定のContent-Typeヘッダーを削除する。
      *
@@ -333,11 +339,15 @@ final class Request {
      */
     public function attach(RequestAttachment $attachment): self {
 
+        // ファイルチェック
         Utils::getFileContents($attachment->path);
 
         $clone = clone $this;
 
+        // 添付ファイル配列に追加
         $clone->attachments[] = $attachment;
+
+        // (不要になるが) 念のためmultipartで設定
         $clone->contentType = ContentType::MultipartFormData;
 
         return $clone;
