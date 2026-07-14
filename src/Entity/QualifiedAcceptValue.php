@@ -24,6 +24,11 @@ final readonly class QualifiedAcceptValue implements AcceptValue {
             throw new InvalidArgumentException('Accept value must not be empty.');
         }
 
+        // 二重ラップ防止と文字列指定時に`q=`があるかの簡易チェック (元々あったq値のチェックまではしない)
+        if($value instanceof self || (is_string($value) && preg_match('/(?:^|;)\s*q\s*=/i', $value) === 1)){
+            throw new InvalidArgumentException('Qualified accept value cannot be qualified again.');
+        }
+
         if($quality < 0.0 || $quality > 1.0){
             throw new InvalidArgumentException('Quality value must be between 0.0 and 1.0.');
         }

@@ -164,7 +164,7 @@ $request = Request::get('https://api.example.com/users')
 
 $request = Request::get('https://api.example.com/users')
     ->accepts(
-        ContentType::Json->withQuality(1.0),
+        ContentType::Json,
         ContentType::Html->withQuality(0.8),
         MediaRange::Any->withQuality(0.1),
     );
@@ -173,7 +173,25 @@ $request = Request::get('https://api.example.com/users')
 The third request sends:
 
 ```text
-Accept: application/json;q=1, text/html;q=0.8, */*;q=0.1
+Accept: application/json, text/html;q=0.8, */*;q=0.1
+```
+
+Use `withQuality()` only for values that need an explicit Quality Value. You do not need to add it to every accepted type, and `q=1` can usually be omitted because it is the HTTP default.
+
+If the same media type is added more than once, the first value wins. For example:
+
+```php
+$request = Request::get('https://api.example.com/users')
+    ->accepts(
+        ContentType::Json,
+        ContentType::Json->withQuality(0.5),
+    );
+```
+
+The request above sends only:
+
+```text
+Accept: application/json
 ```
 
 You can still set a fully custom `Accept` header with `headers()`:
