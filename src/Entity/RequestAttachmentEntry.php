@@ -11,12 +11,12 @@ final readonly class RequestAttachmentEntry {
     /**
      * コンストラクタ
      *
-     * @param RequestAttachment $attachment 添付ファイル情報
-     * @param boolean           $overwrite  multipartフィールド名が重複した場合に上書きするかどうか
+     * @param RequestAttachment $attachment     添付ファイル情報
+     * @param boolean           $allowOverwrite multipartフィールド名が重複した場合に上書きするかどうか
      */
     public function __construct(
         public RequestAttachment $attachment,
-        public bool $overwrite = true
+        public bool              $allowOverwrite = true
     ){
     }
 }

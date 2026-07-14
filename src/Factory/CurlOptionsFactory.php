@@ -179,8 +179,9 @@ final class CurlOptionsFactory {
 
         foreach($request->attachmentEntries as $attachmentEntry){
             $attachment = $attachmentEntry->attachment;
-            $overwrite  = $attachmentEntry->overwrite;
+            $overwrite  = $attachmentEntry->allowOverwrite;
 
+            // NOTE: Request側で避けているので理論上入らないが保険として
             if(array_key_exists($attachment->name, $fields) && !$overwrite){
                 continue;
             }

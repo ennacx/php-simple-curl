@@ -252,9 +252,9 @@ final class Request {
             return $this;
         }
 
-        // 既に添付ファイルが存在する場合はテキストボディーを設定できないためエラー
-        if($this->attachmentEntries !== []){
-            throw new InvalidArgumentException('Cannot set body when attachments are set.');
+        // 既に添付ファイルが存在する場合はmultipart以外のボディーを設定できない
+        if($this->attachmentEntries !== [] && $contentType !== ContentType::FormUrlEncoded){
+            throw new InvalidArgumentException('Only form fields can be combined with attachments.');
         }
 
         $clone = clone $this;
@@ -354,12 +354,12 @@ final class Request {
      * 添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
      * Factory側でユーザー指定のContent-Typeヘッダーを削除する。
      *
-     * @param  RequestAttachment $attachment 添付ファイル情報
-     * @param  boolean           $overwrite  ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
+     * @param  RequestAttachment $attachment     添付ファイル情報
+     * @param  boolean           $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
      * @return self
      * @throws InvalidArgumentException 添付ファイルが存在しない、または読取不可の場合
      */
-    public function attach(RequestAttachment $attachment, bool $overwrite = true): self {
+    public function attach(RequestAttachment $attachment, bool $allowOverwrite = true): self {
 
         // フィールド名が空の場合はエラー
         if(trim($attachment->name) === ''){
@@ -375,7 +375,7 @@ final class Request {
         Utils::fileCheck($attachment->path);
 
         // 上書禁止時の同一名チェック
-        if(!$overwrite){
+        if(!$allowOverwrite){
             // 添付ファイル側の方
             $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
             if(in_array($attachment->name, $attachNames, true)){
@@ -398,7 +398,19 @@ final class Request {
         $clone = clone $this;
 
         // 添付ファイル配列に追加
-        $clone->attachmentEntries[] = new RequestAttachmentEntry(attachment: $attachment, overwrite: $overwrite);
+        if(!$allowOverwrite){
+            $clone->attachmentEntries[] = new RequestAttachmentEntry(attachment: $attachment, allowOverwrite: $allowOverwrite);
+        } else{
+            // 単なるリストなのでまず同名ファイルを削除してから追加
+            $entries = array_filter($this->attachmentEntries,
+                static fn(RequestAttachmentEntry $entry): bool => ($entry->attachment->name !== $attachment->name),
+            );
+
+            $clone->attachmentEntries = [
+                ...array_values($entries),
+                new RequestAttachmentEntry($attachment, $allowOverwrite),
+            ];
+        }
 
         // multipartでのContent-Type指定は強制させないため初期化
         $clone->contentType = null;
@@ -414,13 +426,13 @@ final class Request {
      *  添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
      *  Factory側でユーザー指定のContent-Typeヘッダーを削除する。
      *
-     * @param  string  $name      multipartフィールド名
-     * @param  string  $path      添付するローカルファイルパス
-     * @param  boolean $overwrite ファイル添付時、同名のフィールドが存在する場合に上書きするかどうか
+     * @param  string  $name           multipartフィールド名
+     * @param  string  $path           添付するローカルファイルパス
+     * @param  boolean $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
      * @return self
      */
-    public function attachFile(string $name, string $path, bool $overwrite = true): self {
-        return $this->attach(new RequestAttachment($name, $path), $overwrite);
+    public function attachFile(string $name, string $path, bool $allowOverwrite = true): self {
+        return $this->attach(new RequestAttachment($name, $path), $allowOverwrite);
     }
 
     /**

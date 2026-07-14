@@ -464,6 +464,33 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * 添付ファイル設定後に追加したフォーム項目もmultipart/form-data用のPOSTFIELDSへ統合できることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsMultipartPostFieldsWhenFormIsAddedAfterAttachment(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $preparedRequest = Request::post('https://example.com/upload')
+                ->attach(new RequestAttachment('file', $path))
+                ->form(['name' => 'Taro'])
+                ->prepare();
+
+            $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+            self::assertIsArray($options[CURLOPT_POSTFIELDS]);
+            self::assertSame('Taro', $options[CURLOPT_POSTFIELDS]['name']);
+            self::assertInstanceOf(\CURLFile::class, $options[CURLOPT_POSTFIELDS]['file']);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
      * 添付ファイル名とフォーム項目名が重複した場合は、添付ファイル側のoverwrite設定で上書きできることを検証する。
      *
      * @return void
@@ -477,7 +504,7 @@ final class CurlOptionsFactoryTest extends TestCase {
         try{
             $preparedRequest = Request::post('https://example.com/upload')
                 ->form(['file' => 'replace me'])
-                ->attach(new RequestAttachment('file', $path), overwrite: true)
+                ->attach(new RequestAttachment('file', $path), allowOverwrite: true)
                 ->prepare();
 
             $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);

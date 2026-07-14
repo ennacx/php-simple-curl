@@ -248,7 +248,7 @@ final class RequestTest extends TestCase {
             self::assertNull($request->contentType);
             self::assertCount(1, $updated->attachmentEntries);
             self::assertSame($attachment, $updated->attachmentEntries[0]->attachment);
-            self::assertTrue($updated->attachmentEntries[0]->overwrite);
+            self::assertTrue($updated->attachmentEntries[0]->allowOverwrite);
             self::assertNull($updated->contentType);
         } finally{
             unlink($path);
@@ -268,12 +268,12 @@ final class RequestTest extends TestCase {
 
         try{
             $request = Request::post('https://example.com/upload')
-                ->attachFile('file', $path, overwrite: false);
+                ->attachFile('file', $path, allowOverwrite: false);
 
             self::assertCount(1, $request->attachmentEntries);
             self::assertSame('file', $request->attachmentEntries[0]->attachment->name);
             self::assertSame($path, $request->attachmentEntries[0]->attachment->path);
-            self::assertFalse($request->attachmentEntries[0]->overwrite);
+            self::assertFalse($request->attachmentEntries[0]->allowOverwrite);
         } finally{
             unlink($path);
         }
@@ -328,8 +328,8 @@ final class RequestTest extends TestCase {
             $this->expectException(InvalidArgumentException::class);
 
             Request::post('https://example.com/upload')
-                ->attach(new RequestAttachment('file', $path), overwrite: false)
-                ->attach(new RequestAttachment('file', $path), overwrite: false);
+                ->attach(new RequestAttachment('file', $path), allowOverwrite: false)
+                ->attach(new RequestAttachment('file', $path), allowOverwrite: false);
         } finally{
             unlink($path);
         }
@@ -351,7 +351,7 @@ final class RequestTest extends TestCase {
 
             Request::post('https://example.com/upload')
                 ->form(['file' => 'keep me'])
-                ->attach(new RequestAttachment('file', $path), overwrite: false);
+                ->attach(new RequestAttachment('file', $path), allowOverwrite: false);
         } finally{
             unlink($path);
         }
