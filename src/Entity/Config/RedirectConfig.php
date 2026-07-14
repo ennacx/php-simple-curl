@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /**
  * リダイレクト追跡に関するcURLオプションを保持するConfig。
  */
-final readonly class RedirectConfig implements CurlOptionsApplierImpl {
+final readonly class RedirectConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-interface ToCurlConstImpl {
+interface ToCurlConst {
 
     /**
      * cURL用の定数に変換

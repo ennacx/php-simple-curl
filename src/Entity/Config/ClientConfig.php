@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * リクエスト時のクライアント情報に関するcURLオプションを保持するConfig。
  */
-final readonly class ClientConfig implements CurlOptionsApplierImpl {
+final readonly class ClientConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ
