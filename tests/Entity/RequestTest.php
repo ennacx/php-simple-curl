@@ -7,8 +7,10 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\RequestAttachment;
+use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Enum\MediaRange;
 use InvalidArgumentException;
 use JsonException;
 use PHPUnit\Framework\TestCase;
@@ -89,6 +91,37 @@ final class RequestTest extends TestCase {
             'application/json',
             'text/html',
         ], $request->acceptHeaders);
+    }
+
+    /**
+     * accept()でMediaRangeやQuality Value付きAccept値を追加できることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptAddsMediaRangeAndQualifiedValue(): void {
+
+        $request = Request::get('https://example.com')
+            ->accept(MediaRange::Any)
+            ->accept(ContentType::Json->withQuality(0.9))
+            ->accept(new QualifiedAcceptValue('application/vnd.api+json', 0.75));
+
+        self::assertSame([
+            '*/*',
+            'application/json;q=0.9',
+            'application/vnd.api+json;q=0.75',
+        ], $request->acceptHeaders);
+    }
+
+    /**
+     * Quality Valueが範囲外の場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForInvalidQualityValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        ContentType::Json->withQuality(1.1);
     }
 
     /**

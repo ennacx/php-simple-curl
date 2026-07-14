@@ -147,28 +147,36 @@ $request = Request::post('https://api.example.com/users')
 
 ### Accept Header
 
-Use `accept()` or `accepts()` to add an `Accept` header from common `ContentType` values or custom media type strings.
+Use `accept()` or `accepts()` to add an `Accept` header from common `ContentType` values, `MediaRange` values, or custom media type strings.
 
 ```php
 <?php
 
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Enum\MediaRange;
 
 $request = Request::get('https://api.example.com/users')
     ->accept(ContentType::Json);
 
 $request = Request::get('https://api.example.com/users')
     ->accepts(ContentType::Json, 'application/vnd.api+json');
+
+$request = Request::get('https://api.example.com/users')
+    ->accepts(
+        ContentType::Json->withQuality(1.0),
+        ContentType::Html->withQuality(0.8),
+        MediaRange::Any->withQuality(0.1),
+    );
 ```
 
-The second request sends:
+The third request sends:
 
 ```text
-Accept: application/json, application/vnd.api+json
+Accept: application/json;q=1, text/html;q=0.8, */*;q=0.1
 ```
 
-If you need a custom `Accept` header with quality values, set it explicitly with `headers()`:
+You can still set a fully custom `Accept` header with `headers()`:
 
 ```php
 $request = Request::get('https://api.example.com/users')

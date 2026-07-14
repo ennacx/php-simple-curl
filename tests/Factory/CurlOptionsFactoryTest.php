@@ -10,6 +10,7 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\RequestAttachment;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Enum\MediaRange;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -201,6 +202,28 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         self::assertSame([
             'Accept: application/json, application/vnd.api+json',
+        ], $options[CURLOPT_HTTPHEADER]);
+    }
+
+    /**
+     * Quality Value付きAccept値がAcceptヘッダーへ反映されることを検証する。
+     *
+     * @return void
+     */
+    public function testBuildsAcceptHeaderWithQualityValues(): void {
+
+        $preparedRequest = Request::get('https://example.com')
+            ->accepts(
+                ContentType::Json->withQuality(1.0),
+                ContentType::Html->withQuality(0.8),
+                MediaRange::Any->withQuality(0.1),
+            )
+            ->prepare();
+
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+        self::assertSame([
+            'Accept: application/json;q=1, text/html;q=0.8, */*;q=0.1',
         ], $options[CURLOPT_HTTPHEADER]);
     }
 
