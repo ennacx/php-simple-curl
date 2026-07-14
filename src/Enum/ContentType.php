@@ -32,6 +32,9 @@ enum ContentType : string {
     /** バイナリデータ (`application/octet-stream`) */
     case OctetStream = 'application/octet-stream';
 
+    /** multipartフォームデータ (`multipart/form-data`) */
+    case MultipartFormData = 'multipart/form-data';
+
     /**
      * Content-Typeヘッダーを配列またはcURL用のヘッダー文字列として取得する。
      *

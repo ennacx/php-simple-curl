@@ -303,7 +303,46 @@ $request = Request::post('https://api.example.com/users')
     ]);
 ```
 
-Multipart uploads and stream-based request bodies are planned for a later implementation. They are intentionally not part of the current public request body API yet.
+Use `attach()` to send files as `multipart/form-data`:
+
+```php
+<?php
+
+use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Entity\RequestAttachment;
+
+$request = Request::post('https://api.example.com/upload')
+    ->form([
+        'description' => 'Profile image',
+    ])
+    ->attach(new RequestAttachment(
+        name: 'file',
+        path: __DIR__ . '/avatar.png',
+        filename: 'avatar.png',
+        mimeType: 'image/png',
+    ));
+```
+
+When attachments are present, `Content-Type` is managed by cURL. Any user-defined `Content-Type` header is removed so cURL can generate the required multipart boundary.
+
+If an attachment name conflicts with a form field name or another attachment, the attachment overwrites the existing field by default. Pass `allowOverwrite: false` to `attach()` to reject duplicate names instead:
+
+```php
+$request = Request::post('https://api.example.com/upload')
+    ->form(['file' => 'already used'])
+    ->attach(new RequestAttachment('file', __DIR__ . '/avatar.png'), allowOverwrite: false);
+```
+
+Use `attachFile()` when the default filename and MIME handling are enough:
+
+```php
+$request = Request::post('https://api.example.com/upload')
+    ->attachFile('file', __DIR__ . '/avatar.png');
+```
+
+Attachments can be combined with `form()` fields only. JSON or raw body payloads cannot be mixed with file attachments.
+
+Stream-based request bodies are planned for a later implementation. They are intentionally not part of the current public request body API yet.
 
 Supported request factory methods:
 
