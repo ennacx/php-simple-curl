@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL SSLバージョン
  */
-enum SSLVersion implements ToCurlConstImpl {
+enum SSLVersion implements ToCurlConst {
 
     /** 最適なバージョンを探す */
     case DEFAULT;

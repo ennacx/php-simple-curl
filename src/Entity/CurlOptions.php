@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
-use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierImpl;
+use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplier;
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
@@ -17,10 +17,10 @@ final readonly class CurlOptions {
     /**
      * コンストラクタ
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @param boolean                   $captureHeaders レスポンスヘッダーをResponseに保持するか
      * @param boolean                   $captureBody    レスポンスボディをResponseに保持するか
-     * @param array<class-string<T>, T> $config         `CurlOptionsApplierImpl` のリスト
+     * @param array<class-string<T>, T> $config         `CurlOptionsApplier` のリスト
      */
     public function __construct(
         public  bool  $captureHeaders = true,
@@ -32,21 +32,21 @@ final readonly class CurlOptions {
     /**
      * デフォルト設定のCurlOptionsを生成する。
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @param  list<T> $config cURLオプションを保持するConfig
      * @return self
      */
-    public static function create(CurlOptionsApplierImpl ...$config): self {
+    public static function create(CurlOptionsApplier ...$config): self {
         return (new self())->with(...$config);
     }
 
     /**
      * Configクラスを反映した本クラスを返却する。
      *
-     * @param  CurlOptionsApplierImpl ...$config cURLオプションを保持するConfig
+     * @param  CurlOptionsApplier ...$config cURLオプションを保持するConfig
      * @return self
      */
-    public function with(CurlOptionsApplierImpl ...$config): self {
+    public function with(CurlOptionsApplier ...$config): self {
 
         $applied = $this->config;
 
@@ -64,7 +64,7 @@ final readonly class CurlOptions {
     /**
      * 指定Configクラスが設定済みかをチェックする。
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @param class-string<T> $class
      */
     public function has(string $class): bool {
@@ -74,11 +74,11 @@ final readonly class CurlOptions {
     /**
      * 指定されたConfigクラスを取得する。
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @param  class-string<T> $class
      * @return T|null
      */
-    public function get(string $class): ?CurlOptionsApplierImpl {
+    public function get(string $class): ?CurlOptionsApplier {
 
         if(!$this->has($class)){
             return null;
@@ -90,7 +90,7 @@ final readonly class CurlOptions {
     /**
      * 指定されたConfigクラスを削除する。
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @param  class-string<T> $class
      * @return self
      */
@@ -211,7 +211,7 @@ final readonly class CurlOptions {
      * 本クラスに設定されたConfig群を返却する。
      * ※設定していないConfigは返さない。
      *
-     * @template T of CurlOptionsApplierImpl
+     * @template T of CurlOptionsApplier
      * @return list<T>
      */
     public function getConfig(): array {

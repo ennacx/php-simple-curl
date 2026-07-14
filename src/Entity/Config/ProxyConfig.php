@@ -10,7 +10,7 @@ use InvalidArgumentException;
 /**
  * プロキシー接続に関するcURLオプションを保持するConfig。
  */
-final readonly class ProxyConfig implements CurlOptionsApplierImpl {
+final readonly class ProxyConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ
