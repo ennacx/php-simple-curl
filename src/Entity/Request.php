@@ -519,6 +519,12 @@ final class Request {
         return null;
     }
 
+    /**
+     * Acceptヘッダー値から重複判定用のメディアタイプを取り出す。
+     *
+     * @param  string $acceptValue
+     * @return string
+     */
     private static function normalizeAcceptKey(string $acceptValue): string {
         return strtolower(trim(explode(';', $acceptValue, 2)[0]));
     }
