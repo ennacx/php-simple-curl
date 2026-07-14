@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * SSL/TLSに関するcURLオプションを保持するConfig。
  */
-final readonly class SslConfig implements CurlOptionsApplierImpl {
+final readonly class SslConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ

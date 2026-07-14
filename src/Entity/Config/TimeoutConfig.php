@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /**
  * タイムアウトに関するcURLオプションを保持するConfig。
  */
-final readonly class TimeoutConfig implements CurlOptionsApplierImpl {
+final readonly class TimeoutConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ

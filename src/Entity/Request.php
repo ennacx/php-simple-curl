@@ -129,27 +129,32 @@ final class Request {
     /**
      * Acceptヘッダーへ送信可能なメディアタイプを追加する。
      *
-     * `ContentType` enumだけでなく、`application/vnd.api+json` のような任意のメディアタイプ文字列も指定できる。
+     * `ContentType` enumや`MediaRange` enumだけでなく、
+     * `application/vnd.api+json` のような任意のメディアタイプ文字列も指定できる。
      * 同じ値が既に追加されている場合は、現在のRequestをそのまま返す。
      *
-     * @param  ContentType|string $contentType Acceptヘッダーに追加するメディアタイプ
+     * @param  AcceptValue|string $acceptValue Acceptヘッダーに追加するメディアタイプ
      * @return self
      */
-    public function accept(ContentType|string $contentType): self {
+    public function accept(AcceptValue|string $acceptValue): self {
 
-        $contentType = ($contentType instanceof ContentType) ? $contentType->value : trim($contentType);
+        $acceptValue = ($acceptValue instanceof AcceptValue) ? $acceptValue->toHeaderValue() : trim($acceptValue);
 
-        if($contentType === ''){
+        if($acceptValue === ''){
             throw new InvalidArgumentException('Accept type must not be empty.');
         }
 
-        if(in_array($contentType, $this->acceptHeaders, true)){
-            return $this;
+        $acceptKey = self::normalizeAcceptKey($acceptValue);
+
+        foreach($this->acceptHeaders as $header){
+            if(self::normalizeAcceptKey($header) === $acceptKey){
+                return $this;
+            }
         }
 
         $clone = clone $this;
 
-        $clone->acceptHeaders[] = $contentType;
+        $clone->acceptHeaders[] = $acceptValue;
 
         return $clone;
     }
@@ -157,16 +162,16 @@ final class Request {
     /**
      * 複数のメディアタイプをAcceptヘッダーへ追加する。
      *
-     * @param  ContentType|string ...$contentTypes Acceptヘッダーに追加するメディアタイプ
+     * @param  AcceptValue|string ...$acceptValues Acceptヘッダーに追加するメディアタイプ
      * @return self
      */
-    public function accepts(ContentType|string ...$contentTypes): self {
+    public function accepts(AcceptValue|string ...$acceptValues): self {
 
         $clone = clone $this;
 
-        foreach($contentTypes as $contentType){
+        foreach($acceptValues as $acceptValue){
             // `accept()` 内でcloneしてしまっているため `$clone` に都度代入
-            $clone = $clone->accept($contentType);
+            $clone = $clone->accept($acceptValue);
         }
 
         return $clone;
@@ -512,5 +517,15 @@ final class Request {
         }
 
         return null;
+    }
+
+    /**
+     * Acceptヘッダー値から重複判定用のメディアタイプを取り出す。
+     *
+     * @param  string $acceptValue
+     * @return string
+     */
+    private static function normalizeAcceptKey(string $acceptValue): string {
+        return strtolower(trim(explode(';', $acceptValue, 2)[0]));
     }
 }

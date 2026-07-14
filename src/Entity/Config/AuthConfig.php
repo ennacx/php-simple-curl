@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * HTTP認証に関するcURLオプションを保持するConfig。
  */
-final readonly class AuthConfig implements CurlOptionsApplierImpl {
+final readonly class AuthConfig implements CurlOptionsApplier {
 
     /**
      * コンストラクタ

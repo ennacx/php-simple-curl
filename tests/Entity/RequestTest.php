@@ -7,8 +7,10 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\RequestAttachment;
+use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Enum\MediaRange;
 use InvalidArgumentException;
 use JsonException;
 use PHPUnit\Framework\TestCase;
@@ -89,6 +91,120 @@ final class RequestTest extends TestCase {
             'application/json',
             'text/html',
         ], $request->acceptHeaders);
+    }
+
+    /**
+     * accept()でMediaRangeやQuality Value付きAccept値を追加できることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptAddsMediaRangeAndQualifiedValue(): void {
+
+        $request = Request::get('https://example.com')
+            ->accept(MediaRange::Any)
+            ->accept(ContentType::Json->withQuality(0.9))
+            ->accept(new QualifiedAcceptValue('application/vnd.api+json', 0.75));
+
+        self::assertSame([
+            '*/*',
+            'application/json;q=0.9',
+            'application/vnd.api+json;q=0.75',
+        ], $request->acceptHeaders);
+    }
+
+    /**
+     * Quality ValueがAcceptヘッダー用の文字列へ整形されることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptFormatsQualityValue(): void {
+
+        $request = Request::get('https://example.com')
+            ->accept(ContentType::Json->withQuality(0.8))
+            ->accept(MediaRange::Any->withQuality(0.1234));
+
+        self::assertSame([
+            'application/json;q=0.8',
+            '*/*;q=0.123',
+        ], $request->acceptHeaders);
+    }
+
+    /**
+     * Quality Valueに0を明示できることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptAllowsZeroQualityValue(): void {
+
+        $request = Request::get('https://example.com')
+            ->accept(MediaRange::Any->withQuality(0.0));
+
+        self::assertSame(['*/*;q=0'], $request->acceptHeaders);
+    }
+
+    /**
+     * 同じメディアタイプを異なるQuality Valueで追加した場合、先に追加した値を維持することを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptSkipsDuplicateMediaRangeWithDifferentQualityValue(): void {
+
+        $request = Request::get('https://example.com')
+            ->accepts(
+                ContentType::Json,
+                ContentType::Json->withQuality(0.5),
+                'application/json;q=0.8'
+            );
+
+        self::assertSame(['application/json'], $request->acceptHeaders);
+    }
+
+    /**
+     * Quality Valueが1を超える場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForInvalidQualityValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        ContentType::Json->withQuality(1.1);
+    }
+
+    /**
+     * Quality Valueが0未満の場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForNegativeQualityValue(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        ContentType::Json->withQuality(-0.1);
+    }
+
+    /**
+     * すでにQuality Value付きのAccept値を再度ラップした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForQualifiedAcceptValueWrapping(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        new QualifiedAcceptValue(ContentType::Json->withQuality(0.8), 0.5);
+    }
+
+    /**
+     * q値を含むAccept文字列を再度ラップした場合に例外を投げることを検証する。
+     *
+     * @return void
+     */
+    public function testAcceptThrowsExceptionForQualifiedStringWrapping(): void {
+
+        $this->expectException(InvalidArgumentException::class);
+
+        new QualifiedAcceptValue('application/json;q=0.8', 0.5);
     }
 
     /**
