@@ -11,8 +11,8 @@ use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
-use InvalidArgumentException;
-use JsonException;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -166,7 +166,7 @@ final class RequestTest extends TestCase {
      */
     public function testAcceptThrowsExceptionForInvalidQualityValue(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         ContentType::Json->withQuality(1.1);
     }
@@ -178,7 +178,7 @@ final class RequestTest extends TestCase {
      */
     public function testAcceptThrowsExceptionForNegativeQualityValue(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         ContentType::Json->withQuality(-0.1);
     }
@@ -190,7 +190,7 @@ final class RequestTest extends TestCase {
      */
     public function testAcceptThrowsExceptionForQualifiedAcceptValueWrapping(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         new QualifiedAcceptValue(ContentType::Json->withQuality(0.8), 0.5);
     }
@@ -202,7 +202,7 @@ final class RequestTest extends TestCase {
      */
     public function testAcceptThrowsExceptionForQualifiedStringWrapping(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         new QualifiedAcceptValue('application/json;q=0.8', 0.5);
     }
@@ -214,7 +214,7 @@ final class RequestTest extends TestCase {
      */
     public function testAcceptThrowsExceptionForEmptyType(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         Request::get('https://example.com')
             ->accept('   ');
@@ -287,7 +287,7 @@ final class RequestTest extends TestCase {
      */
     public function testInvalidUrlThrowsException(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         Request::get('example.com');
     }
@@ -299,7 +299,7 @@ final class RequestTest extends TestCase {
      */
     public function testInvalidHeaderNameThrowsException(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidRequestException::class);
 
         Request::get('https://example.com')->headers(['' => 'value']);
     }
@@ -338,7 +338,7 @@ final class RequestTest extends TestCase {
      */
     public function testBodyFromFileThrowsExceptionForMissingFile(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RequestBodyException::class);
 
         Request::post('https://example.com/upload')
             ->bodyFromFile(sys_get_temp_dir() . '/simple-curl-missing-file');
@@ -402,7 +402,7 @@ final class RequestTest extends TestCase {
      */
     public function testAttachThrowsExceptionForMissingFile(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(RequestBodyException::class);
 
         Request::post('https://example.com/upload')
             ->attach(new RequestAttachment('file', sys_get_temp_dir() . '/simple-curl-missing-attachment'));
@@ -420,7 +420,7 @@ final class RequestTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $this->expectException(InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             Request::post('https://example.com/upload')
                 ->attach(new RequestAttachment('   ', $path));
@@ -441,7 +441,7 @@ final class RequestTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $this->expectException(InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             Request::post('https://example.com/upload')
                 ->attach(new RequestAttachment('file', $path), allowOverwrite: false)
@@ -463,7 +463,7 @@ final class RequestTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $this->expectException(InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             Request::post('https://example.com/upload')
                 ->form(['file' => 'keep me'])
@@ -485,7 +485,7 @@ final class RequestTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $this->expectException(InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             Request::post('https://example.com/upload')
                 ->attach(new RequestAttachment('file', $path))
@@ -507,7 +507,7 @@ final class RequestTest extends TestCase {
         file_put_contents($path, 'attachment body');
 
         try{
-            $this->expectException(InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             Request::post('https://example.com/upload')
                 ->attach(new RequestAttachment('file', $path))
@@ -521,11 +521,10 @@ final class RequestTest extends TestCase {
      * 不正なJSON文字列はthrow=trueの場合に例外を投げることを検証する。
      *
      * @return void
-     * @throws JsonException
      */
     public function testJsonThrowsExceptionForInvalidJsonString(): void {
 
-        $this->expectException(JsonException::class);
+        $this->expectException(RequestBodyException::class);
 
         Request::post('https://example.com/users')
             ->json('{"name":');

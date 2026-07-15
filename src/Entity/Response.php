@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlError;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use JsonException;
 
 /**
@@ -137,15 +137,15 @@ final readonly class Response {
      * レスポンスボディをJSONとしてデコードする。
      *
      * @param  boolean $associative `true`の場合は連想配列として返す
-     * @param  boolean $throw       `true`の場合はJSONデコード失敗時に`InvalidArgumentException`を投げる
+     * @param  boolean $throw       `true`の場合はJSONデコード失敗時に`InvalidResponseException`をスローする
      * @return mixed
-     * @throws InvalidArgumentException
+     * @throws InvalidResponseException
      */
     public function json(bool $associative = true, bool $throw = true): mixed {
 
         if($this->body === null || $this->body === ''){
             if($throw){
-                throw new InvalidArgumentException('Response body is empty.');
+                throw new InvalidResponseException('Response body is empty.');
             }
 
             return null;
@@ -158,7 +158,7 @@ final readonly class Response {
                 flags:       ($throw) ? JSON_THROW_ON_ERROR : 0
             );
         } catch(JsonException $e){
-            throw new InvalidArgumentException('Failed to decode JSON.', previous: $e);
+            throw new InvalidResponseException('Failed to decode JSON.', previous: $e);
         }
     }
 

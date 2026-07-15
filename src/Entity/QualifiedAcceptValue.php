@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity;
 
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 
 /**
  * QualityValue付きのAcceptヘッダー値を表す値オブジェクト。
@@ -13,24 +13,25 @@ final readonly class QualifiedAcceptValue implements AcceptValue {
     /**
      * コンストラクタ
      *
-     * @param AcceptValue|string $value   メディアタイプまたはメディアレンジ
-     * @param float              $quality Quality Value。0.0から1.0まで
+     * @param  AcceptValue|string $value   メディアタイプまたはメディアレンジ
+     * @param  float              $quality Quality Value。0.0から1.0まで
+     * @throws InvalidRequestException
      */
     public function __construct(
         private AcceptValue|string $value,
         private float              $quality
     ){
         if(is_string($value) && trim($value) === ''){
-            throw new InvalidArgumentException('Accept value must not be empty.');
+            throw new InvalidRequestException('Accept value must not be empty.');
         }
 
         // 二重ラップ防止と文字列指定時に`q=`があるかの簡易チェック (元々あったq値のチェックまではしない)
         if($value instanceof self || (is_string($value) && preg_match('/(?:^|;)\s*q\s*=/i', $value) === 1)){
-            throw new InvalidArgumentException('Qualified accept value cannot be qualified again.');
+            throw new InvalidRequestException('Qualified accept value cannot be qualified again.');
         }
 
         if($quality < 0.0 || $quality > 1.0){
-            throw new InvalidArgumentException('Quality value must be between 0.0 and 1.0.');
+            throw new InvalidRequestException('Quality value must be between 0.0 and 1.0.');
         }
     }
 
