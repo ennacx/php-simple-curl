@@ -8,6 +8,7 @@ use CurlMultiHandle;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\Response;
+use Ennacx\SimpleCurl\Entity\Responses;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
@@ -38,11 +39,11 @@ final readonly class MultiClient {
      * ※返却配列のキーには各Requestの `Request::$id` を使用する。
      *
      * @param  Request|PreparedRequest ...$preparedRequests 実行対象のRequestまたはPreparedRequest
-     * @return array<string, Response>
+     * @return Responses
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
      */
-    public function sendAll(Request|PreparedRequest ...$preparedRequests): array {
+    public function sendAll(Request|PreparedRequest ...$preparedRequests): Responses {
 
         // Requestの変換
         $preparedRequests = array_map(function(Request|PreparedRequest $preparedRequest): PreparedRequest {
@@ -126,7 +127,7 @@ final readonly class MultiClient {
             }
         }
 
-        return $responses;
+        return new Responses($responses);
     }
 
     /**
