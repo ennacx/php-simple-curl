@@ -6,11 +6,10 @@ namespace Ennacx\SimpleCurl\Client;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\Response;
+use Ennacx\SimpleCurl\Exception\CurlExecutionException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
-use InvalidArgumentException;
-use RuntimeException;
-use Throwable;
 
 /**
  * 単一のリクエストをcURLで実行するクライアント。
@@ -38,14 +37,15 @@ final readonly class SingleClient {
      *
      * @param  Request|PreparedRequest $preparedRequest 実行対象のRequestまたはPreparedRequest
      * @return Response
-     * @throws Throwable
+     * @throws InvalidConfigurationException
+     * @throws CurlExecutionException
      */
     public function send(Request|PreparedRequest $preparedRequest): Response {
 
         $ch = curl_init();
 
         if($ch === false){
-            throw new RuntimeException('cURL initialize failed.');
+            throw new CurlExecutionException('cURL initialize failed.');
         }
 
         // Requestの変換
@@ -55,7 +55,7 @@ final readonly class SingleClient {
 
         // `CURLOPT_*` の設定
         if(!curl_setopt_array($ch, $this->optionsFactory->fromPreparedRequest($preparedRequest))){
-            throw new InvalidArgumentException('Invalid cURL option or value included.');
+            throw new InvalidConfigurationException('Invalid cURL option or value included.');
         }
 
         // cURL実行

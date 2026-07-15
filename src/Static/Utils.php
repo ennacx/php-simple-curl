@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Static;
 
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
+use Ennacx\SimpleCurl\Exception\SimpleCurlException;
 use Random\RandomException;
-use RuntimeException;
 use Stringable;
 
 final class Utils {
@@ -83,14 +83,14 @@ final class Utils {
      *
      * @param  string                   $path 対象ファイルパス
      * @return void
-     * @throws InvalidArgumentException       ファイルが存在しない・読取不可・通常ファイルではない場合
+     * @throws RequestBodyException           ファイルが存在しない・読取不可・通常ファイルではない場合
      */
     public static function fileCheck(string $path): void {
 
         if(!file_exists($path) || !is_readable($path)){
-            throw new InvalidArgumentException('Target file does not exist or is not readable.');
+            throw new RequestBodyException('Target file does not exist or is not readable.');
         } else if(!is_file($path)){
-            throw new InvalidArgumentException('Target path is not a file.');
+            throw new RequestBodyException('Target path is not a file.');
         }
     }
 
@@ -98,7 +98,7 @@ final class Utils {
      * UUIDv4を生成する。
      *
      * @return string RFC4122 UUID
-     * @throws RuntimeException
+     * @throws SimpleCurlException
      * @see    https://www.ietf.org/rfc/rfc4122.txt
      */
     public static function uuid_v4(): string {
@@ -123,7 +123,7 @@ final class Utils {
                 random_int(0, 0xFFFF)
             );
         } catch(RandomException $e){
-            throw new RuntimeException($e->getMessage(), previous: $e);
+            throw new SimpleCurlException('UUIDv4 generation failed.', previous: $e);
         }
     }
 }

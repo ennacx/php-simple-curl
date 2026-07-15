@@ -5,8 +5,9 @@ namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Static\Utils;
-use InvalidArgumentException;
 use JsonException;
 
 /**
@@ -87,13 +88,14 @@ final class Request {
      * @param  string $method 呼び出された静的メソッド名
      * @param  array  $args   Requestコンストラクタへ渡す引数 (現在`url`のみ)
      * @return self
+     * @throws InvalidRequestException
      */
     public static function __callStatic(string $method, array $args): self {
 
         // HTTPメソッドの解決
         $curlMethod = self::findCurlMethod($method);
         if($curlMethod === null){
-            throw new InvalidArgumentException(sprintf('Invalid method: %s', $method));
+            throw new InvalidRequestException(sprintf('Invalid method: %s', $method));
         }
 
         // URL取得
@@ -107,7 +109,7 @@ final class Request {
         }
 
         if($url === null){
-            throw new InvalidArgumentException('Request URL is required.');
+            throw new InvalidRequestException('Request URL is required.');
         }
 
         return new self($url, $curlMethod);
@@ -135,13 +137,14 @@ final class Request {
      *
      * @param  AcceptValue|string $acceptValue Acceptヘッダーに追加するメディアタイプ
      * @return self
+     * @throws InvalidRequestException
      */
     public function accept(AcceptValue|string $acceptValue): self {
 
         $acceptValue = ($acceptValue instanceof AcceptValue) ? $acceptValue->toHeaderValue() : trim($acceptValue);
 
         if($acceptValue === ''){
-            throw new InvalidArgumentException('Accept type must not be empty.');
+            throw new InvalidRequestException('Accept type must not be empty.');
         }
 
         $acceptKey = self::normalizeAcceptKey($acceptValue);
@@ -164,6 +167,7 @@ final class Request {
      *
      * @param  AcceptValue|string ...$acceptValues Acceptヘッダーに追加するメディアタイプ
      * @return self
+     * @throws InvalidRequestException
      */
     public function accepts(AcceptValue|string ...$acceptValues): self {
 
@@ -184,6 +188,7 @@ final class Request {
      * @param  mixed   $value     設定値 (`null`時は指定キーをクエリパラメーターから除外する)
      * @param  boolean $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
      * @return self
+     * @throws InvalidRequestException
      */
     public function param(string $key, mixed $value, bool $overwrite = true): self {
 
@@ -193,7 +198,7 @@ final class Request {
 
         $paramValue = Utils::toString($value);
         if($paramValue === false){
-            throw new InvalidArgumentException(sprintf('Request param "%s" has an invalid value.', $key));
+            throw new InvalidRequestException(sprintf('Request param "%s" has an invalid value.', $key));
         }
 
         $clone = clone $this;
@@ -221,6 +226,7 @@ final class Request {
      * @param  array<string, mixed> $params    `$overwrite = true` 且つ `value = null` の場合は対象キーをクエリパラメーターから除外する
      * @param  boolean              $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
      * @return self
+     * @throws InvalidRequestException
      */
     public function params(array $params, bool $overwrite = true): self {
 
@@ -249,6 +255,7 @@ final class Request {
      * @param  ContentType  $contentType ボディー形式に対応するContent-Type
      * @param  array        $options     リクエストボディーのオプション
      * @return self
+     * @throws RequestBodyException
      */
     public function body(array|string $body, ContentType $contentType = ContentType::PlainText, array $options = []): self {
 
@@ -259,7 +266,7 @@ final class Request {
 
         // 既に添付ファイルが存在する場合はmultipart以外のボディーを設定できない
         if($this->attachmentEntries !== [] && $contentType !== ContentType::FormUrlEncoded){
-            throw new InvalidArgumentException('Only form fields can be combined with attachments.');
+            throw new RequestBodyException('Only form fields can be combined with attachments.');
         }
 
         $clone = clone $this;
@@ -276,13 +283,13 @@ final class Request {
      * @param  string      $path        ファイルパス
      * @param  ContentType $contentType Content-Type (Enum)
      * @return self
-     * @throws InvalidArgumentException ファイルが存在しない、または読取不可の場合
+     * @throws RequestBodyException     ファイルが存在しない、または読取不可の場合
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
 
         // 既に添付ファイルが存在する場合はテキストボディーを設定できないためエラー
         if($this->attachmentEntries !== []){
-            throw new InvalidArgumentException('Cannot set file body when attachments are set.');
+            throw new RequestBodyException('Cannot set file body when attachments are set.');
         }
 
         // ファイルチェック
@@ -291,7 +298,7 @@ final class Request {
         $content = file_get_contents($path);
 
         if($content === false){
-            throw new InvalidArgumentException('Failed to read target file.');
+            throw new RequestBodyException('Failed to read target file.');
         }
 
         return $this->body($content, $contentType);
@@ -306,13 +313,13 @@ final class Request {
      * @param  int                             $jsonFlags 配列をJSON化する場合に `json_encode()` へ渡すJSONフラグ
      * @param  boolean                         $throw     JSON変換失敗時に例外を投げる場合はtrue
      * @return self
-     * @throws JsonException `$throw = true` の時、JSON変換失敗時に投げられる例外
+     * @throws RequestBodyException `$throw = true` の時、JSON変換失敗時に投げられる例外
      */
     public function json(array|string $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
 
         // 既に添付ファイルが存在する場合はJSONボディーを設定できないためエラー
         if($this->attachmentEntries !== []){
-            throw new InvalidArgumentException('Cannot set JSON body when attachments are set.');
+            throw new RequestBodyException('Cannot set JSON body when attachments are set.');
         }
 
         if(is_string($input)){
@@ -320,7 +327,7 @@ final class Request {
                 $inputArray = json_decode($input, true, flags: JSON_THROW_ON_ERROR);
             } catch(JsonException $e){
                 if($throw){
-                    throw $e;
+                    throw new RequestBodyException('JSON parse error.', previous: $e);
                 }
 
                 return $this;
@@ -362,18 +369,18 @@ final class Request {
      * @param  RequestAttachment $attachment     添付ファイル情報
      * @param  boolean           $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
      * @return self
-     * @throws InvalidArgumentException 添付ファイルが存在しない、または読取不可の場合
+     * @throws RequestBodyException 添付ファイルが存在しない、または読取不可の場合
      */
     public function attach(RequestAttachment $attachment, bool $allowOverwrite = true): self {
 
         // フィールド名が空の場合はエラー
         if(trim($attachment->name) === ''){
-            throw new InvalidArgumentException('Attachment name must not be empty.');
+            throw new RequestBodyException('Attachment name must not be empty.');
         }
 
         // リクエストボディーが設定済みの場合、フォーム形式で無いとエラー
         if($this->requestBody !== null && $this->requestBody->contentType !== ContentType::FormUrlEncoded){
-            throw new InvalidArgumentException("The attachment cannot be added when the request body is specified.");
+            throw new RequestBodyException("The attachment cannot be added when the request body is specified.");
         }
 
         // ファイルチェック
@@ -384,7 +391,7 @@ final class Request {
             // 添付ファイル側の方
             $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
             if(in_array($attachment->name, $attachNames, true)){
-                throw new InvalidArgumentException("The attachment name is already used in attachment.");
+                throw new RequestBodyException("The attachment name is already used in attachment.");
             }
 
             unset($attachNames);
@@ -393,7 +400,7 @@ final class Request {
             $body = $this->requestBody?->body ?? null;
             if(is_array($body) && $body !== []){
                 if(array_key_exists($attachment->name, $body)){
-                    throw new InvalidArgumentException("The attachment name is already used in body.");
+                    throw new RequestBodyException("The attachment name is already used in body.");
                 }
             }
 
@@ -435,6 +442,7 @@ final class Request {
      * @param  string  $path           添付するローカルファイルパス
      * @param  boolean $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
      * @return self
+     * @throws RequestBodyException
      */
     public function attachFile(string $name, string $path, bool $allowOverwrite = true): self {
         return $this->attach(new RequestAttachment($name, $path), $allowOverwrite);
@@ -455,17 +463,18 @@ final class Request {
      *
      * @param  string $url
      * @return string
+     * @throws InvalidRequestException
      */
     private static function validateUrl(string $url): string {
 
         $url = trim($url);
         if($url === ''){
-            throw new InvalidArgumentException('Request URL must not be empty.');
+            throw new InvalidRequestException('Request URL must not be empty.');
         }
 
         $parts = parse_url($url);
         if($parts === false || empty($parts['scheme'])){
-            throw new InvalidArgumentException(sprintf('Invalid request URL: %s', $url));
+            throw new InvalidRequestException(sprintf('Invalid request URL: %s', $url));
         }
 
         return $url;
@@ -476,23 +485,24 @@ final class Request {
      *
      * @param  array<string, mixed> $headers
      * @return array<string, string>
+     * @throws InvalidRequestException
      */
     private static function validateHeaders(array $headers): array {
 
         $ret = [];
         foreach($headers as $name => $value){
             if(!is_string($name) || trim($name) === ''){
-                throw new InvalidArgumentException('Request header name must be a non-empty string.');
+                throw new InvalidRequestException('Request header name must be a non-empty string.');
             }
 
             $headerValue = Utils::toString($value);
             if($headerValue === false){
-                throw new InvalidArgumentException(sprintf('Request header "%s" has an invalid value.', $name));
+                throw new InvalidRequestException(sprintf('Request header "%s" has an invalid value.', $name));
             }
 
             $headerName = trim($name);
             if($headerValue === ''){
-                throw new InvalidArgumentException(sprintf('Request header "%s" must not be empty.', $headerName));
+                throw new InvalidRequestException(sprintf('Request header "%s" must not be empty.', $headerName));
             }
 
             $ret[$headerName] = $headerValue;

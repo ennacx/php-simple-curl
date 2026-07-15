@@ -9,11 +9,10 @@ use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
+use Ennacx\SimpleCurl\Exception\CurlExecutionException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
-use InvalidArgumentException;
-use RuntimeException;
-use Throwable;
 
 /**
  * 複数のリクエストをcURL Multiで並列実行するクライアント。
@@ -40,7 +39,8 @@ final readonly class MultiClient {
      *
      * @param  Request|PreparedRequest ...$preparedRequests 実行対象のRequestまたはPreparedRequest
      * @return array<string, Response>
-     * @throws Throwable
+     * @throws InvalidConfigurationException
+     * @throws CurlExecutionException
      */
     public function sendAll(Request|PreparedRequest ...$preparedRequests): array {
 
@@ -61,21 +61,21 @@ final readonly class MultiClient {
                 $ch = curl_init();
 
                 if($ch === false){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL handle. Request-ID: %s', $preparedRequest->request->id));
+                    throw new CurlExecutionException(sprintf('Invalid cURL handle. Request-ID: %s', $preparedRequest->request->id));
                 }
 
                 // ループ中の Request-ID 取得
                 $requestId = $preparedRequest->request->id;
 
                 if(!curl_setopt_array($ch, $this->optionsFactory->fromPreparedRequest($preparedRequest))){
-                    throw new InvalidArgumentException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
+                    throw new InvalidConfigurationException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
                 }
 
                 // cURLハンドラーを追加
                 $result = curl_multi_add_handle($cmh, $ch);
 
                 if($result !== MultiCurlError::OK->value){
-                    throw new RuntimeException(sprintf('Failed to add cURL handle. Request-ID: %s', $requestId));
+                    throw new CurlExecutionException(sprintf('Failed to add cURL handle. Request-ID: %s', $requestId));
                 }
 
                 // レスポンス整理用にマッピング配列を生成
@@ -90,7 +90,7 @@ final readonly class MultiClient {
             $result = $this->exec($cmh, $running);
 
             if($result !== MultiCurlError::OK->value){
-                throw new RuntimeException('The request could not be started. One of the settings in the multi-request may be invalid.');
+                throw new CurlExecutionException('The request could not be started. One of the settings in the multi-request may be invalid.');
             }
 
             // 完了しているハンドラーがあれば回収してレスポンスを生成
@@ -109,14 +109,12 @@ final readonly class MultiClient {
                 $result = $this->exec($cmh, $running);
 
                 if($result !== MultiCurlError::OK->value){
-                    throw new RuntimeException('The request failed during multi execution.');
+                    throw new CurlExecutionException('The request failed during multi execution.');
                 }
 
                 // 完了しているハンドラーがあれば回収してレスポンスを生成
                 $this->drainCompleted($cmh, $handles, $responses);
             }
-        } catch(Throwable $e){
-            throw $e;
         } finally{
             // PHP 8.0以降、CurlHandle/CurlMultiHandle はオブジェクトとして管理されるため、curl_close()/curl_multi_close() は呼ばず、スコープアウト時のGCに任せる
 

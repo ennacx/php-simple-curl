@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity\Config;
 
 use Ennacx\SimpleCurl\Enum\SSLVersion;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * SSL/TLSに関するcURLオプションを保持するConfig。
@@ -14,13 +14,14 @@ final readonly class SslConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param boolean         $verifyPeer      証明書検証を行うか
-     * @param boolean         $verifyHost      ホスト名検証を行うか
-     * @param string|null     $caInfo          CA証明書ファイルパス
-     * @param string|null     $caPath          CA証明書ディレクトリパス
-     * @param SSLVersion|null $version         SSL/TLSバージョン
-     * @param boolean         $verifyStatus    OCSP staplingによる証明書状態検証を行うか
-     * @param string|null     $pinnedPublicKey ピン留め公開鍵
+     * @param  boolean         $verifyPeer      証明書検証を行うか
+     * @param  boolean         $verifyHost      ホスト名検証を行うか
+     * @param  string|null     $caInfo          CA証明書ファイルパス
+     * @param  string|null     $caPath          CA証明書ディレクトリパス
+     * @param  SSLVersion|null $version         SSL/TLSバージョン
+     * @param  boolean         $verifyStatus    OCSP staplingによる証明書状態検証を行うか
+     * @param  string|null     $pinnedPublicKey ピン留め公開鍵
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public bool        $verifyPeer      = true,
@@ -32,15 +33,15 @@ final readonly class SslConfig implements CurlOptionsApplier {
         public ?string     $pinnedPublicKey = null,
     ){
         if($this->caInfo !== null && !is_file($this->caInfo)){
-            throw new InvalidArgumentException('CA info file not found.');
+            throw new InvalidConfigurationException('CA info file not found.');
         }
 
         if($this->caPath !== null && !is_dir($this->caPath)){
-            throw new InvalidArgumentException('CA path directory not found.');
+            throw new InvalidConfigurationException('CA path directory not found.');
         }
 
         if($this->pinnedPublicKey !== null && trim($this->pinnedPublicKey) === ''){
-            throw new InvalidArgumentException('Pinned public key must not be empty.');
+            throw new InvalidConfigurationException('Pinned public key must not be empty.');
         }
     }
 
