@@ -91,7 +91,7 @@ if($response->error !== null){
 
 ## Multiple Requests
 
-`MultiClient::sendAll()` executes multiple requests with cURL multi and returns responses keyed by each request ID.
+`MultiClient::sendAll()` executes multiple requests with cURL multi and returns a `Responses` collection keyed by each request ID.
 
 ```php
 <?php
@@ -121,11 +121,15 @@ $responses = $client->sendAll($php, $packagist);
 // With default CurlOptions.
 $responses = $client->sendAll($phpRequest, $packagistRequest);
 
-$phpResponse = $responses[$phpRequest->id];
-$packagistResponse = $responses[$packagistRequest->id];
+$phpResponse = $responses->get($phpRequest->id);
+$packagistResponse = $responses->get($packagistRequest->id);
 
 echo $phpResponse->statusCode;
 echo $packagistResponse->statusCode;
+
+foreach($responses as $requestId => $response){
+    echo $requestId . ': ' . $response->statusCode . PHP_EOL;
+}
 ```
 
 ## Request
@@ -441,6 +445,22 @@ $response  = $singleClient->send($request);
 $responses = $multiClient->sendAll($requestA, $requestB);
 ```
 
+`sendAll()` returns a `Responses` collection. Use `get()` when the response must exist, or `find()` when a missing response should return `null`.
+
+`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->id]`.
+The collection is read-only; write and unset operations throw `ImmutableCollectionException`.
+
+```php
+$response = $responses->get($requestA->id);
+$sameResponse = $responses[$requestA->id]; // array-style
+
+$maybeResponse = $responses->find($requestB->id);
+
+foreach($responses as $requestId => $response){
+    echo $response->statusCode;
+}
+```
+
 ## Config Objects
 
 Config objects own their own cURL option mapping. The client passes them through `CurlOptionsFactory` before execution.
@@ -598,13 +618,15 @@ Exception classes:
 - `InvalidConfigurationException` is thrown when cURL options or config objects are invalid.
 - `CurlExecutionException` is thrown when cURL cannot be initialized or the cURL multi execution loop fails.
 - `InvalidResponseException` is thrown when response data cannot be interpreted, such as JSON decode failure from `Response::json()`.
+- `ResponseNotFoundException` is thrown when a response is not found in a `Responses` collection.
+- `ImmutableCollectionException` is thrown when an immutable collection is modified.
 
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
 - `captureHeaders` controls whether response header lines are stored in `Response::$headers`.
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
-- `MultiClient::sendAll()` returns `array<string, Response>`, keyed by `Request::$id`.
+- `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::$id`.
 
 ## License
 
