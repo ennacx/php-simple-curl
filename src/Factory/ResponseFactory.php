@@ -36,7 +36,7 @@ final class ResponseFactory {
             throw new CurlExecutionException('Invalid curl info');
         }
 
-        $options      = $preparedRequest->options ?? CurlOptions::create();
+        $options      = $preparedRequest->getOptions() ?? CurlOptions::create();
         $errno        = $resultCode ?? curl_errno($ch);
         $error        = ($errno !== CURLE_OK) ? (CurlError::tryFrom($errno) ?? CurlError::OTHER) : null;
         $errorMessage = ($errno !== CURLE_OK) ? curl_error($ch) : '';
@@ -46,7 +46,7 @@ final class ResponseFactory {
         $body    = null;
         if(is_string($raw)){
             // ヘッダーが必要な場合
-            if($options->captureHeaders){
+            if($options->isCapturingHeaders()){
                 // ヘッダーサイズ取得
                 $headerSize = $info['header_size'] ?? null;
                 if(!is_int($headerSize)){
@@ -55,12 +55,12 @@ final class ResponseFactory {
 
                 // ヘッダーとボディを分割・格納
                 $headers = $this->parseHeaders(substr($raw, 0, $headerSize));
-                if($options->captureBody){
+                if($options->isCapturingBody()){
                     $body = substr($raw, $headerSize);
                 }
             }
             // ボディのみの場合はそのまま
-            else if($options->captureBody){
+            else if($options->isCapturingBody()){
                 $body = $raw;
             }
         }

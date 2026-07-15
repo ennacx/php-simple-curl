@@ -25,28 +25,34 @@ use JsonException;
 final class Request {
 
     /** @var string Requestを識別するID */
-    public readonly string $id;
+    private readonly string $id;
+
+    /** @var string 送信先URL */
+    private readonly string $url;
+
+    /** @var CurlMethod $method HTTPメソッド */
+    private readonly CurlMethod $method;
 
     /** @var array<string, mixed> 送信するHTTPヘッダー */
-    public array $requestHeaders = [];
+    private array $headers = [];
 
-    /** @var RequestBody|null 送信するリクエストボディー */
-    public ?RequestBody $requestBody = null;
+    /** @var RequestBody|null 送信するボディー */
+    private ?RequestBody $body = null;
 
     /** @var list<RequestAttachmentEntry> 添付ファイルの配列 */
-    public array $attachmentEntries = [];
+    private array $attachmentEntries = [];
 
     /** @var ContentType|null リクエストボディーのContent-Type */
-    public ?ContentType $contentType = null;
+    private ?ContentType $contentType = null;
 
     /** @var string[] Acceptヘッダーとして送信するメディアタイプ */
-    public array $acceptHeaders = [];
+    private array $acceptHeaders = [];
 
     /** @var array<string, mixed> 送信するクエリパラメータ */
-    public array $queryParams = [];
+    private array $queryParams = [];
 
     /** @var string|null フラグメント */
-    public ?string $fragment = null;
+    private ?string $fragment = null;
 
     /**
      * コンストラクタ
@@ -54,15 +60,20 @@ final class Request {
      * @param string     $url    送信先URL
      * @param CurlMethod $method HTTPメソッド
      */
-    public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
+    public function __construct(string $url, CurlMethod $method = CurlMethod::GET){
 
-        $this->id  = Utils::uuid_v4();
-        $this->url = self::validateUrl($this->url);
+        // ID付与
+        $this->id = Utils::uuid_v4();
+
+        // URLバリデーション
+        $tempUrl = self::validateUrl($url);
+
+        $this->method = $method;
 
         // GETクエリ取得
-        $queryString = parse_url($this->url, PHP_URL_QUERY);
+        $queryString = parse_url($tempUrl, PHP_URL_QUERY);
         // フラグメント取得
-        $fragment = parse_url($this->url, PHP_URL_FRAGMENT);
+        $fragment = parse_url($tempUrl, PHP_URL_FRAGMENT);
 
         // GETクエリが存在する場合
         if($queryString !== null){
@@ -76,7 +87,7 @@ final class Request {
         }
 
         // URLからクエリとフラグメントを除去
-        $tempUrl = explode('?', $url);
+        $tempUrl = explode('?', $tempUrl);
         $this->url = (str_contains($tempUrl[0], '#')) ? explode('#', $tempUrl[0])[0] : $tempUrl[0];
 
         unset($tempUrl);
@@ -115,6 +126,68 @@ final class Request {
         return new self($url, $curlMethod);
     }
 
+    public function getId(): string {
+        return $this->id;
+    }
+
+    public function getUrl(): string {
+        return $this->url;
+    }
+
+    public function getMethod(): CurlMethod {
+        return $this->method;
+    }
+
+    public function getHeaders(): array {
+        return $this->headers;
+    }
+
+    /**
+     * @return RequestBody|null
+     * @internal
+     */
+    public function getRequestBody(): ?RequestBody {
+        return $this->body;
+    }
+
+    /**
+     * @return RequestAttachmentEntry[]
+     * @internal
+     */
+    public function getAttachmentEntries(): array {
+        return $this->attachmentEntries;
+    }
+
+    /**
+     * @return ContentType|null
+     * @internal
+     */
+    public function getContentType(): ?ContentType {
+        return $this->contentType;
+    }
+
+    /**
+     * @return string[]
+     * @internal
+     */
+    public function getAcceptHeaders(): array {
+        return $this->acceptHeaders;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getQueryParams(): array {
+        return $this->queryParams;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getFragment(): ?string {
+        return $this->fragment;
+    }
+
     /**
      * 送信するHTTPヘッダーを設定する。
      *
@@ -123,9 +196,11 @@ final class Request {
      */
     public function headers(array $headers): self {
 
-        $this->requestHeaders = self::validateHeaders($headers);
+        $clone = clone $this;
 
-        return $this;
+        $clone->headers = self::validateHeaders($headers);
+
+        return $clone;
     }
 
     /**
@@ -271,7 +346,7 @@ final class Request {
 
         $clone = clone $this;
 
-        $clone->requestBody = new RequestBody($body, $contentType, $options);
+        $clone->body = new RequestBody($body, $contentType, $options);
         $clone->contentType = $contentType;
 
         return $clone;
@@ -379,7 +454,7 @@ final class Request {
         }
 
         // リクエストボディーが設定済みの場合、フォーム形式で無いとエラー
-        if($this->requestBody !== null && $this->requestBody->contentType !== ContentType::FormUrlEncoded){
+        if($this->body !== null && $this->body->contentType !== ContentType::FormUrlEncoded){
             throw new RequestBodyException("The attachment cannot be added when the request body is specified.");
         }
 
@@ -397,7 +472,7 @@ final class Request {
             unset($attachNames);
 
             // リクエストボディーの方
-            $body = $this->requestBody?->body ?? null;
+            $body = $this->body?->body ?? null;
             if(is_array($body) && $body !== []){
                 if(array_key_exists($attachment->name, $body)){
                     throw new RequestBodyException("The attachment name is already used in body.");

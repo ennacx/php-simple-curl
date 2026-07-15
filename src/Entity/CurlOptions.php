@@ -23,8 +23,8 @@ final readonly class CurlOptions {
      * @param array<class-string<T>, T> $config         `CurlOptionsApplier` のリスト
      */
     public function __construct(
-        public  bool  $captureHeaders = true,
-        public  bool  $captureBody    = true,
+        private bool  $captureHeaders = true,
+        private bool  $captureBody    = true,
         private array $config         = [],
     ){
     }
@@ -205,6 +205,20 @@ final readonly class CurlOptions {
         return $this->with(
             new ClientConfig(userAgent: $userAgent, referer: $referer),
         );
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isCapturingHeaders(): bool {
+        return $this->captureHeaders;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isCapturingBody(): bool {
+        return $this->captureBody;
     }
 
     /**

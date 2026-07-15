@@ -108,7 +108,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
         self::assertNull($response->error);
         self::assertTrue($response->isOk());
         self::assertNull($response->body);
-        self::assertNotSame([], $response->headers);
+        self::assertNotSame([], $response->rawHeaders());
         self::assertTrue($response->hasHeader('content-type'));
     }
 

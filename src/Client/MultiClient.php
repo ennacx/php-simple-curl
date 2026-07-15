@@ -59,14 +59,16 @@ final readonly class MultiClient {
         try{
             // 並列処理するcURLそれぞれにハンドラーを設定
             foreach($preparedRequests as $preparedRequest){
+                $request = $preparedRequest->getRequest();
+
+                // ループ中の Request-ID 取得
+                $requestId = $request->getId();
+
                 $ch = curl_init();
 
                 if($ch === false){
-                    throw new CurlExecutionException(sprintf('Invalid cURL handle. Request-ID: %s', $preparedRequest->request->id));
+                    throw new CurlExecutionException(sprintf('Invalid cURL handle. Request-ID: %s', $requestId));
                 }
-
-                // ループ中の Request-ID 取得
-                $requestId = $preparedRequest->request->id;
 
                 if(!curl_setopt_array($ch, $this->optionsFactory->fromPreparedRequest($preparedRequest))){
                     throw new InvalidConfigurationException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
@@ -189,7 +191,7 @@ final readonly class MultiClient {
             $raw = ($result === CURLE_OK) ? curl_multi_getcontent($ch) : false;
 
             // ループ中の Request-ID 取得
-            $requestId = $preparedRequest->request->id;
+            $requestId = $preparedRequest->getRequest()->getId();
 
             // cURL実行結果からResponseを生成
             $responses[$requestId] = $this->responseFactory->fromCurlResult($ch, $raw, $preparedRequest, $result);

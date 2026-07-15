@@ -29,9 +29,9 @@ final class RequestTest extends TestCase {
 
         $request = Request::post('https://example.com');
 
-        self::assertSame('https://example.com', $request->url);
-        self::assertSame(CurlMethod::POST, $request->method);
-        self::assertNotSame('', $request->id);
+        self::assertSame('https://example.com', $request->getUrl());
+        self::assertSame(CurlMethod::POST, $request->getMethod());
+        self::assertNotSame('', $request->getId());
     }
 
     /**
@@ -50,7 +50,7 @@ final class RequestTest extends TestCase {
         self::assertSame([
             'Accept' => 'application/json',
             'X-Number' => '123',
-        ], $request->requestHeaders);
+        ], $request->getHeaders());
     }
 
     /**
@@ -65,11 +65,11 @@ final class RequestTest extends TestCase {
             ->accept(ContentType::Json)
             ->accept('application/vnd.api+json');
 
-        self::assertSame([], $request->acceptHeaders);
+        self::assertSame([], $request->getAcceptHeaders());
         self::assertSame([
             'application/json',
             'application/vnd.api+json',
-        ], $updated->acceptHeaders);
+        ], $updated->getAcceptHeaders());
     }
 
     /**
@@ -90,7 +90,7 @@ final class RequestTest extends TestCase {
         self::assertSame([
             'application/json',
             'text/html',
-        ], $request->acceptHeaders);
+        ], $request->getAcceptHeaders());
     }
 
     /**
@@ -109,7 +109,7 @@ final class RequestTest extends TestCase {
             '*/*',
             'application/json;q=0.9',
             'application/vnd.api+json;q=0.75',
-        ], $request->acceptHeaders);
+        ], $request->getAcceptHeaders());
     }
 
     /**
@@ -126,7 +126,7 @@ final class RequestTest extends TestCase {
         self::assertSame([
             'application/json;q=0.8',
             '*/*;q=0.123',
-        ], $request->acceptHeaders);
+        ], $request->getAcceptHeaders());
     }
 
     /**
@@ -139,7 +139,7 @@ final class RequestTest extends TestCase {
         $request = Request::get('https://example.com')
             ->accept(MediaRange::Any->withQuality(0.0));
 
-        self::assertSame(['*/*;q=0'], $request->acceptHeaders);
+        self::assertSame(['*/*;q=0'], $request->getAcceptHeaders());
     }
 
     /**
@@ -156,7 +156,7 @@ final class RequestTest extends TestCase {
                 'application/json;q=0.8'
             );
 
-        self::assertSame(['application/json'], $request->acceptHeaders);
+        self::assertSame(['application/json'], $request->getAcceptHeaders());
     }
 
     /**
@@ -229,11 +229,11 @@ final class RequestTest extends TestCase {
 
         $request = Request::get('https://example.com/search?b=2&a=1');
 
-        self::assertSame('https://example.com/search', $request->url);
+        self::assertSame('https://example.com/search', $request->getUrl());
         self::assertSame([
             'b' => '2',
             'a' => '1',
-        ], $request->queryParams);
+        ], $request->getQueryParams());
     }
 
     /**
@@ -252,11 +252,11 @@ final class RequestTest extends TestCase {
         self::assertSame([
             'keep'   => '1',
             'remove' => '2',
-        ], $request->queryParams);
+        ], $request->getQueryParams());
         self::assertSame([
             'keep'  => '9',
             'added' => '3',
-        ], $updated->queryParams);
+        ], $updated->getQueryParams());
     }
 
     /**
@@ -273,11 +273,11 @@ final class RequestTest extends TestCase {
             0 => 'ignored',
         ], overwrite: false);
 
-        self::assertSame(['keep' => '1'], $request->queryParams);
+        self::assertSame(['keep' => '1'], $request->getQueryParams());
         self::assertSame([
             'keep' => '1',
             'new'  => '3',
-        ], $updated->queryParams);
+        ], $updated->getQueryParams());
     }
 
     /**
@@ -320,12 +320,12 @@ final class RequestTest extends TestCase {
             $request = Request::post('https://example.com/upload');
             $updated = $request->bodyFromFile($path, ContentType::PlainText);
 
-            self::assertNull($request->requestBody);
-            self::assertNull($request->contentType);
-            self::assertNotNull($updated->requestBody);
-            self::assertSame("file body\n", $updated->requestBody->body);
-            self::assertSame(ContentType::PlainText, $updated->requestBody->contentType);
-            self::assertSame(ContentType::PlainText, $updated->contentType);
+            self::assertNull($request->getRequestBody());
+            self::assertNull($request->getContentType());
+            self::assertNotNull($updated->getRequestBody());
+            self::assertSame("file body\n", $updated->getRequestBody()->body);
+            self::assertSame(ContentType::PlainText, $updated->getRequestBody()->contentType);
+            self::assertSame(ContentType::PlainText, $updated->getContentType());
         } finally{
             unlink($path);
         }
@@ -360,12 +360,12 @@ final class RequestTest extends TestCase {
             $request = Request::post('https://example.com/upload');
             $updated = $request->attach($attachment);
 
-            self::assertSame([], $request->attachmentEntries);
-            self::assertNull($request->contentType);
-            self::assertCount(1, $updated->attachmentEntries);
-            self::assertSame($attachment, $updated->attachmentEntries[0]->attachment);
-            self::assertTrue($updated->attachmentEntries[0]->allowOverwrite);
-            self::assertNull($updated->contentType);
+            self::assertSame([], $request->getAttachmentEntries());
+            self::assertNull($request->getContentType());
+            self::assertCount(1, $updated->getAttachmentEntries());
+            self::assertSame($attachment, $updated->getAttachmentEntries()[0]->attachment);
+            self::assertTrue($updated->getAttachmentEntries()[0]->allowOverwrite);
+            self::assertNull($updated->getContentType());
         } finally{
             unlink($path);
         }
@@ -386,10 +386,10 @@ final class RequestTest extends TestCase {
             $request = Request::post('https://example.com/upload')
                 ->attachFile('file', $path, allowOverwrite: false);
 
-            self::assertCount(1, $request->attachmentEntries);
-            self::assertSame('file', $request->attachmentEntries[0]->attachment->name);
-            self::assertSame($path, $request->attachmentEntries[0]->attachment->path);
-            self::assertFalse($request->attachmentEntries[0]->allowOverwrite);
+            self::assertCount(1, $request->getAttachmentEntries());
+            self::assertSame('file', $request->getAttachmentEntries()[0]->attachment->name);
+            self::assertSame($path, $request->getAttachmentEntries()[0]->attachment->path);
+            self::assertFalse($request->getAttachmentEntries()[0]->allowOverwrite);
         } finally{
             unlink($path);
         }
@@ -541,8 +541,8 @@ final class RequestTest extends TestCase {
         $updated = $request->json('{"name":', throw: false);
 
         self::assertSame($request, $updated);
-        self::assertNull($updated->requestBody);
-        self::assertNull($updated->contentType);
+        self::assertNull($updated->getRequestBody());
+        self::assertNull($updated->getContentType());
     }
 
     /**
@@ -557,8 +557,8 @@ final class RequestTest extends TestCase {
         $preparedRequest = $request->prepare($options);
 
         self::assertInstanceOf(PreparedRequest::class, $preparedRequest);
-        self::assertSame($request, $preparedRequest->request);
-        self::assertSame($options, $preparedRequest->options);
+        self::assertSame($request, $preparedRequest->getRequest());
+        self::assertSame($options, $preparedRequest->getOptions());
     }
 
     /**
@@ -571,7 +571,7 @@ final class RequestTest extends TestCase {
         $request = Request::get('https://example.com');
         $preparedRequest = $request->prepare();
 
-        self::assertSame($request, $preparedRequest->request);
-        self::assertNull($preparedRequest->options);
+        self::assertSame($request, $preparedRequest->getRequest());
+        self::assertNull($preparedRequest->getOptions());
     }
 }

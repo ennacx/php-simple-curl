@@ -9,6 +9,7 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
 use LogicException;
 
@@ -30,22 +31,22 @@ final class CurlOptionsFactory {
      */
     public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
-        $request     = $preparedRequest->request;
-        $curlOptions = $preparedRequest->options ?? CurlOptions::create();
+        $request     = $preparedRequest->getRequest();
+        $curlOptions = $preparedRequest->getOptions() ?? CurlOptions::create();
 
         // 基本設定
         $options = [
             CURLOPT_URL            => $this->buildUrl($preparedRequest),
-            CURLOPT_RETURNTRANSFER => ($curlOptions->captureBody || $curlOptions->captureHeaders),
-            CURLOPT_HEADER         => $curlOptions->captureHeaders,
+            CURLOPT_RETURNTRANSFER => ($curlOptions->isCapturingBody() || $curlOptions->isCapturingHeaders()),
+            CURLOPT_HEADER         => $curlOptions->isCapturingHeaders(),
         ];
 
         // HTTPメソッド設定の追加
-        $options += $request->method->toCurlOptions();
-        $headers  = $request->requestHeaders;
+        $options += $request->getMethod()->toCurlOptions();
+        $headers  = $request->getHeaders();
 
         // リクエストボディの付与
-        if($request->requestBody !== null || $request->attachmentEntries !== []){
+        if($request->getRequestBody() !== null || $request->getAttachmentEntries() !== []){
             $body = $this->buildPostFields($request);
             if($body !== null){
                 $options[CURLOPT_POSTFIELDS] = $body;
@@ -55,20 +56,22 @@ final class CurlOptionsFactory {
         }
 
         // multi-part形式の場合はContent-Typeを削除する (cURL側に任せて指定させない)
-        if($request->attachmentEntries !== [] && HeaderUtils::has($headers, 'Content-Type')){
+        if($request->getAttachmentEntries() !== [] && HeaderUtils::has($headers, 'Content-Type')){
             HeaderUtils::remove($headers, 'Content-Type');
         }
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
-        else if(!in_array($request->contentType, [null, ContentType::MultipartFormData], true)){
+        else if(!in_array($request->getContentType(), [null, ContentType::MultipartFormData], true)){
             if(!HeaderUtils::has($headers, 'Content-Type')){
-                $headers['Content-Type'] = $request->contentType->value;
+                $headers['Content-Type'] =
+                    $request->getContentType()?->value ??
+                    throw new InvalidRequestException('Invalid Content-Type');
             }
         }
 
         // ユーザーがAcceptを指定している場合は設定
-        if(!empty($request->acceptHeaders)){
+        if(!empty($request->getAcceptHeaders())){
             if(!HeaderUtils::has($headers, 'Accept')){
-                $headers['Accept'] = implode(', ', $request->acceptHeaders);
+                $headers['Accept'] = implode(', ', $request->getAcceptHeaders());
             }
         }
 
@@ -93,17 +96,17 @@ final class CurlOptionsFactory {
      */
     private function buildUrl(PreparedRequest $preparedRequest): string {
 
-        $request = $preparedRequest->request;
+        $request = $preparedRequest->getRequest();
 
         // GETクエリ付与
-        $url = $request->url;
-        if(!empty($request->queryParams)){
-            $url .= '?' . http_build_query($request->queryParams);
+        $url = $request->getUrl();
+        if(!empty($request->getQueryParams())){
+            $url .= '?' . http_build_query($request->getQueryParams());
         }
 
         // フラグメント付与 (URLの仕様上、必ずGETクエリの後にすること)
-        if(isset($request->fragment)){
-            $url .= '#' . $request->fragment;
+        if($request->getFragment() !== null){
+            $url .= '#' . $request->getFragment();
         }
 
         return $url;
@@ -120,11 +123,11 @@ final class CurlOptionsFactory {
      */
     private function buildPostFields(Request $request): string|array|null {
 
-        if(!empty($request->attachmentEntries)){
+        if(!empty($request->getAttachmentEntries())){
             return $this->buildMultipart($request);
         }
 
-        $requestBody = $request->requestBody;
+        $requestBody = $request->getRequestBody();
 
         if($requestBody === null){
             return null;
@@ -160,7 +163,7 @@ final class CurlOptionsFactory {
 
         $fields = [];
 
-        $requestBody = $request->requestBody;
+        $requestBody = $request->getRequestBody();
 
         // 添付ファイル以外にボディーが設定されている場合
         if($requestBody !== null){
@@ -177,7 +180,7 @@ final class CurlOptionsFactory {
             $fields = $requestBody->body;
         }
 
-        foreach($request->attachmentEntries as $attachmentEntry){
+        foreach($request->getAttachmentEntries() as $attachmentEntry){
             $attachment = $attachmentEntry->attachment;
             $overwrite  = $attachmentEntry->allowOverwrite;
 

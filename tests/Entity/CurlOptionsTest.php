@@ -37,17 +37,17 @@ final class CurlOptionsTest extends TestCase {
         self::assertNotSame($base, $redirect);
         self::assertNotSame($base, $client);
 
-        self::assertTrue($base->captureHeaders);
-        self::assertTrue($base->captureBody);
+        self::assertTrue($base->isCapturingHeaders());
+        self::assertTrue($base->isCapturingBody());
         self::assertFalse($base->has(TimeoutConfig::class));
         self::assertFalse($base->has(RedirectConfig::class));
         self::assertFalse($base->has(ClientConfig::class));
 
-        self::assertFalse($withoutHeaders->captureHeaders);
-        self::assertTrue($withoutHeaders->captureBody);
+        self::assertFalse($withoutHeaders->isCapturingHeaders());
+        self::assertTrue($withoutHeaders->isCapturingBody());
 
-        self::assertTrue($withoutBody->captureHeaders);
-        self::assertFalse($withoutBody->captureBody);
+        self::assertTrue($withoutBody->isCapturingHeaders());
+        self::assertFalse($withoutBody->isCapturingBody());
 
         $timeoutConfig = $timeout->get(TimeoutConfig::class);
         self::assertInstanceOf(TimeoutConfig::class, $timeoutConfig);

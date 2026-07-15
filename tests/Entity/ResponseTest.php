@@ -68,7 +68,7 @@ final class ResponseTest extends TestCase {
             'Content-Type: application/json',
             'Set-Cookie: a=1',
             'Set-Cookie: b=2',
-        ], $response->headers);
+        ], $response->rawHeaders());
         self::assertTrue($response->hasHeader('content-type'));
         self::assertTrue($response->hasHeader('Content-Type'));
         self::assertSame('application/json', $response->header('CONTENT-TYPE'));

@@ -5,6 +5,8 @@ namespace Ennacx\SimpleCurl\Entity;
 
 /**
  * 添付ファイルと同名フィールド上書き設定をまとめる値オブジェクト。
+ *
+ * @internal
  */
 final readonly class RequestAttachmentEntry {
 

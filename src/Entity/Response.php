@@ -13,10 +13,10 @@ use JsonException;
 final readonly class Response {
 
     /** @var string[] cURLから取得した生のレスポンスヘッダー行 */
-    public array $rawHeaders;
+    private array $rawHeaders;
 
     /** @var array<string, string|string[]> 小文字化したヘッダー名をキーにしたレスポンスヘッダー */
-    public array $parsedHeaders;
+    private array $parsedHeaders;
 
     /**
      * コンストラクタ
@@ -30,7 +30,7 @@ final readonly class Response {
      */
     public function __construct(
         public int        $statusCode,
-        public array      $headers,
+        private array     $headers,
         public ?string    $body,
         public array      $info,
         public ?CurlError $error        = null,
@@ -122,6 +122,10 @@ final readonly class Response {
      */
     public function header(string $key): string|array|null {
         return $this->parsedHeaders[strtolower($key)] ?? null;
+    }
+
+    public function rawHeaders(): array {
+        return $this->rawHeaders;
     }
 
     /**

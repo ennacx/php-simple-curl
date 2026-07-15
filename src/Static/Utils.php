@@ -8,6 +8,9 @@ use Ennacx\SimpleCurl\Exception\SimpleCurlException;
 use Random\RandomException;
 use Stringable;
 
+/**
+ * @internal
+ */
 final class Utils {
 
     /**

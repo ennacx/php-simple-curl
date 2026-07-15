@@ -14,7 +14,7 @@ final readonly class PreparedRequest {
      * @param Request          $request 送信するHTTPリクエスト
      * @param CurlOptions|null $options cURL実行オプション。nullの場合はデフォルト設定で実行する
      */
-    private function __construct(public Request $request, public ?CurlOptions $options = null){
+    private function __construct(private Request $request, private ?CurlOptions $options = null){
     }
 
     /**
@@ -26,5 +26,13 @@ final readonly class PreparedRequest {
      */
     public static function create(Request $request, ?CurlOptions $options = null): self {
         return new self($request, $options);
+    }
+
+    public function getRequest(): Request {
+        return $this->request;
+    }
+
+    public function getOptions(): ?CurlOptions {
+        return $this->options;
     }
 }
