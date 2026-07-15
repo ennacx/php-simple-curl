@@ -5,5 +5,8 @@ namespace Ennacx\SimpleCurl\Exception;
 
 use Throwable;
 
+/**
+ * Marker interface for all PHP Simple cURL exceptions.
+ */
 interface SimpleCurlErrorInterface extends Throwable {
 }

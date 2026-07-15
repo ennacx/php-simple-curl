@@ -573,6 +573,32 @@ JSON helper:
 - `$response->json()` decodes `Response::$body` as JSON.
 - `$response->json(throw: false)` returns `null` when the body is empty.
 
+## Exceptions
+
+PHP Simple cURL throws library-specific exceptions for invalid API usage and execution setup failures.
+
+Network-level cURL errors such as connection failures or timeouts are returned as `Response::$error` and `Response::$errorMessage` when a response object can be created. They are not thrown by default.
+
+```php
+<?php
+
+use Ennacx\SimpleCurl\Exception\SimpleCurlErrorInterface;
+
+try{
+    $response = $client->send($request);
+} catch(SimpleCurlErrorInterface $e){
+    echo $e->getMessage();
+}
+```
+
+Exception classes:
+
+- `InvalidRequestException` is thrown when the request itself is invalid, such as an invalid URL, header, query parameter, or `Accept` value.
+- `RequestBodyException` is thrown when the request body cannot be built, such as invalid JSON, unreadable body files, invalid attachments, or unsupported body and attachment combinations.
+- `InvalidConfigurationException` is thrown when cURL options or config objects are invalid.
+- `CurlExecutionException` is thrown when cURL cannot be initialized or the cURL multi execution loop fails.
+- `InvalidResponseException` is thrown when response data cannot be interpreted, such as JSON decode failure from `Response::json()`.
+
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
