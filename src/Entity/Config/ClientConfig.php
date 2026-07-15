@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity\Config;
 
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
-use InvalidArgumentException;
 
 /**
  * リクエスト時のクライアント情報に関するcURLオプションを保持するConfig。
@@ -14,19 +14,20 @@ final readonly class ClientConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param string|null $userAgent ユーザーエージェント
-     * @param string|null $referer   リファラー
+     * @param  string|null $userAgent ユーザーエージェント
+     * @param  string|null $referer   リファラー
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public ?string $userAgent = null,
         public ?string $referer   = null,
     ){
         if($this->userAgent !== null && trim($this->userAgent) === ''){
-            throw new InvalidArgumentException('User-Agent must not be empty.');
+            throw new InvalidConfigurationException('User-Agent must not be empty.');
         }
 
         if($this->referer !== null && trim($this->referer) === ''){
-            throw new InvalidArgumentException('Referer must not be empty.');
+            throw new InvalidConfigurationException('Referer must not be empty.');
         }
     }
 

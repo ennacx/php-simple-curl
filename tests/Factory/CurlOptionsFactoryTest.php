@@ -11,6 +11,7 @@ use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Entity\RequestAttachment;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use PHPUnit\Framework\TestCase;
 
@@ -553,7 +554,7 @@ final class CurlOptionsFactoryTest extends TestCase {
             $request = Request::post('https://example.com/upload')
                 ->json(['name' => 'Taro']);
 
-            $this->expectException(\InvalidArgumentException::class);
+            $this->expectException(RequestBodyException::class);
 
             $request->attach(new RequestAttachment('file', $path));
         } finally{

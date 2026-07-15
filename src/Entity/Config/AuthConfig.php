@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity\Config;
 
 use Ennacx\SimpleCurl\Enum\CurlAuth;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * HTTP認証に関するcURLオプションを保持するConfig。
@@ -14,10 +14,11 @@ final readonly class AuthConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param CurlAuth    $method      認証方式
-     * @param string|null $user        認証ユーザー名
-     * @param string|null $password    認証パスワード
-     * @param string|null $bearerToken Bearerトークン
+     * @param  CurlAuth    $method      認証方式
+     * @param  string|null $user        認証ユーザー名
+     * @param  string|null $password    認証パスワード
+     * @param  string|null $bearerToken Bearerトークン
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public CurlAuth $method,
@@ -26,7 +27,7 @@ final readonly class AuthConfig implements CurlOptionsApplier {
         public ?string  $bearerToken = null,
     ){
         if($this->method !== CurlAuth::NONE && $this->bearerToken === null && ($this->user === null || $this->password === null)){
-            throw new InvalidArgumentException('Authentication user and password are required.');
+            throw new InvalidConfigurationException('Authentication user and password are required.');
         }
     }
 
@@ -55,11 +56,13 @@ final readonly class AuthConfig implements CurlOptionsApplier {
      *
      * @param  string $token
      * @return self
+     * @throws InvalidConfigurationException
      */
     public static function bearer(string $token): self {
+
         $token = trim($token);
         if($token === ''){
-            throw new InvalidArgumentException('Bearer token must not be empty.');
+            throw new InvalidConfigurationException('Bearer token must not be empty.');
         }
 
         return new self(CurlAuth::NONE, bearerToken: $token);

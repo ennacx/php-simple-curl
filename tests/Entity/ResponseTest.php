@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Entity;
 
 use Ennacx\SimpleCurl\Entity\Response;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -110,14 +110,14 @@ final class ResponseTest extends TestCase {
 
         $response = new Response(204, [], null, [], null, '');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidResponseException::class);
         $this->expectExceptionMessage('Response body is empty.');
 
         $response->json();
     }
 
     /**
-     * 不正なJSONのデコード失敗をInvalidArgumentExceptionへ包むことを検証する。
+     * 不正なJSONのデコード失敗をInvalidResponseExceptionへ包むことを検証する。
      *
      * @return void
      */
@@ -125,7 +125,7 @@ final class ResponseTest extends TestCase {
 
         $response = new Response(200, [], '{invalid-json', [], null, '');
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidResponseException::class);
         $this->expectExceptionMessage('Failed to decode JSON.');
 
         $response->json();

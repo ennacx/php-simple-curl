@@ -5,7 +5,7 @@ namespace Ennacx\SimpleCurl\Entity\Config;
 
 use Ennacx\SimpleCurl\Enum\ProxyAuth;
 use Ennacx\SimpleCurl\Enum\ProxyProtocol;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * プロキシー接続に関するcURLオプションを保持するConfig。
@@ -15,13 +15,14 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param string        $address    プロキシーアドレス
-     * @param int           $port       プロキシーポート
-     * @param ProxyProtocol $protocol   プロキシープロトコル
-     * @param bool|null     $httpTunnel プロキシーのプロトコルがHTTPの場合、HTTPトンネルを有効にするかどうか
-     * @param ProxyAuth     $authMethod プロキシーの認証方法
-     * @param string|null   $user       プロキシー認証時のユーザー名
-     * @param string|null   $password   プロキシー認証時のパスワード
+     * @param  string        $address    プロキシーアドレス
+     * @param  int           $port       プロキシーポート
+     * @param  ProxyProtocol $protocol   プロキシープロトコル
+     * @param  bool|null     $httpTunnel プロキシーのプロトコルがHTTPの場合、HTTPトンネルを有効にするかどうか
+     * @param  ProxyAuth     $authMethod プロキシーの認証方法
+     * @param  string|null   $user       プロキシー認証時のユーザー名
+     * @param  string|null   $password   プロキシー認証時のパスワード
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public string        $address,
@@ -34,11 +35,11 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
     ){
 
         if(trim($this->address) === ''){
-            throw new InvalidArgumentException('Proxy address must not be empty.');
+            throw new InvalidConfigurationException('Proxy address must not be empty.');
         } else if($this->port < 1 || $this->port > 65535){
-            throw new InvalidArgumentException('Proxy port must be between 1 and 65535.');
+            throw new InvalidConfigurationException('Proxy port must be between 1 and 65535.');
         } else if($this->authMethod !== ProxyAuth::NONE && ($this->user === null || $this->password === null)){
-            throw new InvalidArgumentException('Proxy authentication user and password are required.');
+            throw new InvalidConfigurationException('Proxy authentication user and password are required.');
         }
     }
 
@@ -73,19 +74,20 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
      * @param  string $method 呼び出された静的メソッド名
      * @param  array  $args   ProxyConfig生成引数
      * @return self
+     * @throws InvalidConfigurationException
      */
     public static function __callStatic(string $method, array $args): self {
 
         // プロトコル変換
         $protocol = self::findProtocol($method);
         if($protocol === null){
-            throw new InvalidArgumentException(sprintf('Invalid proxy protocol: %s', $method));
+            throw new InvalidConfigurationException(sprintf('Invalid proxy protocol: %s', $method));
         }
 
         // アドレス取得
         $address = $args['address'] ?? $args[0] ?? null;
         if(!is_string($address)){
-            throw new InvalidArgumentException('Proxy address is required.');
+            throw new InvalidConfigurationException('Proxy address is required.');
         }
 
         return new self(

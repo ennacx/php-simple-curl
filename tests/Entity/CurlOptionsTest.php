@@ -7,7 +7,7 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -108,7 +108,7 @@ final class CurlOptionsTest extends TestCase {
      */
     public function testUserAgentRejectsEmptyValue(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         CurlOptions::create()->userAgent(' ');
     }
@@ -120,7 +120,7 @@ final class CurlOptionsTest extends TestCase {
      */
     public function testRefererRejectsEmptyValue(): void {
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidConfigurationException::class);
 
         CurlOptions::create()->referer(' ');
     }

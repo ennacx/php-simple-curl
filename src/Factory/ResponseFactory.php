@@ -8,8 +8,8 @@ use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Enum\CurlError;
-use InvalidArgumentException;
-use RuntimeException;
+use Ennacx\SimpleCurl\Exception\CurlExecutionException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 
 /**
  * cURLの実行結果からResponseを組み立てるFactory。
@@ -26,12 +26,14 @@ final class ResponseFactory {
      * @param  PreparedRequest $preparedRequest 実行に使用した設定済みリクエスト
      * @param  int|null        $resultCode      `curl_multi_info_read()`のresult。単一実行時はnull
      * @return Response
+     * @throws CurlExecutionException
+     * @throws InvalidResponseException
      */
     public function fromCurlResult(CurlHandle $ch, bool|string $raw, PreparedRequest $preparedRequest, ?int $resultCode = null): Response {
 
         $info = curl_getinfo($ch);
         if(!is_array($info)){
-            throw new RuntimeException('Invalid curl info');
+            throw new CurlExecutionException('Invalid curl info');
         }
 
         $options      = $preparedRequest->options ?? CurlOptions::create();
@@ -48,7 +50,7 @@ final class ResponseFactory {
                 // ヘッダーサイズ取得
                 $headerSize = $info['header_size'] ?? null;
                 if(!is_int($headerSize)){
-                    throw new InvalidArgumentException('Invalid cURL header size.');
+                    throw new InvalidResponseException('Invalid cURL header size.');
                 }
 
                 // ヘッダーとボディを分割・格納
@@ -64,11 +66,11 @@ final class ResponseFactory {
         }
 
         return new Response(
-            statusCode: $info['http_code'],
-            headers: $headers,
-            body: $body,
-            info: $info,
-            error: $error,
+            statusCode:   $info['http_code'],
+            headers:      $headers,
+            body:         $body,
+            info:         $info,
+            error:        $error,
             errorMessage: $errorMessage,
         );
     }

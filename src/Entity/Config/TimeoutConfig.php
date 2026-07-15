@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity\Config;
 
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * タイムアウトに関するcURLオプションを保持するConfig。
@@ -13,10 +13,11 @@ final readonly class TimeoutConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param int      $timeoutSeconds             全体タイムアウト秒数
-     * @param int      $connectTimeoutSeconds      接続タイムアウト秒数
-     * @param int|null $timeoutMilliseconds        全体タイムアウトミリ秒数
-     * @param int|null $connectTimeoutMilliseconds 接続タイムアウトミリ秒数
+     * @param  int      $timeoutSeconds             全体タイムアウト秒数
+     * @param  int      $connectTimeoutSeconds      接続タイムアウト秒数
+     * @param  int|null $timeoutMilliseconds        全体タイムアウトミリ秒数
+     * @param  int|null $connectTimeoutMilliseconds 接続タイムアウトミリ秒数
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public int  $timeoutSeconds             = 30,
@@ -32,7 +33,7 @@ final readonly class TimeoutConfig implements CurlOptionsApplier {
             'connectTimeoutMilliseconds' => $this->connectTimeoutMilliseconds,
         ] as $name => $value){
             if($value !== null && $value < 0){
-                throw new InvalidArgumentException(sprintf('%s must be 0 or greater.', $name));
+                throw new InvalidConfigurationException(sprintf('%s must be 0 or greater.', $name));
             }
         }
     }

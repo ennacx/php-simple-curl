@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity\Config;
 
-use InvalidArgumentException;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * リダイレクト追跡に関するcURLオプションを保持するConfig。
@@ -13,9 +13,10 @@ final readonly class RedirectConfig implements CurlOptionsApplier {
     /**
      * コンストラクタ
      *
-     * @param boolean $follow       リダイレクトを追跡するか
-     * @param int     $maxRedirects 最大リダイレクト回数。-1は無制限
-     * @param boolean $autoReferer  リダイレクト時にRefererを自動設定するか
+     * @param  boolean $follow       リダイレクトを追跡するか
+     * @param  int     $maxRedirects 最大リダイレクト回数。-1は無制限
+     * @param  boolean $autoReferer  リダイレクト時にRefererを自動設定するか
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         public bool $follow       = false,
@@ -23,7 +24,7 @@ final readonly class RedirectConfig implements CurlOptionsApplier {
         public bool $autoReferer  = true,
     ){
         if($this->maxRedirects < -1){
-            throw new InvalidArgumentException('Max redirects must be -1 or greater.');
+            throw new InvalidConfigurationException('Max redirects must be -1 or greater.');
         }
     }
 
