@@ -445,10 +445,15 @@ $response  = $singleClient->send($request);
 $responses = $multiClient->sendAll($requestA, $requestB);
 ```
 
-`sendAll()` returns a `Responses` collection. Use `get()` when the response must exist, `find()` when a missing response should return `null`, or array access when you prefer keyed array-style reads.
+`sendAll()` returns a `Responses` collection. Use `get()` when the response must exist, or `find()` when a missing response should return `null`.
+
+`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->id]`.
+The collection is read-only; write and unset operations throw `ImmutableCollectionException`.
 
 ```php
 $response = $responses->get($requestA->id);
+$sameResponse = $responses[$requestA->id]; // array-style
+
 $maybeResponse = $responses->find($requestB->id);
 
 foreach($responses as $requestId => $response){
