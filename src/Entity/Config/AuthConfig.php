@@ -7,17 +7,17 @@ use Ennacx\SimpleCurl\Enum\CurlAuth;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
- * HTTP認証に関するcURLオプションを保持するConfig。
+ * HTTP authentication configuration.
  */
 final readonly class AuthConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates an authentication config.
      *
-     * @param  CurlAuth    $method      認証方式
-     * @param  string|null $user        認証ユーザー名
-     * @param  string|null $password    認証パスワード
-     * @param  string|null $bearerToken Bearerトークン
+     * @param  CurlAuth    $method      Authentication method.
+     * @param  string|null $user        Authentication user.
+     * @param  string|null $password    Authentication password.
+     * @param  string|null $bearerToken Bearer token for Authorization header.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -32,7 +32,7 @@ final readonly class AuthConfig implements CurlOptionsApplier {
     }
 
     /**
-     * 認証なしの設定を生成する。
+     * Creates a config without authentication.
      *
      * @return self
      */
@@ -41,10 +41,10 @@ final readonly class AuthConfig implements CurlOptionsApplier {
     }
 
     /**
-     * Basic認証の設定を生成する。
+     * Creates a Basic authentication config.
      *
-     * @param  string $user
-     * @param  string $password
+     * @param  string $user     Authentication user.
+     * @param  string $password Authentication password.
      * @return self
      */
     public static function basic(string $user, string $password): self {
@@ -52,9 +52,9 @@ final readonly class AuthConfig implements CurlOptionsApplier {
     }
 
     /**
-     * Authorization: Bearer ヘッダーを送信する設定を生成する。
+     * Creates a Bearer token authentication config.
      *
-     * @param  string $token
+     * @param  string $token Bearer token.
      * @return self
      * @throws InvalidConfigurationException
      */
@@ -69,11 +69,7 @@ final readonly class AuthConfig implements CurlOptionsApplier {
     }
 
     /**
-     * 認証設定をcURLオプションと送信ヘッダーへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 

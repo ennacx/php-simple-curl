@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 /**
- * Acceptヘッダーへ変換できる値を表すインターフェース。
+ * Represents a value that can be written to the Accept header.
  */
 interface AcceptValue {
 
     /**
-     * `Accept` ヘッダーに付与する値を返す。
+     * Converts the value into an Accept header segment.
      *
      * @return string
      */

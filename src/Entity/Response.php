@@ -8,29 +8,29 @@ use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use JsonException;
 
 /**
- * cURL実行後のレスポンス情報を保持する値オブジェクト。
+ * HTTP response returned after cURL execution.
  */
 final readonly class Response {
 
     /** @var string[] cURLから取得した生のレスポンスヘッダー行 */
-    public array $rawHeaders;
+    private array $rawHeaders;
 
     /** @var array<string, string|string[]> 小文字化したヘッダー名をキーにしたレスポンスヘッダー */
-    public array $parsedHeaders;
+    private array $parsedHeaders;
 
     /**
-     * コンストラクタ
+     * Creates a response object.
      *
-     * @param int            $statusCode   HTTPステータスコード
-     * @param string[]       $headers      レスポンスヘッダー行
-     * @param string|null    $body         レスポンスボディ
-     * @param array          $info         curl_getinfo()の結果
-     * @param CurlError|null $error        cURLエラー。成功時はnull
-     * @param string         $errorMessage cURLエラーメッセージ
+     * @param int            $statusCode   HTTP status code.
+     * @param string[]       $headers      Raw response header lines.
+     * @param string|null    $body         Response body.
+     * @param array          $info         curl_getinfo() result.
+     * @param CurlError|null $error        cURL error. Null on successful transfer.
+     * @param string         $errorMessage cURL error message.
      */
     public function __construct(
         public int        $statusCode,
-        public array      $headers,
+        private array     $headers,
         public ?string    $body,
         public array      $info,
         public ?CurlError $error        = null,
@@ -41,7 +41,7 @@ final readonly class Response {
     }
 
     /**
-     * 1xx系の情報レスポンスか判定する。
+     * Checks whether the response status is 1xx.
      *
      * @return boolean
      */
@@ -50,7 +50,7 @@ final readonly class Response {
     }
 
     /**
-     * HTTP 200 OK レスポンスか判定する。
+     * Checks whether the response is HTTP 200 OK and has no cURL error.
      *
      * @return boolean
      */
@@ -59,7 +59,7 @@ final readonly class Response {
     }
 
     /**
-     * cURLエラーがなく、2xx系の成功レスポンスか判定する。
+     * Checks whether the response is 2xx and has no cURL error.
      *
      * @return boolean
      */
@@ -68,7 +68,7 @@ final readonly class Response {
     }
 
     /**
-     * 3xx系のリダイレクトレスポンスか判定する。
+     * Checks whether the response status is 3xx.
      *
      * @return boolean
      */
@@ -77,7 +77,7 @@ final readonly class Response {
     }
 
     /**
-     * 4xx系のクライアントエラーレスポンスか判定する。
+     * Checks whether the response status is 4xx.
      *
      * @return boolean
      */
@@ -86,7 +86,7 @@ final readonly class Response {
     }
 
     /**
-     * 5xx系のサーバーエラーレスポンスか判定する。
+     * Checks whether the response status is 5xx.
      *
      * @return boolean
      */
@@ -95,7 +95,7 @@ final readonly class Response {
     }
 
     /**
-     * cURLエラー、または4xx/5xxレスポンスか判定する。
+     * Checks whether the response has a cURL error or a 4xx/5xx status.
      *
      * @return boolean
      */
@@ -104,9 +104,11 @@ final readonly class Response {
     }
 
     /**
-     * 指定したレスポンスヘッダーが存在するか判定する。
+     * Checks whether a response header exists.
      *
-     * @param  string  $key ヘッダー名
+     * Header names are case-insensitive.
+     *
+     * @param  string $key Header name.
      * @return boolean
      */
     public function hasHeader(string $key): bool {
@@ -114,10 +116,11 @@ final readonly class Response {
     }
 
     /**
-     * 指定したレスポンスヘッダーを取得する。
-     * ※同名ヘッダーが複数ある場合は文字列配列を返す。
+     * Returns a parsed response header value.
      *
-     * @param  string $key ヘッダー名
+     * If the same header appears multiple times, an array of values is returned.
+     *
+     * @param  string $key Header name.
      * @return string|string[]|null
      */
     public function header(string $key): string|array|null {
@@ -125,7 +128,16 @@ final readonly class Response {
     }
 
     /**
-     * パース済みのレスポンスヘッダーを返す。
+     * Returns raw response header lines.
+     *
+     * @return string[]
+     */
+    public function rawHeaders(): array {
+        return $this->rawHeaders;
+    }
+
+    /**
+     * Returns parsed response headers.
      *
      * @return array<string, string|string[]>
      */
@@ -134,10 +146,10 @@ final readonly class Response {
     }
 
     /**
-     * レスポンスボディをJSONとしてデコードする。
+     * Decodes the response body as JSON.
      *
-     * @param  boolean $associative `true`の場合は連想配列として返す
-     * @param  boolean $throw       `true`の場合はJSONデコード失敗時に`InvalidResponseException`をスローする
+     * @param  boolean $associative Whether objects should be decoded as associative arrays.
+     * @param  boolean $throw       Whether JSON decode failures should throw InvalidResponseException.
      * @return mixed
      * @throws InvalidResponseException
      */
@@ -185,13 +197,11 @@ final readonly class Response {
             // キーが存在しない場合はまず値を格納する
             if(!array_key_exists($key, $parsedHeaders)){
                 $parsedHeaders[$key] = $value;
-            }
             // キーが重複した場合は配列に変換して値を追加
-            else if(!is_array($parsedHeaders[$key])){
+            } else if(!is_array($parsedHeaders[$key])){
                 $parsedHeaders[$key] = [$parsedHeaders[$key], $value];
-            }
             // キーが重複し、且つ既に配列化されている場合は追加
-            else{
+            } else{
                 $parsedHeaders[$key][] = $value;
             }
         }

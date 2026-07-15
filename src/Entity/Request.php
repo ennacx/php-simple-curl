@@ -3,17 +3,19 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Entity;
 
-use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Static\Utils;
 use JsonException;
 
 /**
- * cURLで送信するリクエスト内容を表す値オブジェクト。
+ * Immutable-style HTTP request value object.
  *
- * `CurlMethod` の列挙子を小文字にした静的Factoryを提供する。
+ * Static constructors are available for each CurlMethod case, for example
+ * Request::get('https://example.com') and Request::post('https://example.com').
+ *
  * @method static self get(string $url)
  * @method static self post(string $url)
  * @method static self put(string $url)
@@ -25,68 +27,78 @@ use JsonException;
 final class Request {
 
     /** @var string Requestを識別するID */
-    public readonly string $id;
+    private readonly string $id;
 
-    /** @var array<string, mixed> 送信するHTTPヘッダー */
-    public array $requestHeaders = [];
+    /** @var string クエリ・フラグメントを除いた送信先URL */
+    private readonly string $url;
 
-    /** @var RequestBody|null 送信するリクエストボディー */
-    public ?RequestBody $requestBody = null;
+    /** @var CurlMethod HTTPメソッド */
+    private readonly CurlMethod $method;
+
+    /** @var array<string, string> 送信するHTTPヘッダー */
+    private array $headers = [];
+
+    /** @var RequestBody|null 送信するリクエストボディ */
+    private ?RequestBody $body = null;
 
     /** @var list<RequestAttachmentEntry> 添付ファイルの配列 */
-    public array $attachmentEntries = [];
+    private array $attachmentEntries = [];
 
-    /** @var ContentType|null リクエストボディーのContent-Type */
-    public ?ContentType $contentType = null;
+    /** @var ContentType|null リクエストボディのContent-Type */
+    private ?ContentType $contentType = null;
 
     /** @var string[] Acceptヘッダーとして送信するメディアタイプ */
-    public array $acceptHeaders = [];
+    private array $acceptHeaders = [];
 
-    /** @var array<string, mixed> 送信するクエリパラメータ */
-    public array $queryParams = [];
+    /** @var array<string, mixed> 送信するクエリパラメーター */
+    private array $queryParams = [];
 
     /** @var string|null フラグメント */
-    public ?string $fragment = null;
+    private ?string $fragment = null;
 
     /**
-     * コンストラクタ
+     * Creates a request.
      *
-     * @param string     $url    送信先URL
-     * @param CurlMethod $method HTTPメソッド
+     * Query string and fragment values are extracted from the URL and stored
+     * separately so that CurlOptionsFactory can rebuild the final URL.
+     *
+     * @param  string     $url    Request URL.
+     * @param  CurlMethod $method HTTP method.
+     * @throws InvalidRequestException
      */
-    public function __construct(public string $url, public CurlMethod $method = CurlMethod::GET){
+    public function __construct(string $url, CurlMethod $method = CurlMethod::GET){
 
-        $this->id  = Utils::uuid_v4();
-        $this->url = self::validateUrl($this->url);
+        // ID付与
+        $this->id = Utils::uuid_v4();
 
-        // GETクエリ取得
-        $queryString = parse_url($this->url, PHP_URL_QUERY);
-        // フラグメント取得
-        $fragment = parse_url($this->url, PHP_URL_FRAGMENT);
+        // URLバリデーション
+        $tempUrl = self::validateUrl($url);
+        $this->method = $method;
 
-        // GETクエリが存在する場合
+        // GETクエリとフラグメントをRequest内部の値として分離する
+        $queryString = parse_url($tempUrl, PHP_URL_QUERY);
+        $fragment = parse_url($tempUrl, PHP_URL_FRAGMENT);
+
         if($queryString !== null){
-            // 配列に格納
             parse_str($queryString, $this->queryParams);
         }
 
-        // フラグメントが存在する場合
         if($fragment !== null){
             $this->fragment = $fragment;
         }
 
-        // URLからクエリとフラグメントを除去
-        $tempUrl = explode('?', $url);
+        // URL本体はクエリとフラグメントを除去した状態で保持する
+        $tempUrl = explode('?', $tempUrl);
         $this->url = (str_contains($tempUrl[0], '#')) ? explode('#', $tempUrl[0])[0] : $tempUrl[0];
 
         unset($tempUrl);
     }
 
     /**
-     * Request::get('https://example.com') のような、HTTPメソッド名の静的Factoryを提供する。
+     * Creates a request from a lower-case HTTP method name.
      *
-     * @param  string $method 呼び出された静的メソッド名
-     * @param  array  $args   Requestコンストラクタへ渡す引数 (現在`url`のみ)
+     * @param  string $method Called static method name.
+     * @param  array  $args   Constructor arguments. The first argument must be the URL.
      * @return self
      * @throws InvalidRequestException
      */
@@ -116,26 +128,121 @@ final class Request {
     }
 
     /**
-     * 送信するHTTPヘッダーを設定する。
+     * Returns the request ID.
      *
-     * @param  array<string, mixed> $headers ヘッダー名をキーにした連想配列
-     * @return self
+     * @return string
      */
-    public function headers(array $headers): self {
-
-        $this->requestHeaders = self::validateHeaders($headers);
-
-        return $this;
+    public function getId(): string {
+        return $this->id;
     }
 
     /**
-     * Acceptヘッダーへ送信可能なメディアタイプを追加する。
+     * Returns the base request URL.
      *
-     * `ContentType` enumや`MediaRange` enumだけでなく、
-     * `application/vnd.api+json` のような任意のメディアタイプ文字列も指定できる。
-     * 同じ値が既に追加されている場合は、現在のRequestをそのまま返す。
+     * @return string
+     */
+    public function getUrl(): string {
+        return $this->url;
+    }
+
+    /**
+     * Returns the HTTP method.
      *
-     * @param  AcceptValue|string $acceptValue Acceptヘッダーに追加するメディアタイプ
+     * @return CurlMethod
+     */
+    public function getMethod(): CurlMethod {
+        return $this->method;
+    }
+
+    /**
+     * Returns request headers.
+     *
+     * @return array<string, string>
+     */
+    public function getHeaders(): array {
+        return $this->headers;
+    }
+
+    /**
+     * cURLオプション生成用にリクエストボディ情報を返す。
+     *
+     * @return RequestBody|null
+     * @internal
+     */
+    public function getRequestBody(): ?RequestBody {
+        return $this->body;
+    }
+
+    /**
+     * cURLオプション生成用に添付ファイル情報を返す。
+     *
+     * @return list<RequestAttachmentEntry>
+     * @internal
+     */
+    public function getAttachmentEntries(): array {
+        return $this->attachmentEntries;
+    }
+
+    /**
+     * cURLオプション生成用にリクエストボディのContent-Typeを返す。
+     *
+     * @return ContentType|null
+     * @internal
+     */
+    public function getContentType(): ?ContentType {
+        return $this->contentType;
+    }
+
+    /**
+     * cURLオプション生成用にAcceptヘッダー値を返す。
+     *
+     * @return string[]
+     * @internal
+     */
+    public function getAcceptHeaders(): array {
+        return $this->acceptHeaders;
+    }
+
+    /**
+     * Returns query parameters.
+     *
+     * @return array<string, mixed>
+     */
+    public function getQueryParams(): array {
+        return $this->queryParams;
+    }
+
+    /**
+     * Returns the URL fragment.
+     *
+     * @return string|null
+     */
+    public function getFragment(): ?string {
+        return $this->fragment;
+    }
+
+    /**
+     * Returns a new request with the given headers.
+     *
+     * @param  array<string, mixed> $headers Header names and values.
+     * @return self
+     * @throws InvalidRequestException
+     */
+    public function headers(array $headers): self {
+
+        $clone = clone $this;
+        $clone->headers = self::validateHeaders($headers);
+
+        return $clone;
+    }
+
+    /**
+     * Returns a new request with an Accept header value.
+     *
+     * Existing values are compared by media type only. If the media type already
+     * exists, the current request is returned unchanged.
+     *
+     * @param  AcceptValue|string $acceptValue Accept header value.
      * @return self
      * @throws InvalidRequestException
      */
@@ -156,16 +263,15 @@ final class Request {
         }
 
         $clone = clone $this;
-
         $clone->acceptHeaders[] = $acceptValue;
 
         return $clone;
     }
 
     /**
-     * 複数のメディアタイプをAcceptヘッダーへ追加する。
+     * Returns a new request with multiple Accept header values.
      *
-     * @param  AcceptValue|string ...$acceptValues Acceptヘッダーに追加するメディアタイプ
+     * @param  AcceptValue|string ...$acceptValues Accept header values.
      * @return self
      * @throws InvalidRequestException
      */
@@ -174,7 +280,7 @@ final class Request {
         $clone = clone $this;
 
         foreach($acceptValues as $acceptValue){
-            // `accept()` 内でcloneしてしまっているため `$clone` に都度代入
+            // `accept()` 内でcloneしているため `$clone` に都度代入する
             $clone = $clone->accept($acceptValue);
         }
 
@@ -182,11 +288,13 @@ final class Request {
     }
 
     /**
-     * 単一のGETパラメーターを登録する。
+     * Returns a new request with a query parameter.
      *
-     * @param  string  $key       クエリパラメーターのキー名
-     * @param  mixed   $value     設定値 (`null`時は指定キーをクエリパラメーターから除外する)
-     * @param  boolean $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * Passing null removes the key when overwrite is true.
+     *
+     * @param  string  $key       Query parameter key.
+     * @param  mixed   $value     Query parameter value.
+     * @param  boolean $overwrite Whether an existing key should be overwritten.
      * @return self
      * @throws InvalidRequestException
      */
@@ -221,10 +329,10 @@ final class Request {
     }
 
     /**
-     * 複数のGETパラメーターを一括して登録する。
+     * Returns a new request with multiple query parameters.
      *
-     * @param  array<string, mixed> $params    `$overwrite = true` 且つ `value = null` の場合は対象キーをクエリパラメーターから除外する
-     * @param  boolean              $overwrite 既存項目を上書きする場合は、$overwriteをtrueに設定 [Default: `true`]
+     * @param  array<string, mixed> $params    Query parameters.
+     * @param  boolean              $overwrite Whether existing keys should be overwritten.
      * @return self
      * @throws InvalidRequestException
      */
@@ -238,7 +346,7 @@ final class Request {
         $clone = clone $this;
 
         foreach($params as $key => $value){
-            // `param()` 内でcloneしてしまっているため `$clone` に都度代入
+            // `param()` 内でcloneしているため `$clone` に都度代入する
             $clone = $clone->param($key, $value, $overwrite);
         }
 
@@ -246,48 +354,44 @@ final class Request {
     }
 
     /**
-     * 送信するリクエストボディーを設定する。
+     * Returns a new request with a raw request body.
      *
-     * 引数で受け取った文字列をそのまま保持し、`CurlOptionsFactory`で `CURLOPT_POSTFIELDS` と、
-     * 既定の `Content-Type` へ変換する。
-     *
-     * @param  array|string $body        送信するリクエストボディー
-     * @param  ContentType  $contentType ボディー形式に対応するContent-Type
-     * @param  array        $options     リクエストボディーのオプション
+     * @param  array|string $body        Request body.
+     * @param  ContentType  $contentType Content type used to encode the body.
+     * @param  array        $options     Body encoding options.
      * @return self
      * @throws RequestBodyException
      */
     public function body(array|string $body, ContentType $contentType = ContentType::PlainText, array $options = []): self {
 
-        // 空ボディーは即リターン
+        // 空ボディは即リターン
         if($body === [] || $body === ''){
             return $this;
         }
 
-        // 既に添付ファイルが存在する場合はmultipart以外のボディーを設定できない
+        // 既に添付ファイルが存在する場合はmultipart以外のボディを設定できない
         if($this->attachmentEntries !== [] && $contentType !== ContentType::FormUrlEncoded){
             throw new RequestBodyException('Only form fields can be combined with attachments.');
         }
 
         $clone = clone $this;
-
-        $clone->requestBody = new RequestBody($body, $contentType, $options);
+        $clone->body = new RequestBody($body, $contentType, $options);
         $clone->contentType = $contentType;
 
         return $clone;
     }
 
     /**
-     * ファイルの内容をボディーに設定する。
+     * Returns a new request with a body loaded from a local file.
      *
-     * @param  string      $path        ファイルパス
-     * @param  ContentType $contentType Content-Type (Enum)
+     * @param  string      $path        Local file path.
+     * @param  ContentType $contentType Body content type.
      * @return self
-     * @throws RequestBodyException     ファイルが存在しない、または読取不可の場合
+     * @throws RequestBodyException
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
 
-        // 既に添付ファイルが存在する場合はテキストボディーを設定できないためエラー
+        // 既に添付ファイルが存在する場合はテキストボディを設定できない
         if($this->attachmentEntries !== []){
             throw new RequestBodyException('Cannot set file body when attachments are set.');
         }
@@ -305,19 +409,20 @@ final class Request {
     }
 
     /**
-     * 配列またはJSON文字列をJSONリクエストボディーとして設定する。
+     * Returns a new request with a JSON body.
      *
-     * 既定では `JSON_THROW_ON_ERROR` を有効にし、Content-Typeには `application/json` を使用する。
+     * Arrays are encoded later by CurlOptionsFactory. Strings are validated as
+     * JSON before being stored.
      *
-     * @param  array<string|int, mixed>|string $input     JSON化する配列、または検証済みとして送信するJSON文字列
-     * @param  int                             $jsonFlags 配列をJSON化する場合に `json_encode()` へ渡すJSONフラグ
-     * @param  boolean                         $throw     JSON変換失敗時に例外を投げる場合はtrue
+     * @param  array<string|int, mixed>|string $input     Array to encode or JSON string.
+     * @param  int                             $jsonFlags Flags passed to json_encode().
+     * @param  boolean                         $throw     Whether JSON failures should throw an exception.
      * @return self
-     * @throws RequestBodyException `$throw = true` の時、JSON変換失敗時に投げられる例外
+     * @throws RequestBodyException
      */
     public function json(array|string $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
 
-        // 既に添付ファイルが存在する場合はJSONボディーを設定できないためエラー
+        // 既に添付ファイルが存在する場合はJSONボディを設定できない
         if($this->attachmentEntries !== []){
             throw new RequestBodyException('Cannot set JSON body when attachments are set.');
         }
@@ -346,9 +451,9 @@ final class Request {
     }
 
     /**
-     * 配列を `application/x-www-form-urlencoded` 形式のリクエストボディーとして設定する。
+     * Returns a new request with an application/x-www-form-urlencoded body.
      *
-     * @param  array<string|int, mixed> $input フォーム送信用の値
+     * @param  array<string|int, mixed> $input Form fields.
      * @return self
      */
     public function form(array $input): self {
@@ -359,17 +464,15 @@ final class Request {
     }
 
     /**
-     * multipart/form-dataで送信する添付ファイルを追加する。
+     * Returns a new request with a multipart/form-data file attachment.
      *
-     * 添付ファイルは、リクエストボディ未指定または `form()` のフォーム項目と組み合わせて送信できる。
+     * If attachments are present, a user-provided Content-Type header is removed
+     * during option building so cURL can generate a valid multipart boundary.
      *
-     * 添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
-     * Factory側でユーザー指定のContent-Typeヘッダーを削除する。
-     *
-     * @param  RequestAttachment $attachment     添付ファイル情報
-     * @param  boolean           $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
+     * @param  RequestAttachment $attachment     File attachment.
+     * @param  boolean           $allowOverwrite Whether this attachment may overwrite a field with the same name.
      * @return self
-     * @throws RequestBodyException 添付ファイルが存在しない、または読取不可の場合
+     * @throws RequestBodyException
      */
     public function attach(RequestAttachment $attachment, bool $allowOverwrite = true): self {
 
@@ -378,17 +481,16 @@ final class Request {
             throw new RequestBodyException('Attachment name must not be empty.');
         }
 
-        // リクエストボディーが設定済みの場合、フォーム形式で無いとエラー
-        if($this->requestBody !== null && $this->requestBody->contentType !== ContentType::FormUrlEncoded){
+        // リクエストボディが設定済みの場合、フォーム形式でなければエラー
+        if($this->body !== null && $this->body->contentType !== ContentType::FormUrlEncoded){
             throw new RequestBodyException("The attachment cannot be added when the request body is specified.");
         }
 
         // ファイルチェック
         Utils::fileCheck($attachment->path);
 
-        // 上書禁止時の同一名チェック
+        // 上書き禁止時の同一名チェック
         if(!$allowOverwrite){
-            // 添付ファイル側の方
             $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
             if(in_array($attachment->name, $attachNames, true)){
                 throw new RequestBodyException("The attachment name is already used in attachment.");
@@ -396,8 +498,7 @@ final class Request {
 
             unset($attachNames);
 
-            // リクエストボディーの方
-            $body = $this->requestBody?->body ?? null;
+            $body = $this->body?->body ?? null;
             if(is_array($body) && $body !== []){
                 if(array_key_exists($attachment->name, $body)){
                     throw new RequestBodyException("The attachment name is already used in body.");
@@ -409,11 +510,10 @@ final class Request {
 
         $clone = clone $this;
 
-        // 添付ファイル配列に追加
         if(!$allowOverwrite){
             $clone->attachmentEntries[] = new RequestAttachmentEntry(attachment: $attachment, allowOverwrite: $allowOverwrite);
         } else{
-            // 単なるリストなのでまず同名ファイルを削除してから追加
+            // 単なるリストなので、同名ファイルを削除してから追加する
             $entries = array_filter($this->attachmentEntries,
                 static fn(RequestAttachmentEntry $entry): bool => ($entry->attachment->name !== $attachment->name),
             );
@@ -424,23 +524,18 @@ final class Request {
             ];
         }
 
-        // multipartでのContent-Type指定は強制させないため初期化
+        // multipartではContent-Typeのboundary生成をcURLに任せるため初期化
         $clone->contentType = null;
 
         return $clone;
     }
 
     /**
-     * multipart/form-dataで送信する添付ファイルを追加する。
+     * Returns a new request with a multipart/form-data file attachment.
      *
-     *  添付ファイルは、リクエストボディ未指定または `form()` のフォーム項目と組み合わせて送信できる。
-     *
-     *  添付ファイルがある場合、送信時のContent-TypeはcURLがboundary付きで生成するため、
-     *  Factory側でユーザー指定のContent-Typeヘッダーを削除する。
-     *
-     * @param  string  $name           multipartフィールド名
-     * @param  string  $path           添付するローカルファイルパス
-     * @param  boolean $allowOverwrite ファイル添付時、同名のフィールドが存在する場合に上書きを許可するかどうか
+     * @param  string  $name           Multipart field name.
+     * @param  string  $path           Local file path.
+     * @param  boolean $allowOverwrite Whether this attachment may overwrite a field with the same name.
      * @return self
      * @throws RequestBodyException
      */
@@ -449,9 +544,9 @@ final class Request {
     }
 
     /**
-     * 任意にCurlOptionsを付与し送信待ちリクエストを生成する。
+     * Prepares the request with optional cURL execution options.
      *
-     * @param  CurlOptions|null $options cURL実行時のオプション設定
+     * @param  CurlOptions|null $options Execution options.
      * @return PreparedRequest
      */
     public function prepare(?CurlOptions $options = null): PreparedRequest {
@@ -459,7 +554,7 @@ final class Request {
     }
 
     /**
-     * URLとして利用できる最低限の形式か検証する。
+     * URLとして利用できる最小限の形式か検証する。
      *
      * @param  string $url
      * @return string

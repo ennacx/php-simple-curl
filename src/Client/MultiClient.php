@@ -16,16 +16,18 @@ use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
 
 /**
- * 複数のリクエストをcURL Multiで並列実行するクライアント。
- * 各リクエストのcURLハンドラーをMultiハンドラーへ登録し、完了したものから `Response` へ変換する。
+ * Sends multiple HTTP requests through cURL multi.
+ *
+ * Each request is registered as an individual cURL handle and converted into a
+ * Response after completion.
  */
 final readonly class MultiClient {
 
     /**
-     * コンストラクタ
+     * Creates a multi-request client.
      *
-     * @param CurlOptionsFactory $optionsFactory  PreparedRequestからcURLオプションを生成するFactory
-     * @param ResponseFactory    $responseFactory cURL実行結果からResponseを生成するFactory
+     * @param CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
+     * @param ResponseFactory    $responseFactory Factory used to create response objects.
      */
     public function __construct(
         private CurlOptionsFactory $optionsFactory  = new CurlOptionsFactory(),
@@ -34,11 +36,11 @@ final readonly class MultiClient {
     }
 
     /**
-     * 指定されたRequestまたはPreparedRequest群を並列実行し、Request-IDをキーにしたResponse配列を返す。
-     * Requestが渡された場合は、デフォルトのCurlOptionsを使って内部でPreparedRequestへ変換する。
-     * ※返却配列のキーには各Requestの `Request::$id` を使用する。
+     * Sends multiple requests and returns responses keyed by request ID.
      *
-     * @param  Request|PreparedRequest ...$preparedRequests 実行対象のRequestまたはPreparedRequest
+     * Plain Request instances are prepared internally with default options.
+     *
+     * @param  Request|PreparedRequest ...$preparedRequests Requests to send.
      * @return Responses
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
@@ -59,14 +61,16 @@ final readonly class MultiClient {
         try{
             // 並列処理するcURLそれぞれにハンドラーを設定
             foreach($preparedRequests as $preparedRequest){
+                $request = $preparedRequest->getRequest();
+
+                // ループ中の Request-ID 取得
+                $requestId = $request->getId();
+
                 $ch = curl_init();
 
                 if($ch === false){
-                    throw new CurlExecutionException(sprintf('Invalid cURL handle. Request-ID: %s', $preparedRequest->request->id));
+                    throw new CurlExecutionException(sprintf('Invalid cURL handle. Request-ID: %s', $requestId));
                 }
-
-                // ループ中の Request-ID 取得
-                $requestId = $preparedRequest->request->id;
 
                 if(!curl_setopt_array($ch, $this->optionsFactory->fromPreparedRequest($preparedRequest))){
                     throw new InvalidConfigurationException(sprintf('Invalid cURL option or value included. Request-ID: %s', $requestId));
@@ -117,8 +121,7 @@ final readonly class MultiClient {
                 $this->drainCompleted($cmh, $handles, $responses);
             }
         } finally{
-            // PHP 8.0以降、CurlHandle/CurlMultiHandle はオブジェクトとして管理されるため、curl_close()/curl_multi_close() は呼ばず、スコープアウト時のGCに任せる
-
+            // PHP 8.0以降、CurlHandle はGCに任せられるが、MultiHandleからの取り外しは必要
             // マルチハンドラーにハンドラーが残り続けている場合は除去
             foreach($handles as $entry){
                 if(isset($entry['handle']) && $entry['handle'] instanceof CurlHandle){
@@ -145,7 +148,7 @@ final readonly class MultiClient {
      *
      * @param  CurlMultiHandle $cmh
      * @param  int|null        $running 処理中のハンドラー数
-     * @return int                      `CURLM_*` の実行結果
+     * @return int                      CURLM_* の実行結果
      */
     private function exec(CurlMultiHandle $cmh, ?int &$running): int {
 
@@ -189,7 +192,7 @@ final readonly class MultiClient {
             $raw = ($result === CURLE_OK) ? curl_multi_getcontent($ch) : false;
 
             // ループ中の Request-ID 取得
-            $requestId = $preparedRequest->request->id;
+            $requestId = $preparedRequest->getRequest()->getId();
 
             // cURL実行結果からResponseを生成
             $responses[$requestId] = $this->responseFactory->fromCurlResult($ch, $raw, $preparedRequest, $result);
@@ -198,7 +201,6 @@ final readonly class MultiClient {
             curl_multi_remove_handle($cmh, $ch);
 
             // CurlHandleの解放はスコープアウトに任せる
-
             unset($handles[$key]);
         }
     }

@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Static;
 
+/**
+ * @internal
+ */
 final class HeaderUtils {
 
     /**

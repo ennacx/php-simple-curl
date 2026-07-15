@@ -4,56 +4,46 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Enum;
 
 /**
- * cURL認証
+ * cURL HTTP authentication modes.
  */
 enum CurlAuth implements ToCurlConst {
 
-    /** 認証無し */
+    /** No authentication. */
     case NONE;
 
-    /** 最適な認証方法の自動選択 */
+    /** Let cURL choose any supported authentication method. */
     case AUTO;
 
-    /** BASIC認証以外の最適な認証方法の選択 */
+    /** Let cURL choose a safe authentication method other than Basic. */
     case SAFE;
 
-    /** @var int BASIC認証 */
+    /** Basic authentication. */
     case BASIC;
 
-    /** ダイジェスト認証 */
+    /** Digest authentication. */
     case DIGEST;
 
-    /** GSS-API認証 (SASL, Kerberos etc SSO) */
+    /** GSS-API authentication. */
     case GSS;
 
-    /** Windows NT LAN Manager認証 */
+    /** Windows NTLM authentication. */
     case NTLM;
 
-    /** AWS Signature Version 4 */
+    /** AWS Signature Version 4. */
     case AWSSIG4;
 
     /**
-     * cURL用の定数に変換
-     *
-     * @return int
+     * @inheritDoc
      */
     public function toCurlConst(): int {
         return match($this){
-            // 認証無し
-            self::NONE => CURLAUTH_NONE,
-            // 最適な認証方法の選択
-            self::AUTO => CURLAUTH_ANY,
-            // BASIC認証以外の最適な認証方法の選択
-            self::SAFE => CURLAUTH_ANYSAFE,
-            // BASIC認証
-            self::BASIC => CURLAUTH_BASIC,
-            // ダイジェスト認証
-            self::DIGEST => CURLAUTH_DIGEST,
-            // GSS-API認証 (SASL, Kerberos etc SSO)
-            self::GSS => CURLAUTH_GSSNEGOTIATE,
-            // Windows NT LAN Manager認証
-            self::NTLM => CURLAUTH_NTLM,
-            // AWS Signature Version 4
+            self::NONE    => CURLAUTH_NONE,
+            self::AUTO    => CURLAUTH_ANY,
+            self::SAFE    => CURLAUTH_ANYSAFE,
+            self::BASIC   => CURLAUTH_BASIC,
+            self::DIGEST  => CURLAUTH_DIGEST,
+            self::GSS     => CURLAUTH_GSSNEGOTIATE,
+            self::NTLM    => CURLAUTH_NTLM,
             self::AWSSIG4 => CURLAUTH_AWS_SIGV4
         };
     }

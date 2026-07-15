@@ -32,18 +32,18 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
         $responses = (new MultiClient())->sendAll($json, $text, $missing);
 
         self::assertCount(3, $responses);
-        self::assertArrayHasKey($json->request->id, $responses);
-        self::assertArrayHasKey($text->request->id, $responses);
-        self::assertArrayHasKey($missing->request->id, $responses);
+        self::assertArrayHasKey($json->getRequest()->getId(), $responses);
+        self::assertArrayHasKey($text->getRequest()->getId(), $responses);
+        self::assertArrayHasKey($missing->getRequest()->getId(), $responses);
 
-        self::assertTrue($responses[$json->request->id]->isSuccessful());
-        self::assertSame('GET', $responses[$json->request->id]->json()['method']);
+        self::assertTrue($responses[$json->getRequest()->getId()]->isSuccessful());
+        self::assertSame('GET', $responses[$json->getRequest()->getId()]->json()['method']);
 
-        self::assertTrue($responses[$text->request->id]->isSuccessful());
-        self::assertSame('hello from fixture', $responses[$text->request->id]->body);
+        self::assertTrue($responses[$text->getRequest()->getId()]->isSuccessful());
+        self::assertSame('hello from fixture', $responses[$text->getRequest()->getId()]->body);
 
-        self::assertTrue($responses[$missing->request->id]->isClientError());
-        self::assertTrue($responses[$missing->request->id]->isError());
+        self::assertTrue($responses[$missing->getRequest()->getId()]->isClientError());
+        self::assertTrue($responses[$missing->getRequest()->getId()]->isError());
     }
 
     /**
@@ -60,14 +60,14 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
         $responses = (new MultiClient())->sendAll($json, $text);
 
         self::assertCount(2, $responses);
-        self::assertArrayHasKey($json->id, $responses);
-        self::assertArrayHasKey($text->id, $responses);
+        self::assertArrayHasKey($json->getId(), $responses);
+        self::assertArrayHasKey($text->getId(), $responses);
 
-        self::assertTrue($responses[$json->id]->isSuccessful());
-        self::assertSame('GET', $responses[$json->id]->json()['method']);
-        self::assertSame('application/json', $responses[$json->id]->json()['accept']);
+        self::assertTrue($responses[$json->getId()]->isSuccessful());
+        self::assertSame('GET', $responses[$json->getId()]->json()['method']);
+        self::assertSame('application/json', $responses[$json->getId()]->json()['accept']);
 
-        self::assertTrue($responses[$text->id]->isSuccessful());
-        self::assertSame('hello from fixture', $responses[$text->id]->body);
+        self::assertTrue($responses[$text->getId()]->isSuccessful());
+        self::assertSame('hello from fixture', $responses[$text->getId()]->body);
     }
 }

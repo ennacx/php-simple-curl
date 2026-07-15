@@ -4,32 +4,28 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Enum;
 
 /**
- * cURL プロキシープロトコル
+ * cURL proxy protocols.
  */
 enum ProxyProtocol implements ToCurlConst {
 
-    /** HTTPプロトコル */
+    /** HTTP proxy. */
     case HTTP;
 
-    /** SOCKSプロトコル v5 */
+    /** SOCKS5 proxy. */
     case SOCKS5;
 
     /**
-     * cURL用の定数に変換
-     *
-     * @return int
+     * @inheritDoc
      */
     public function toCurlConst(): int {
         return match($this){
-            // HTTPプロトコル
-            self::HTTP => CURLPROXY_HTTP,
-            // SOCKSプロトコル v5
+            self::HTTP   => CURLPROXY_HTTP,
             self::SOCKS5 => CURLPROXY_SOCKS5
         };
     }
 
     /**
-     * プロキシープロトコルごとの標準ポート番号を返す。
+     * Returns the default port for the protocol.
      *
      * @return int
      */

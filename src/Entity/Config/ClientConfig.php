@@ -7,15 +7,15 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Static\HeaderUtils;
 
 /**
- * リクエスト時のクライアント情報に関するcURLオプションを保持するConfig。
+ * Client metadata configuration.
  */
 final readonly class ClientConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates a client metadata config.
      *
-     * @param  string|null $userAgent ユーザーエージェント
-     * @param  string|null $referer   リファラー
+     * @param  string|null $userAgent User-Agent header value.
+     * @param  string|null $referer   Referer header value.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -32,11 +32,7 @@ final readonly class ClientConfig implements CurlOptionsApplier {
     }
 
     /**
-     * クライアント設定をcURLオプションと送信ヘッダーへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 

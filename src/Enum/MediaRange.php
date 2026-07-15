@@ -7,29 +7,29 @@ use Ennacx\SimpleCurl\Entity\AcceptValue;
 use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 
 /**
- * Acceptヘッダーで使用するメディアレンジを表す列挙型。
+ * Common Accept header media ranges.
  */
 enum MediaRange : string implements AcceptValue {
 
-    /** すべて */
+    /** Any media type. */
     case Any = '*/*';
 
-    /** テキスト */
+    /** Any text media type. */
     case Text = 'text/*';
 
-    /** 画像 */
+    /** Any image media type. */
     case Image = 'image/*';
 
-    /** 動画 */
+    /** Any video media type. */
     case Video = 'video/*';
 
-    /** アプリケーション */
+    /** Any application media type. */
     case Application = 'application/*';
 
     /**
-     * QualityValueを設定したAcceptヘッダー用のタイプに変換する。
+     * Returns this media range with an Accept quality value.
      *
-     * @param  float $quality
+     * @param  float $quality Quality value between 0.0 and 1.0.
      * @return QualifiedAcceptValue
      */
     public function withQuality(float $quality): QualifiedAcceptValue {

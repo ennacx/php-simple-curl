@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Enum;
 
 /**
- * cURLエラー番号
+ * cURL easy error codes.
  *
  * @see https://curl.se/libcurl/c/libcurl-errors.html
  */

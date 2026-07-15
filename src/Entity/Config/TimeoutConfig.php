@@ -6,17 +6,17 @@ namespace Ennacx\SimpleCurl\Entity\Config;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
- * タイムアウトに関するcURLオプションを保持するConfig。
+ * Timeout configuration.
  */
 final readonly class TimeoutConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates a timeout config.
      *
-     * @param  int      $timeoutSeconds             全体タイムアウト秒数
-     * @param  int      $connectTimeoutSeconds      接続タイムアウト秒数
-     * @param  int|null $timeoutMilliseconds        全体タイムアウトミリ秒数
-     * @param  int|null $connectTimeoutMilliseconds 接続タイムアウトミリ秒数
+     * @param  int      $timeoutSeconds             Total timeout in seconds.
+     * @param  int      $connectTimeoutSeconds      Connection timeout in seconds.
+     * @param  int|null $timeoutMilliseconds        Total timeout in milliseconds.
+     * @param  int|null $connectTimeoutMilliseconds Connection timeout in milliseconds.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -39,10 +39,10 @@ final readonly class TimeoutConfig implements CurlOptionsApplier {
     }
 
     /**
-     * 秒単位のタイムアウト設定を生成する。
+     * Creates a second-based timeout config.
      *
-     * @param  int $timeoutSec
-     * @param  int $connectTimeoutSec
+     * @param  int $timeoutSec        Total timeout in seconds.
+     * @param  int $connectTimeoutSec Connection timeout in seconds.
      * @return self
      */
     public static function seconds(int $timeoutSec, int $connectTimeoutSec = 10): self {
@@ -50,10 +50,10 @@ final readonly class TimeoutConfig implements CurlOptionsApplier {
     }
 
     /**
-     * ミリ秒単位のタイムアウト設定を生成する。
+     * Creates a millisecond-based timeout config.
      *
-     * @param  int $timeoutMs
-     * @param  int $connectTimeoutMs
+     * @param  int $timeoutMs        Total timeout in milliseconds.
+     * @param  int $connectTimeoutMs Connection timeout in milliseconds.
      * @return self
      */
     public static function milliseconds(int $timeoutMs, int $connectTimeoutMs = 10000): self {
@@ -61,11 +61,7 @@ final readonly class TimeoutConfig implements CurlOptionsApplier {
     }
 
     /**
-     * タイムアウト設定をcURLオプションへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 

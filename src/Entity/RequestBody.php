@@ -7,6 +7,8 @@ use Ennacx\SimpleCurl\Enum\ContentType;
 
 /**
  * Requestに保持する送信ボディの内容と変換設定を表す値オブジェクト。
+ *
+ * @internal
  */
 final readonly class RequestBody {
 

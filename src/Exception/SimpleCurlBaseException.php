@@ -11,13 +11,13 @@ use Throwable;
  */
 abstract class SimpleCurlBaseException extends RuntimeException {
 
-    /** @var array<int|string, mixed> Message attributes used by templated exceptions. */
+    /** @var array<int|string, mixed> テンプレートメッセージに差し込む属性値 */
     protected array $_attributes = [];
 
-    /** Message template used when the constructor receives an attribute array. */
+    /** コンストラクタで属性配列を受け取った場合に使用するメッセージテンプレート */
     protected string $_messageTemplate = '';
 
-    /** Default exception code. */
+    /** デフォルトの例外コード */
     protected int $_defaultCode = 0;
 
     /**

@@ -6,16 +6,16 @@ namespace Ennacx\SimpleCurl\Entity\Config;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
- * リダイレクト追跡に関するcURLオプションを保持するConfig。
+ * Redirect handling configuration.
  */
 final readonly class RedirectConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates a redirect config.
      *
-     * @param  boolean $follow       リダイレクトを追跡するか
-     * @param  int     $maxRedirects 最大リダイレクト回数。-1は無制限
-     * @param  boolean $autoReferer  リダイレクト時にRefererを自動設定するか
+     * @param  boolean $follow       Whether redirects should be followed.
+     * @param  int     $maxRedirects Maximum redirects. -1 means unlimited.
+     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -29,10 +29,10 @@ final readonly class RedirectConfig implements CurlOptionsApplier {
     }
 
     /**
-     * リダイレクト追跡を有効にした設定を生成する。
+     * Creates an enabled redirect config.
      *
-     * @param  int     $maxRedirects
-     * @param  boolean $autoReferer
+     * @param  int     $maxRedirects Maximum redirects.
+     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
      * @return self
      */
     public static function enabled(int $maxRedirects = 10, bool $autoReferer = true): self {
@@ -40,7 +40,7 @@ final readonly class RedirectConfig implements CurlOptionsApplier {
     }
 
     /**
-     * リダイレクト追跡を無効にした設定を生成する。
+     * Creates a disabled redirect config.
      *
      * @return self
      */
@@ -49,11 +49,7 @@ final readonly class RedirectConfig implements CurlOptionsApplier {
     }
 
     /**
-     * リダイレクト設定をcURLオプションへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 

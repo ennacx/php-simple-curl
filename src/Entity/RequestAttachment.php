@@ -4,17 +4,17 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 /**
- * multipart/form-dataで送信する添付ファイルを表す値オブジェクト。
+ * File attachment for multipart/form-data requests.
  */
 final readonly class RequestAttachment {
 
     /**
-     * コンストラクタ
+     * Creates a file attachment.
      *
-     * @param string      $name     multipartフィールド名
-     * @param string      $path     添付するローカルファイルパス
-     * @param string|null $filename 送信時に使用するファイル名。nullの場合はcURLの既定に従う
-     * @param string|null $mimeType 送信時に使用するMIMEタイプ。nullの場合はcURLの既定に従う
+     * @param string      $name     Multipart field name.
+     * @param string      $path     Local file path.
+     * @param string|null $filename Posted filename. Null lets cURL use the local filename.
+     * @param string|null $mimeType MIME type. Null lets cURL infer or omit it.
      */
     public function __construct(
         public string $name,
