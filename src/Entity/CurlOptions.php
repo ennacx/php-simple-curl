@@ -9,18 +9,20 @@ use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
 /**
- * cURL実行時のオプション設定をまとめる値オブジェクト。
- * Request本体には含めず、通信制御やレスポンス取得方法に関わる設定を保持する。
+ * Immutable cURL execution options.
+ *
+ * This object stores execution-level options such as response capture, timeout,
+ * redirects, and client metadata. Request body and URL data belong to Request.
  */
 final readonly class CurlOptions {
 
     /**
-     * コンストラクタ
+     * Creates an option set.
      *
      * @template T of CurlOptionsApplier
-     * @param boolean                   $captureHeaders レスポンスヘッダーをResponseに保持するか
-     * @param boolean                   $captureBody    レスポンスボディをResponseに保持するか
-     * @param array<class-string<T>, T> $config         `CurlOptionsApplier` のリスト
+     * @param boolean                   $captureHeaders Whether response headers should be captured.
+     * @param boolean                   $captureBody    Whether response body should be captured.
+     * @param array<class-string<T>, T> $config         Config objects keyed by class name.
      */
     public function __construct(
         private bool  $captureHeaders = true,
@@ -30,10 +32,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * デフォルト設定のCurlOptionsを生成する。
+     * Creates a default option set with optional config objects.
      *
-     * @template T of CurlOptionsApplier
-     * @param  list<T> $config cURLオプションを保持するConfig
+     * @param  CurlOptionsApplier ...$config Config objects to apply.
      * @return self
      */
     public static function create(CurlOptionsApplier ...$config): self {
@@ -41,9 +42,12 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Configクラスを反映した本クラスを返却する。
+     * Returns a new option set with the given config objects.
      *
-     * @param  CurlOptionsApplier ...$config cURLオプションを保持するConfig
+     * Config objects are keyed by class name; adding the same config class
+     * replaces the previous one.
+     *
+     * @param  CurlOptionsApplier ...$config Config objects to apply.
      * @return self
      */
     public function with(CurlOptionsApplier ...$config): self {
@@ -62,20 +66,21 @@ final readonly class CurlOptions {
     }
 
     /**
-     * 指定Configクラスが設定済みかをチェックする。
+     * Checks whether a config class is set.
      *
      * @template T of CurlOptionsApplier
-     * @param class-string<T> $class
+     * @param  class-string<T> $class Config class name.
+     * @return boolean
      */
     public function has(string $class): bool {
         return (isset($this->config[$class]));
     }
 
     /**
-     * 指定されたConfigクラスを取得する。
+     * Returns a config object by class name.
      *
      * @template T of CurlOptionsApplier
-     * @param  class-string<T> $class
+     * @param  class-string<T> $class Config class name.
      * @return T|null
      */
     public function get(string $class): ?CurlOptionsApplier {
@@ -88,10 +93,10 @@ final readonly class CurlOptions {
     }
 
     /**
-     * 指定されたConfigクラスを削除する。
+     * Returns a new option set without the given config class.
      *
      * @template T of CurlOptionsApplier
-     * @param  class-string<T> $class
+     * @param  class-string<T> $class Config class name.
      * @return self
      */
     public function remove(string $class): self {
@@ -107,9 +112,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * レスポンスヘッダーをResponseへ保持するか設定する。
+     * Returns a new option set with response header capture enabled or disabled.
      *
-     * @param  boolean $capture `true` の場合は `Response::$headers`へ ヘッダー行を格納する
+     * @param  boolean $capture Whether response headers should be captured.
      * @return self
      */
     public function captureHeaders(bool $capture = true): self {
@@ -122,9 +127,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * レスポンスボディをResponseへ保持するか設定する。
+     * Returns a new option set with response body capture enabled or disabled.
      *
-     * @param  boolean $capture `true` の場合は `Response::$body`へ ボディを格納する
+     * @param  boolean $capture Whether response body should be captured.
      * @return self
      */
     public function captureBody(bool $capture = true): self {
@@ -137,10 +142,29 @@ final readonly class CurlOptions {
     }
 
     /**
-     * 秒単位のタイムアウト設定を追加する。
-     * ※接続タイムアウトも同じ秒数で設定する。
+     * Checks whether response headers should be captured.
      *
-     * @param  int $timeoutSec タイムアウト秒数
+     * @return boolean
+     */
+    public function isCapturingHeaders(): bool {
+        return $this->captureHeaders;
+    }
+
+    /**
+     * Checks whether response body should be captured.
+     *
+     * @return boolean
+     */
+    public function isCapturingBody(): bool {
+        return $this->captureBody;
+    }
+
+    /**
+     * Returns a new option set with second-based timeout settings.
+     *
+     * The connection timeout is set to the same value.
+     *
+     * @param  int $timeoutSec Timeout in seconds.
      * @return self
      */
     public function timeout(int $timeoutSec): self {
@@ -151,10 +175,10 @@ final readonly class CurlOptions {
     }
 
     /**
-     * リダイレクト追跡を有効にする。
+     * Returns a new option set with redirect following enabled.
      *
-     * @param  int     $maxRedirects 最大リダイレクト回数 [default: `10`]
-     * @param  boolean $autoReferer  リダイレクト時にリファラを自動設定するか [default: `true`]
+     * @param  int     $maxRedirects Maximum number of redirects.
+     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
      * @return self
      */
     public function followRedirects(int $maxRedirects = 10, bool $autoReferer = true): self {
@@ -165,9 +189,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * リダイレクト追跡を有効にする。
+     * Returns a new option set with redirect following enabled.
      *
-     * `followRedirects()` の単数形エイリアス。
+     * Alias of followRedirects().
      *
      * @return self
      */
@@ -176,9 +200,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * User-Agentヘッダーを送信する設定を追加する。
+     * Returns a new option set with a User-Agent header.
      *
-     * @param  string $userAgent
+     * @param  string $userAgent User-Agent value.
      * @return self
      */
     public function userAgent(string $userAgent): self {
@@ -192,9 +216,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Refererヘッダーを送信する設定を追加する。
+     * Returns a new option set with a Referer header.
      *
-     * @param  string $referer
+     * @param  string $referer Referer value.
      * @return self
      */
     public function referer(string $referer): self {
@@ -208,22 +232,7 @@ final readonly class CurlOptions {
     }
 
     /**
-     * @return boolean
-     */
-    public function isCapturingHeaders(): bool {
-        return $this->captureHeaders;
-    }
-
-    /**
-     * @return boolean
-     */
-    public function isCapturingBody(): bool {
-        return $this->captureBody;
-    }
-
-    /**
-     * 本クラスに設定されたConfig群を返却する。
-     * ※設定していないConfigは返さない。
+     * Returns all configured config objects.
      *
      * @template T of CurlOptionsApplier
      * @return list<T>

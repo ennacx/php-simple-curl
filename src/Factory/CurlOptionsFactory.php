@@ -14,20 +14,16 @@ use Ennacx\SimpleCurl\Static\HeaderUtils;
 use LogicException;
 
 /**
- * PreparedRequestをcURLオプション配列へ変換するFactory。
- *
- * Request本体、CurlOptions、各Configを集約し、`curl_setopt_array()` に渡せる形式へ変換する。
+ * Builds cURL options from a prepared request.
  */
 final class CurlOptionsFactory {
 
     /**
-     * PreparedRequest本体と各Configから `curl_setopt_array()` 用の配列を生成する。
+     * Converts a prepared request into options for curl_setopt_array().
      *
-     * レスポンスボディまたはヘッダーを取得する場合のみ `CURLOPT_RETURNTRANSFER` を有効にする。
-     * 送信ヘッダーはRequestのヘッダーとConfigが追加したヘッダーを統合して設定する。
-     *
-     * @param  PreparedRequest   $preparedRequest
+     * @param  PreparedRequest $preparedRequest Prepared request.
      * @return array<int, mixed>
+     * @throws InvalidRequestException
      */
     public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
@@ -55,7 +51,7 @@ final class CurlOptionsFactory {
             unset($body);
         }
 
-        // multi-part形式の場合はContent-Typeを削除する (cURL側に任せて指定させない)
+        // multipart形式の場合はContent-Typeを削除する (cURL側に任せて指定させない)
         if($request->getAttachmentEntries() !== [] && HeaderUtils::has($headers, 'Content-Type')){
             HeaderUtils::remove($headers, 'Content-Type');
         }
@@ -89,7 +85,7 @@ final class CurlOptionsFactory {
     }
 
     /**
-     * PreparedRequestの内容からURLを生成する。
+     * PreparedRequestの内容から最終的なURLを再構築する。
      *
      * @param  PreparedRequest $preparedRequest
      * @return string

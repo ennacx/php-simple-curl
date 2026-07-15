@@ -8,20 +8,20 @@ use Ennacx\SimpleCurl\Enum\ProxyProtocol;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
- * プロキシー接続に関するcURLオプションを保持するConfig。
+ * Proxy connection configuration.
  */
 final readonly class ProxyConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates a proxy config.
      *
-     * @param  string        $address    プロキシーアドレス
-     * @param  int           $port       プロキシーポート
-     * @param  ProxyProtocol $protocol   プロキシープロトコル
-     * @param  bool|null     $httpTunnel プロキシーのプロトコルがHTTPの場合、HTTPトンネルを有効にするかどうか
-     * @param  ProxyAuth     $authMethod プロキシーの認証方法
-     * @param  string|null   $user       プロキシー認証時のユーザー名
-     * @param  string|null   $password   プロキシー認証時のパスワード
+     * @param  string        $address    Proxy host or address.
+     * @param  int           $port       Proxy port.
+     * @param  ProxyProtocol $protocol   Proxy protocol.
+     * @param  bool|null     $httpTunnel Whether HTTP proxy tunneling should be enabled.
+     * @param  ProxyAuth     $authMethod Proxy authentication method.
+     * @param  string|null   $user       Proxy authentication user.
+     * @param  string|null   $password   Proxy authentication password.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -44,11 +44,7 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
     }
 
     /**
-     * プロキシー設定をcURLオプションへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 
@@ -69,22 +65,22 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
     }
 
     /**
-     * `ProxyConfig::http('host')` のように、Enumの `ProxyProtocol` 名からConfigを生成する。
+     * Creates a proxy config from a ProxyProtocol case name.
      *
-     * @param  string $method 呼び出された静的メソッド名
-     * @param  array  $args   ProxyConfig生成引数
+     * Example: ProxyConfig::http('proxy.example.com').
+     *
+     * @param  string $method Called static method name.
+     * @param  array  $args   ProxyConfig constructor arguments.
      * @return self
      * @throws InvalidConfigurationException
      */
     public static function __callStatic(string $method, array $args): self {
 
-        // プロトコル変換
         $protocol = self::findProtocol($method);
         if($protocol === null){
             throw new InvalidConfigurationException(sprintf('Invalid proxy protocol: %s', $method));
         }
 
-        // アドレス取得
         $address = $args['address'] ?? $args[0] ?? null;
         if(!is_string($address)){
             throw new InvalidConfigurationException('Proxy address is required.');
@@ -102,7 +98,7 @@ final readonly class ProxyConfig implements CurlOptionsApplier {
     }
 
     /**
-     * メソッド名から `ProxyProtocol` を取得する。
+     * メソッド名からProxyProtocolを取得する。
      *
      * @param  string $method
      * @return ProxyProtocol|null

@@ -7,42 +7,39 @@ use Ennacx\SimpleCurl\Entity\AcceptValue;
 use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 
 /**
- * HTTPで扱う代表的なメディアタイプを表す列挙型。
- *
- * 現時点では主にリクエストボディーのContent-Type指定に使用する。
- * AcceptヘッダーやレスポンスContent-Type判定など、メディアタイプを扱う用途にも再利用できる。
+ * Common HTTP media types.
  */
 enum ContentType : string implements AcceptValue {
 
-    /** プレーンテキスト (`text/plain`) */
+    /** Plain text. */
     case PlainText = 'text/plain';
 
-    /** HTML (`text/html`) */
+    /** HTML. */
     case Html = 'text/html';
 
-    /** JSON (`application/json`) */
+    /** JSON. */
     case Json = 'application/json';
 
-    /** XML (`application/xml`) */
+    /** XML. */
     case Xml = 'application/xml';
 
-    /** URLエンコード済みフォーム (`application/x-www-form-urlencoded`) */
+    /** URL-encoded form data. */
     case FormUrlEncoded = 'application/x-www-form-urlencoded';
 
-    /** PDF (`application/pdf`) */
+    /** PDF. */
     case Pdf = 'application/pdf';
 
-    /** バイナリデータ (`application/octet-stream`) */
+    /** Binary data. */
     case OctetStream = 'application/octet-stream';
 
-    /** multipartフォームデータ (`multipart/form-data`) */
+    /** Multipart form data. */
     case MultipartFormData = 'multipart/form-data';
 
     /**
-     * Content-Typeヘッダーを配列またはcURL用のヘッダー文字列として取得する。
+     * Returns the value as a Content-Type header.
      *
-     * @param  boolean $returnArray trueの場合は連想配列、falseの場合は "Content-Type: ..." 形式で返す
-     * @return array{ 'Content-Type': string }|string
+     * @param  boolean $returnArray Whether to return an associative header array.
+     * @return array{'Content-Type': string}|string
      */
     public function getContentTypeHeader(bool $returnArray = true): array|string {
         return ($returnArray) ?
@@ -51,9 +48,9 @@ enum ContentType : string implements AcceptValue {
     }
 
     /**
-     * QualityValueを設定したAcceptヘッダー用のタイプに変換する。
+     * Returns this media type with an Accept quality value.
      *
-     * @param  float $quality
+     * @param  float $quality Quality value between 0.0 and 1.0.
      * @return QualifiedAcceptValue
      */
     public function withQuality(float $quality): QualifiedAcceptValue {

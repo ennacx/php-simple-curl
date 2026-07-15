@@ -4,32 +4,27 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Enum;
 
 /**
- * cURL プロキシー認証
+ * cURL proxy authentication modes.
  */
 enum ProxyAuth implements ToCurlConst {
 
-    /** 認証無し */
+    /** No authentication. */
     case NONE;
 
-    /** @var int BASIC認証 */
+    /** Basic authentication. */
     case BASIC;
 
-    /** Windows NT LAN Manager認証 */
+    /** Windows NTLM authentication. */
     case NTLM;
 
     /**
-     * cURL用の定数に変換
-     *
-     * @return int
+     * @inheritDoc
      */
     public function toCurlConst(): int {
         return match($this){
-            // 認証無し
-            self::NONE => CURLAUTH_NONE,
-            // BASIC認証
+            self::NONE  => CURLAUTH_NONE,
             self::BASIC => CURLAUTH_BASIC,
-            // Windows NT LAN Manager認証
-            self::NTLM => CURLAUTH_NTLM
+            self::NTLM  => CURLAUTH_NTLM
         };
     }
 }

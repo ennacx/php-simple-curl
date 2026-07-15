@@ -4,34 +4,44 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 /**
- * RequestとCurlOptionsを組み合わせた送信準備済みリクエスト。
+ * A request prepared with optional cURL execution options.
  */
 final readonly class PreparedRequest {
 
     /**
-     * コンストラクタ
+     * コンストラクタ。
      *
      * @param Request          $request 送信するHTTPリクエスト
-     * @param CurlOptions|null $options cURL実行オプション。nullの場合はデフォルト設定で実行する
+     * @param CurlOptions|null $options 実行オプション。nullの場合はデフォルト設定で実行する
      */
     private function __construct(private Request $request, private ?CurlOptions $options = null){
     }
 
     /**
-     * 送信準備済みリクエストを生成する。
+     * Creates a prepared request instance.
      *
-     * @param  Request          $request
-     * @param  CurlOptions|null $options
+     * @param  Request          $request Request to send.
+     * @param  CurlOptions|null $options Execution options.
      * @return self
      */
     public static function create(Request $request, ?CurlOptions $options = null): self {
         return new self($request, $options);
     }
 
+    /**
+     * Returns the request.
+     *
+     * @return Request
+     */
     public function getRequest(): Request {
         return $this->request;
     }
 
+    /**
+     * Returns execution options.
+     *
+     * @return CurlOptions|null
+     */
     public function getOptions(): ?CurlOptions {
         return $this->options;
     }

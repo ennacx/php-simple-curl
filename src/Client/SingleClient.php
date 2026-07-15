@@ -12,17 +12,18 @@ use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
 
 /**
- * 単一のリクエストをcURLで実行するクライアント。
+ * Sends a single HTTP request through cURL.
  *
- * cURLハンドラーの生成、オプション適用、実行、Response生成、ハンドラー解放までを担当する。
+ * The client builds cURL options, executes the handle, and converts the result
+ * into a Response object.
  */
 final readonly class SingleClient {
 
     /**
-     * コンストラクタ
+     * Creates a single-request client.
      *
-     * @param CurlOptionsFactory $optionsFactory  PreparedRequestからcURLオプションを生成するFactory
-     * @param ResponseFactory    $responseFactory cURL実行結果からResponseを生成するFactory
+     * @param CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
+     * @param ResponseFactory    $responseFactory Factory used to create response objects.
      */
     public function __construct(
         private CurlOptionsFactory $optionsFactory  = new CurlOptionsFactory(),
@@ -31,11 +32,11 @@ final readonly class SingleClient {
     }
 
     /**
-     * Requestを実行してResponseを返す。
+     * Sends a request and returns its response.
      *
-     * 実行時に作成したcURLハンドラーは、成功・失敗に関わらずメソッド内で解放する。
+     * Plain Request instances are prepared internally with default options.
      *
-     * @param  Request|PreparedRequest $preparedRequest 実行対象のRequestまたはPreparedRequest
+     * @param  Request|PreparedRequest $preparedRequest Request to send.
      * @return Response
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
@@ -61,7 +62,7 @@ final readonly class SingleClient {
         // cURL実行
         $raw = curl_exec($ch);
 
-        // PHP 8.0以降、CurlHandle はオブジェクトとして管理されるため、curl_close() は呼ばず、スコープアウト時のGCに任せる
+        // PHP 8.0以降、CurlHandle はオブジェクトとして管理されるため、curl_close() は呼ばずスコープアウト時のGCに任せる
 
         // 実行結果からResponseを生成
         return $this->responseFactory->fromCurlResult($ch, $raw, $preparedRequest);

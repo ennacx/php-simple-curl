@@ -4,33 +4,33 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Enum;
 
 /**
- * HTTP メソッド
+ * HTTP methods supported by Request.
  */
 enum CurlMethod {
 
-    /** HTTP GETモード */
+    /** HTTP GET. */
     case GET;
 
-    /** HTTP POSTモード */
+    /** HTTP POST. */
     case POST;
 
-    /** HTTP PUTモード */
+    /** HTTP PUT. */
     case PUT;
 
-    /** HTTP DELETEモード */
+    /** HTTP DELETE. */
     case DELETE;
 
-    /** HTTP PATCHモード */
+    /** HTTP PATCH. */
     case PATCH;
 
-    /** HTTP HEADモード */
+    /** HTTP HEAD. */
     case HEAD;
 
-    /** HTTP OPTIONSモード */
+    /** HTTP OPTIONS. */
     case OPTIONS;
 
     /**
-     * HTTPメソッドに対応するcURLオプションを返す。
+     * Converts the method into cURL options.
      *
      * @return array<int, mixed>
      */

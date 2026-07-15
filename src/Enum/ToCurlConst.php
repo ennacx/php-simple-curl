@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
+/**
+ * Converts enum cases into cURL constants.
+ */
 interface ToCurlConst {
 
     /**
-     * cURL用の定数に変換
+     * Returns the cURL constant value for the enum case.
      *
      * @return int
      */

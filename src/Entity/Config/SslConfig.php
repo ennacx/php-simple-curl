@@ -7,20 +7,20 @@ use Ennacx\SimpleCurl\Enum\SSLVersion;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
- * SSL/TLSに関するcURLオプションを保持するConfig。
+ * SSL/TLS verification configuration.
  */
 final readonly class SslConfig implements CurlOptionsApplier {
 
     /**
-     * コンストラクタ
+     * Creates an SSL/TLS config.
      *
-     * @param  boolean         $verifyPeer      証明書検証を行うか
-     * @param  boolean         $verifyHost      ホスト名検証を行うか
-     * @param  string|null     $caInfo          CA証明書ファイルパス
-     * @param  string|null     $caPath          CA証明書ディレクトリパス
-     * @param  SSLVersion|null $version         SSL/TLSバージョン
-     * @param  boolean         $verifyStatus    OCSP staplingによる証明書状態検証を行うか
-     * @param  string|null     $pinnedPublicKey ピン留め公開鍵
+     * @param  boolean         $verifyPeer      Whether peer certificate verification should be enabled.
+     * @param  boolean         $verifyHost      Whether host name verification should be enabled.
+     * @param  string|null     $caInfo          CA certificate file path.
+     * @param  string|null     $caPath          CA certificate directory path.
+     * @param  SSLVersion|null $version         SSL/TLS version.
+     * @param  boolean         $verifyStatus    Whether OCSP stapling verification should be enabled.
+     * @param  string|null     $pinnedPublicKey Pinned public key.
      * @throws InvalidConfigurationException
      */
     public function __construct(
@@ -46,7 +46,7 @@ final readonly class SslConfig implements CurlOptionsApplier {
     }
 
     /**
-     * SSL/TLS検証を有効にした設定を生成する。
+     * Creates a verified SSL/TLS config.
      *
      * @return self
      */
@@ -55,7 +55,7 @@ final readonly class SslConfig implements CurlOptionsApplier {
     }
 
     /**
-     * SSL/TLS検証を無効にした設定を生成する。
+     * Creates an SSL/TLS config with verification disabled.
      *
      * @return self
      */
@@ -64,11 +64,7 @@ final readonly class SslConfig implements CurlOptionsApplier {
     }
 
     /**
-     * SSL/TLS設定をcURLオプションへ適用する。
-     *
-     * @param  array<int, mixed>     $options
-     * @param  array<string, string> $headers
-     * @return void
+     * @inheritDoc
      */
     public function applyToCurlOptions(array &$options, array &$headers): void {
 
