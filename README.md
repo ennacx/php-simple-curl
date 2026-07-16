@@ -121,8 +121,8 @@ $responses = $client->sendAll($php, $packagist);
 // With default CurlOptions.
 $responses = $client->sendAll($phpRequest, $packagistRequest);
 
-$phpResponse = $responses->get($phpRequest->id);
-$packagistResponse = $responses->get($packagistRequest->id);
+$phpResponse = $responses->get($phpRequest->getId());
+$packagistResponse = $responses->get($packagistRequest->getId());
 
 echo $phpResponse->statusCode;
 echo $packagistResponse->statusCode;
@@ -447,14 +447,14 @@ $responses = $multiClient->sendAll($requestA, $requestB);
 
 `sendAll()` returns a `Responses` collection. Use `get()` when the response must exist, or `find()` when a missing response should return `null`.
 
-`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->id]`.
+`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->getId()]`.
 The collection is read-only; write and unset operations throw `ImmutableCollectionException`.
 
 ```php
-$response = $responses->get($requestA->id);
-$sameResponse = $responses[$requestA->id]; // array-style
+$response = $responses->get($requestA->getId());
+$sameResponse = $responses[$requestA->getId()]; // array-style
 
-$maybeResponse = $responses->find($requestB->id);
+$maybeResponse = $responses->find($requestB->getId());
 
 foreach($responses as $requestId => $response){
     echo $response->statusCode;
@@ -624,9 +624,9 @@ Exception classes:
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
-- `captureHeaders` controls whether response header lines are stored in `Response::$headers`.
+- `captureHeaders` controls whether response header lines are available through `Response::rawHeaders()` and `Response::headers()`.
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
-- `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::$id`.
+- `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::getId()`.
 
 ## License
 

@@ -36,7 +36,7 @@ final readonly class MultiClient {
     }
 
     /**
-     * Sends multiple requests and returns responses keyed by request ID.
+     * Sends multiple requests and returns a Responses collection keyed by request ID.
      *
      * Plain Request instances are prepared internally with default options.
      *
