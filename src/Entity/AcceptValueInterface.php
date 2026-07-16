@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Entity;
 /**
  * Represents a value that can be written to the Accept header.
  */
-interface AcceptValue {
+interface AcceptValueInterface {
 
     /**
      * Converts the value into an Accept header segment.

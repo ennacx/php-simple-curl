@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Entity\Config;
 /**
  * Applies a config object to cURL options and request headers.
  */
-interface CurlOptionsApplier {
+interface CurlOptionsApplierInterface {
 
     /**
      * Applies config values to cURL options and headers.

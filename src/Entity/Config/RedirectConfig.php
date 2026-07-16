@@ -8,7 +8,7 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 /**
  * Redirect handling configuration.
  */
-final readonly class RedirectConfig implements CurlOptionsApplier {
+final readonly class RedirectConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a redirect config.

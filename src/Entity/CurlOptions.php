@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Entity;
 
 use Ennacx\SimpleCurl\Entity\Config\ClientConfig;
-use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplier;
+use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
 
@@ -19,7 +19,7 @@ final readonly class CurlOptions {
     /**
      * Creates an option set.
      *
-     * @template T of CurlOptionsApplier
+     * @template T of CurlOptionsApplierInterface
      * @param boolean                   $captureHeaders Whether response headers should be captured.
      * @param boolean                   $captureBody    Whether response body should be captured.
      * @param array<class-string<T>, T> $config         Config objects keyed by class name.
@@ -34,10 +34,10 @@ final readonly class CurlOptions {
     /**
      * Creates a default option set with optional config objects.
      *
-     * @param  CurlOptionsApplier ...$config Config objects to apply.
+     * @param  CurlOptionsApplierInterface ...$config Config objects to apply.
      * @return self
      */
-    public static function create(CurlOptionsApplier ...$config): self {
+    public static function create(CurlOptionsApplierInterface ...$config): self {
         return (new self())->with(...$config);
     }
 
@@ -47,10 +47,10 @@ final readonly class CurlOptions {
      * Config objects are keyed by class name; adding the same config class
      * replaces the previous one.
      *
-     * @param  CurlOptionsApplier ...$config Config objects to apply.
+     * @param  CurlOptionsApplierInterface ...$config Config objects to apply.
      * @return self
      */
-    public function with(CurlOptionsApplier ...$config): self {
+    public function with(CurlOptionsApplierInterface ...$config): self {
 
         $applied = $this->config;
 
@@ -68,7 +68,7 @@ final readonly class CurlOptions {
     /**
      * Checks whether a config class is set.
      *
-     * @template T of CurlOptionsApplier
+     * @template T of CurlOptionsApplierInterface
      * @param  class-string<T> $class Config class name.
      * @return boolean
      */
@@ -79,11 +79,11 @@ final readonly class CurlOptions {
     /**
      * Returns a config object by class name.
      *
-     * @template T of CurlOptionsApplier
+     * @template T of CurlOptionsApplierInterface
      * @param  class-string<T> $class Config class name.
      * @return T|null
      */
-    public function get(string $class): ?CurlOptionsApplier {
+    public function get(string $class): ?CurlOptionsApplierInterface {
 
         if(!$this->has($class)){
             return null;
@@ -95,7 +95,7 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set without the given config class.
      *
-     * @template T of CurlOptionsApplier
+     * @template T of CurlOptionsApplierInterface
      * @param  class-string<T> $class Config class name.
      * @return self
      */
@@ -234,7 +234,7 @@ final readonly class CurlOptions {
     /**
      * Returns all configured config objects.
      *
-     * @template T of CurlOptionsApplier
+     * @template T of CurlOptionsApplierInterface
      * @return list<T>
      */
     public function getConfig(): array {

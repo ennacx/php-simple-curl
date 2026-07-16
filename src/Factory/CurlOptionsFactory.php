@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CURLFile;
-use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplier;
+use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Entity\CurlOptions;
 use Ennacx\SimpleCurl\Entity\PreparedRequest;
 use Ennacx\SimpleCurl\Entity\Request;
@@ -72,7 +72,7 @@ final class CurlOptionsFactory {
         }
 
         // 各Configの設定内容をcURL形式のオプションに変換して付与
-        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplier)) as $config){
+        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplierInterface)) as $config){
             $config->applyToCurlOptions($options, $headers);
         }
 

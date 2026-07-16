@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL proxy protocols.
  */
-enum ProxyProtocol implements ToCurlConst {
+enum ProxyProtocol implements ToCurlConstInterface {
 
     /** HTTP proxy. */
     case HTTP;

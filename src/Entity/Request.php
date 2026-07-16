@@ -242,13 +242,13 @@ final class Request {
      * Existing values are compared by media type only. If the media type already
      * exists, the current request is returned unchanged.
      *
-     * @param  AcceptValue|string $acceptValue Accept header value.
+     * @param  AcceptValueInterface|string $acceptValue Accept header value.
      * @return self
      * @throws InvalidRequestException
      */
-    public function accept(AcceptValue|string $acceptValue): self {
+    public function accept(AcceptValueInterface|string $acceptValue): self {
 
-        $acceptValue = ($acceptValue instanceof AcceptValue) ? $acceptValue->toHeaderValue() : trim($acceptValue);
+        $acceptValue = ($acceptValue instanceof AcceptValueInterface) ? $acceptValue->toHeaderValue() : trim($acceptValue);
 
         if($acceptValue === ''){
             throw new InvalidRequestException('Accept type must not be empty.');
@@ -271,11 +271,11 @@ final class Request {
     /**
      * Returns a new request with multiple Accept header values.
      *
-     * @param  AcceptValue|string ...$acceptValues Accept header values.
+     * @param  AcceptValueInterface|string ...$acceptValues Accept header values.
      * @return self
      * @throws InvalidRequestException
      */
-    public function accepts(AcceptValue|string ...$acceptValues): self {
+    public function accepts(AcceptValueInterface|string ...$acceptValues): self {
 
         $clone = clone $this;
 

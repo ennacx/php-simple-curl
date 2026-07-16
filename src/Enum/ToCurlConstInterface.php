@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * Converts enum cases into cURL constants.
  */
-interface ToCurlConst {
+interface ToCurlConstInterface {
 
     /**
      * Returns the cURL constant value for the enum case.

@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-use Ennacx\SimpleCurl\Entity\AcceptValue;
+use Ennacx\SimpleCurl\Entity\AcceptValueInterface;
 use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 
 /**
  * Common HTTP media types.
  */
-enum ContentType : string implements AcceptValue {
+enum ContentType : string implements AcceptValueInterface {
 
     /** Plain text. */
     case PlainText = 'text/plain';

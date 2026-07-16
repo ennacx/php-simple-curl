@@ -9,7 +9,7 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 /**
  * SSL/TLS verification configuration.
  */
-final readonly class SslConfig implements CurlOptionsApplier {
+final readonly class SslConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates an SSL/TLS config.

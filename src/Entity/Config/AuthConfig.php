@@ -9,7 +9,7 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 /**
  * HTTP authentication configuration.
  */
-final readonly class AuthConfig implements CurlOptionsApplier {
+final readonly class AuthConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates an authentication config.

@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-use Ennacx\SimpleCurl\Entity\AcceptValue;
+use Ennacx\SimpleCurl\Entity\AcceptValueInterface;
 use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
 
 /**
  * Common Accept header media ranges.
  */
-enum MediaRange : string implements AcceptValue {
+enum MediaRange : string implements AcceptValueInterface {
 
     /** Any media type. */
     case Any = '*/*';

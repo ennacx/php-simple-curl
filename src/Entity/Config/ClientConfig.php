@@ -9,7 +9,7 @@ use Ennacx\SimpleCurl\Static\HeaderUtils;
 /**
  * Client metadata configuration.
  */
-final readonly class ClientConfig implements CurlOptionsApplier {
+final readonly class ClientConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a client metadata config.

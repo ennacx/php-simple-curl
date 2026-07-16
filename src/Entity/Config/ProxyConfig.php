@@ -10,7 +10,7 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 /**
  * Proxy connection configuration.
  */
-final readonly class ProxyConfig implements CurlOptionsApplier {
+final readonly class ProxyConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a proxy config.

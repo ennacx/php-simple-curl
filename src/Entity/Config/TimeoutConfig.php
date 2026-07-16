@@ -8,7 +8,7 @@ use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 /**
  * Timeout configuration.
  */
-final readonly class TimeoutConfig implements CurlOptionsApplier {
+final readonly class TimeoutConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a timeout config.

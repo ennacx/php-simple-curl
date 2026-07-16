@@ -8,18 +8,18 @@ use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 /**
  * Accept header value with a quality value.
  */
-final readonly class QualifiedAcceptValue implements AcceptValue {
+final readonly class QualifiedAcceptValue implements AcceptValueInterface {
 
     /**
      * Creates a qualified Accept header value.
      *
-     * @param  AcceptValue|string $value   Media type, media range, or AcceptValue.
-     * @param  float              $quality Quality value between 0.0 and 1.0.
+     * @param  AcceptValueInterface|string $value   Media type, media range, or AcceptValueInterface.
+     * @param  float                       $quality Quality value between 0.0 and 1.0.
      * @throws InvalidRequestException
      */
     public function __construct(
-        private AcceptValue|string $value,
-        private float              $quality,
+        private AcceptValueInterface|string $value,
+        private float                       $quality,
     ){
         if(is_string($value) && trim($value) === ''){
             throw new InvalidRequestException('Accept value must not be empty.');
@@ -41,7 +41,7 @@ final readonly class QualifiedAcceptValue implements AcceptValue {
      * @return string
      */
     public function toHeaderValue(): string {
-        $value = ($this->value instanceof AcceptValue) ? $this->value->toHeaderValue() : trim($this->value);
+        $value = ($this->value instanceof AcceptValueInterface) ? $this->value->toHeaderValue() : trim($this->value);
 
         return sprintf('%s;q=%s', $value, self::formatQuality($this->quality));
     }
