@@ -25,7 +25,7 @@ final readonly class CurlOptions {
      * @param boolean                   $captureBody    Whether response body should be captured.
      * @param array<class-string<T>, T> $config         Config objects keyed by class name.
      */
-    public function __construct(
+    private function __construct(
         private bool  $captureHeaders = true,
         private bool  $captureBody    = true,
         private array $config         = [],

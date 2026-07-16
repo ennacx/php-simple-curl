@@ -55,7 +55,7 @@ final class ResponseTest extends TestCase {
             ],
             body: null,
             info: [],
-            error: null,
+            curlError: null,
             errorMessage: '',
         );
 

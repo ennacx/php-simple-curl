@@ -67,7 +67,7 @@ final class ResponseFactory {
             headers:      $headers,
             body:         $body,
             info:         $info,
-            error:        $error,
+            curlError:    $error,
             errorMessage: $errorMessage,
         );
     }

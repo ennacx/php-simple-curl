@@ -53,7 +53,7 @@ enum ContentType : string implements AcceptValueInterface {
      * @param float $quality Quality value between 0.0 and 1.0.
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
-        return new QualifiedAcceptValue($this, $quality);
+        return QualifiedAcceptValue::create($this, $quality);
     }
 
     /**

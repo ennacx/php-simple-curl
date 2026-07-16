@@ -75,7 +75,7 @@ $response = $client->send($request);
 echo $response->statusCode;
 echo $response->body;
 
-foreach($response->headers as $headerLine){
+foreach($response->rawHeaders() as $headerLine){
     echo $headerLine . PHP_EOL;
 }
 
@@ -83,8 +83,8 @@ if($response->isSuccessful()){
     echo $response->header('content-type');
 }
 
-if($response->error !== null){
-    echo $response->error->name;
+if($response->curlError !== null){
+    echo $response->curlError->name;
     echo $response->errorMessage;
 }
 ```
@@ -570,7 +570,7 @@ Both clients return `Response` objects.
 ```php
 echo $response->statusCode;      // int
 echo $response->body;            // string|null
-print_r($response->headers);     // raw response header lines
+print_r($response->rawHeaders()); // raw response header lines
 print_r($response->headers());   // parsed response headers
 print_r($response->info);        // curl_getinfo() result
 
@@ -614,7 +614,7 @@ Response status helpers:
 
 Header helpers:
 
-- `$response->headers` contains raw header lines.
+- `$response->rawHeaders()` returns raw header lines.
 - `$response->headers()` returns parsed headers keyed by lower-case header name.
 - `$response->header('content-type')` returns a header value, an array of values, or `null`.
 - `$response->hasHeader('content-type')` checks whether the header exists.

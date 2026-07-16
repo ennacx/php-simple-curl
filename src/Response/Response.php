@@ -25,16 +25,16 @@ final readonly class Response {
      * @param string[]       $headers      Raw response header lines.
      * @param string|null    $body         Response body.
      * @param array          $info         curl_getinfo() result.
-     * @param CurlError|null $error        cURL error. Null on successful transfer.
+     * @param CurlError|null $curlError    cURL error. Null on successful transfer.
      * @param string         $errorMessage cURL error message.
      */
     public function __construct(
-        public int        $statusCode,
-        private array     $headers,
-        public ?string    $body,
-        public array      $info,
-        public ?CurlError $error        = null,
-        public string     $errorMessage = '',
+        public  int        $statusCode,
+        private array      $headers,
+        public  ?string    $body,
+        public  array      $info,
+        public  ?CurlError $curlError    = null,
+        public  string     $errorMessage = '',
     ){
         $this->rawHeaders    = $headers;
         $this->parsedHeaders = self::parseHeaders($headers);
@@ -51,14 +51,14 @@ final readonly class Response {
      * Checks whether the response is HTTP 200 OK and has no cURL error.
      */
     public function isOk(): bool {
-        return ($this->error === null && $this->statusCode === 200);
+        return ($this->curlError === null && $this->statusCode === 200);
     }
 
     /**
      * Checks whether the response is 2xx and has no cURL error.
      */
     public function isSuccessful(): bool {
-        return ($this->error === null && $this->statusCode >= 200 && $this->statusCode < 300);
+        return ($this->curlError === null && $this->statusCode >= 200 && $this->statusCode < 300);
     }
 
     /**
@@ -86,7 +86,7 @@ final readonly class Response {
      * Checks whether the response has a cURL error or a 4xx/5xx status.
      */
     public function isError(): bool {
-        return ($this->error !== null || $this->isClientError() || $this->isServerError());
+        return ($this->curlError !== null || $this->isClientError() || $this->isServerError());
     }
 
     /**

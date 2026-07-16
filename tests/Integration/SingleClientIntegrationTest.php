@@ -29,7 +29,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
 
         $response = (new SingleClient())->send($preparedRequest);
 
-        self::assertNull($response->error);
+        self::assertNull($response->curlError);
         self::assertTrue($response->isOk());
         self::assertTrue($response->isSuccessful());
         self::assertTrue($response->hasHeader('content-type'));
@@ -53,7 +53,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
 
         $response = (new SingleClient())->send($request);
 
-        self::assertNull($response->error);
+        self::assertNull($response->curlError);
         self::assertTrue($response->isSuccessful());
         self::assertSame([
             'ok' => true,
@@ -78,7 +78,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
 
         $response = (new SingleClient())->send($preparedRequest);
 
-        self::assertNull($response->error);
+        self::assertNull($response->curlError);
         self::assertTrue($response->isOk());
         self::assertSame(200, $response->statusCode);
         self::assertSame('GET', $response->json()['method']);
@@ -101,7 +101,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
 
         $response = (new SingleClient())->send($preparedRequest);
 
-        self::assertNull($response->error);
+        self::assertNull($response->curlError);
         self::assertTrue($response->isOk());
         self::assertNull($response->body);
         self::assertNotSame([], $response->rawHeaders());
@@ -123,7 +123,7 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
 
         $response = (new SingleClient())->send($preparedRequest);
 
-        self::assertNull($response->error);
+        self::assertNull($response->curlError);
         self::assertSame(404, $response->statusCode);
         self::assertTrue($response->isClientError());
         self::assertTrue($response->isError());
