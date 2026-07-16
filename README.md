@@ -49,8 +49,8 @@ You may pass either a plain `Request` or the object returned by `Request::prepar
 <?php
 
 use Ennacx\SimpleCurl\Client\SingleClient;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\Request;
 
 $request = Request::get('https://www.php.net/')
     ->headers([
@@ -97,8 +97,8 @@ if($response->error !== null){
 <?php
 
 use Ennacx\SimpleCurl\Client\MultiClient;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\Request;
 
 $options = CurlOptions::create()
     ->timeout(10)
@@ -121,8 +121,8 @@ $responses = $client->sendAll($php, $packagist);
 // With default CurlOptions.
 $responses = $client->sendAll($phpRequest, $packagistRequest);
 
-$phpResponse = $responses->get($phpRequest->id);
-$packagistResponse = $responses->get($packagistRequest->id);
+$phpResponse = $responses->get($phpRequest->getId());
+$packagistResponse = $responses->get($packagistRequest->getId());
 
 echo $phpResponse->statusCode;
 echo $packagistResponse->statusCode;
@@ -139,8 +139,8 @@ foreach($responses as $requestId => $response){
 ```php
 <?php
 
-use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Request\Request;
 
 $request = Request::post('https://api.example.com/users')
     ->accept(ContentType::Json)
@@ -156,9 +156,9 @@ Use `accept()` or `accepts()` to add an `Accept` header from common `ContentType
 ```php
 <?php
 
-use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
+use Ennacx\SimpleCurl\Request\Request;
 
 $request = Request::get('https://api.example.com/users')
     ->accept(ContentType::Json);
@@ -277,8 +277,8 @@ Use `body()` when you already have a raw string payload:
 ```php
 <?php
 
-use Ennacx\SimpleCurl\Entity\Request;
 use Ennacx\SimpleCurl\Enum\ContentType;
+use Ennacx\SimpleCurl\Request\Request;
 
 $request = Request::post('https://api.example.com/messages')
     ->body('plain text message', ContentType::PlainText);
@@ -338,8 +338,8 @@ Use `attach()` to send files as `multipart/form-data`:
 ```php
 <?php
 
-use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Entity\RequestAttachment;
+use Ennacx\SimpleCurl\Request\Request;
+use Ennacx\SimpleCurl\Request\RequestAttachment;
 
 $request = Request::post('https://api.example.com/upload')
     ->form([
@@ -393,12 +393,12 @@ Supported request factory methods:
 ```php
 <?php
 
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
-use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
-use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
-use Ennacx\SimpleCurl\Entity\Config\SslConfig;
-use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Config\AuthConfig;
+use Ennacx\SimpleCurl\Config\ProxyConfig;
+use Ennacx\SimpleCurl\Config\RedirectConfig;
+use Ennacx\SimpleCurl\Config\SslConfig;
+use Ennacx\SimpleCurl\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Option\CurlOptions;
 
 $options = CurlOptions::create(
     AuthConfig::bearer('token'),
@@ -447,14 +447,14 @@ $responses = $multiClient->sendAll($requestA, $requestB);
 
 `sendAll()` returns a `Responses` collection. Use `get()` when the response must exist, or `find()` when a missing response should return `null`.
 
-`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->id]`.
+`Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->getId()]`.
 The collection is read-only; write and unset operations throw `ImmutableCollectionException`.
 
 ```php
-$response = $responses->get($requestA->id);
-$sameResponse = $responses[$requestA->id]; // array-style
+$response = $responses->get($requestA->getId());
+$sameResponse = $responses[$requestA->getId()]; // array-style
 
-$maybeResponse = $responses->find($requestB->id);
+$maybeResponse = $responses->find($requestB->getId());
 
 foreach($responses as $requestId => $response){
     echo $response->statusCode;
@@ -490,7 +490,7 @@ $options = CurlOptions::create()
 ### SSL
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\SslConfig;
+use Ennacx\SimpleCurl\Config\SslConfig;
 
 $ssl = SslConfig::verified();
 $insecure = SslConfig::insecure();
@@ -499,7 +499,7 @@ $insecure = SslConfig::insecure();
 ### Proxy
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\ProxyConfig;
+use Ennacx\SimpleCurl\Config\ProxyConfig;
 
 $httpProxy  = ProxyConfig::http('proxy.example.com', port: 3128);
 $socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
@@ -508,7 +508,7 @@ $socksProxy = ProxyConfig::socks5('127.0.0.1', port: 1080);
 ### Authentication
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
+use Ennacx\SimpleCurl\Config\AuthConfig;
 
 $basic  = AuthConfig::basic('user', 'password');
 $bearer = AuthConfig::bearer('token');
@@ -517,7 +517,7 @@ $bearer = AuthConfig::bearer('token');
 ### Timeout
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Config\TimeoutConfig;
 
 $timeout   = TimeoutConfig::seconds(timeoutSec: 10, connectTimeoutSec: 3);
 $timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500);
@@ -526,7 +526,7 @@ $timeoutMs = TimeoutConfig::milliseconds(timeoutMs: 1500, connectTimeoutMs: 500)
 ### Redirects
 
 ```php
-use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
+use Ennacx\SimpleCurl\Config\RedirectConfig;
 
 $redirect   = RedirectConfig::enabled(maxRedirects: 10, autoReferer: true);
 $noRedirect = RedirectConfig::disabled();
@@ -624,9 +624,9 @@ Exception classes:
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
-- `captureHeaders` controls whether response header lines are stored in `Response::$headers`.
+- `captureHeaders` controls whether response header lines are available through `Response::rawHeaders()` and `Response::headers()`.
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
-- `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::$id`.
+- `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::getId()`.
 
 ## License
 

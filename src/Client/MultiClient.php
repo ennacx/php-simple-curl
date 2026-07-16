@@ -5,15 +5,15 @@ namespace Ennacx\SimpleCurl\Client;
 
 use CurlHandle;
 use CurlMultiHandle;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Entity\Response;
-use Ennacx\SimpleCurl\Entity\Responses;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Request\Request;
+use Ennacx\SimpleCurl\Response\Response;
+use Ennacx\SimpleCurl\Response\Responses;
 
 /**
  * Sends multiple HTTP requests through cURL multi.
@@ -36,12 +36,11 @@ final readonly class MultiClient {
     }
 
     /**
-     * Sends multiple requests and returns responses keyed by request ID.
+     * Sends multiple requests and returns a Responses collection keyed by request ID.
      *
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest ...$preparedRequests Requests to send.
-     * @return Responses
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
      */
@@ -136,8 +135,7 @@ final readonly class MultiClient {
     /**
      * CurlHandleを配列キーとして扱うための一意な整数値を生成する。
      *
-     * @param  CurlHandle $ch
-     * @return int
+     * @param CurlHandle $ch
      */
     private function generateKey(CurlHandle $ch): int {
         return spl_object_id($ch);
@@ -170,7 +168,6 @@ final readonly class MultiClient {
      * @param  CurlMultiHandle                                                         $cmh
      * @param  array<int, array{handle: CurlHandle, preparedRequest: PreparedRequest}> $handles
      * @param  array<string, Response>                                                 $responses
-     * @return void
      */
     private function drainCompleted(CurlMultiHandle $cmh, array &$handles, array &$responses): void {
 

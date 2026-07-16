@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CURLFile;
-use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplier;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
-use Ennacx\SimpleCurl\Static\HeaderUtils;
+use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Request\Request;
 use LogicException;
 
 /**
@@ -72,7 +72,7 @@ final class CurlOptionsFactory {
         }
 
         // 各Configの設定内容をcURL形式のオプションに変換して付与
-        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplier)) as $config){
+        foreach(array_filter($curlOptions->getConfig(), fn($config): bool => ($config instanceof CurlOptionsApplierInterface)) as $config){
             $config->applyToCurlOptions($options, $headers);
         }
 
@@ -86,9 +86,6 @@ final class CurlOptionsFactory {
 
     /**
      * PreparedRequestの内容から最終的なURLを再構築する。
-     *
-     * @param  PreparedRequest $preparedRequest
-     * @return string
      */
     private function buildUrl(PreparedRequest $preparedRequest): string {
 
@@ -113,9 +110,6 @@ final class CurlOptionsFactory {
      *
      * 添付ファイルがある場合はmultipart/form-data用の配列を生成し、
      * 添付ファイルがない場合はContent-Typeに応じて文字列ボディを生成する。
-     *
-     * @param  Request $request
-     * @return string|array|null
      */
     private function buildPostFields(Request $request): string|array|null {
 
@@ -152,7 +146,6 @@ final class CurlOptionsFactory {
      * cURLは配列とCURLFileを受け取るとboundary付きContent-Typeを生成するため、
      * 呼び出し元ではユーザー指定のContent-Typeヘッダーを削除する。
      *
-     * @param  Request $request
      * @return array<string, mixed>
      */
     private function buildMultipart(Request $request): array {

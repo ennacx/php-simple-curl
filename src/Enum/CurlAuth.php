@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL HTTP authentication modes.
  */
-enum CurlAuth implements ToCurlConst {
+enum CurlAuth implements ToCurlConstInterface {
 
     /** No authentication. */
     case NONE;

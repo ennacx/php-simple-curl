@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL SSL/TLS version options.
  */
-enum SSLVersion implements ToCurlConst {
+enum SSLVersion implements ToCurlConstInterface {
 
     /** Let cURL choose the default version. */
     case DEFAULT;

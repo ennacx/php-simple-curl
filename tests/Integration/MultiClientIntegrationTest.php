@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Integration;
 
 use Ennacx\SimpleCurl\Client\MultiClient;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\Request;
 
 /**
  * MultiClientが複数のローカルHTTPリクエストを並列実行できることを検証する。
@@ -14,8 +14,6 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
     /**
      * 複数レスポンスが各Request IDをキーにして返却されることを検証する。
-     *
-     * @return void
      */
     public function testSendAllReturnsResponsesKeyedByRequestId(): void {
 
@@ -48,8 +46,6 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
     /**
      * Requestを直接渡した場合に、各Requestが内部でPreparedRequestへ変換されて並列実行できることを検証する。
-     *
-     * @return void
      */
     public function testSendAllAcceptsRequestsAndPreparesThemInternally(): void {
 

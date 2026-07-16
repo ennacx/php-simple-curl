@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CurlHandle;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Response;
+use Ennacx\SimpleCurl\Option\CurlOptions;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidResponseException;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Response\Response;
 
 /**
  * Builds Response objects from cURL execution results.
@@ -23,7 +23,6 @@ final class ResponseFactory {
      * @param  bool|string     $raw             Result from curl_exec() or curl_multi_getcontent().
      * @param  PreparedRequest $preparedRequest Request and options used for execution.
      * @param  int|null        $resultCode      cURL result code from curl_multi_info_read().
-     * @return Response
      * @throws CurlExecutionException
      * @throws InvalidResponseException
      */

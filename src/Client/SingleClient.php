@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Client;
 
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Entity\Response;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Request\Request;
+use Ennacx\SimpleCurl\Response\Response;
 
 /**
  * Sends a single HTTP request through cURL.
@@ -37,7 +37,6 @@ final readonly class SingleClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest $preparedRequest Request to send.
-     * @return Response
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
      */

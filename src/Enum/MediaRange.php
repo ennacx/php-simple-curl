@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-use Ennacx\SimpleCurl\Entity\AcceptValue;
-use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
+use Ennacx\SimpleCurl\Request\AcceptValueInterface;
+use Ennacx\SimpleCurl\Request\QualifiedAcceptValue;
 
 /**
  * Common Accept header media ranges.
  */
-enum MediaRange : string implements AcceptValue {
+enum MediaRange : string implements AcceptValueInterface {
 
     /** Any media type. */
     case Any = '*/*';
@@ -29,8 +29,7 @@ enum MediaRange : string implements AcceptValue {
     /**
      * Returns this media range with an Accept quality value.
      *
-     * @param  float $quality Quality value between 0.0 and 1.0.
-     * @return QualifiedAcceptValue
+     * @param float $quality Quality value between 0.0 and 1.0.
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
         return new QualifiedAcceptValue($this, $quality);

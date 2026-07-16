@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL proxy protocols.
  */
-enum ProxyProtocol implements ToCurlConst {
+enum ProxyProtocol implements ToCurlConstInterface {
 
     /** HTTP proxy. */
     case HTTP;
@@ -26,8 +26,6 @@ enum ProxyProtocol implements ToCurlConst {
 
     /**
      * Returns the default port for the protocol.
-     *
-     * @return int
      */
     public function defaultPort(): int {
         return match($this){

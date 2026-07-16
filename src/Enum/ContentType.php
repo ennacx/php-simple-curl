@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-use Ennacx\SimpleCurl\Entity\AcceptValue;
-use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
+use Ennacx\SimpleCurl\Request\AcceptValueInterface;
+use Ennacx\SimpleCurl\Request\QualifiedAcceptValue;
 
 /**
  * Common HTTP media types.
  */
-enum ContentType : string implements AcceptValue {
+enum ContentType : string implements AcceptValueInterface {
 
     /** Plain text. */
     case PlainText = 'text/plain';
@@ -50,8 +50,7 @@ enum ContentType : string implements AcceptValue {
     /**
      * Returns this media type with an Accept quality value.
      *
-     * @param  float $quality Quality value between 0.0 and 1.0.
-     * @return QualifiedAcceptValue
+     * @param float $quality Quality value between 0.0 and 1.0.
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
         return new QualifiedAcceptValue($this, $quality);

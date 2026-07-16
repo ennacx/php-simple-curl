@@ -26,8 +26,6 @@ abstract class LocalHttpServerTestCase extends TestCase {
 
     /**
      * テストクラス実行前にローカルHTTP serverを起動する。
-     *
-     * @return void
      */
     public static function setUpBeforeClass(): void {
 
@@ -71,8 +69,6 @@ abstract class LocalHttpServerTestCase extends TestCase {
 
     /**
      * テストクラス実行後にローカルHTTP serverを停止する。
-     *
-     * @return void
      */
     public static function tearDownAfterClass(): void {
 
@@ -94,8 +90,7 @@ abstract class LocalHttpServerTestCase extends TestCase {
     /**
      * ローカルHTTP server上のURLを生成する。
      *
-     * @param  string $path `/json` のようなfixture path
-     * @return string
+     * @param string $path `/json` のようなfixture path
      */
     protected static function url(string $path): string {
 
@@ -108,8 +103,6 @@ abstract class LocalHttpServerTestCase extends TestCase {
 
     /**
      * ローカルHTTP server用の空きポートを取得する。
-     *
-     * @return int
      */
     private static function findFreePort(): int {
 
@@ -136,8 +129,6 @@ abstract class LocalHttpServerTestCase extends TestCase {
     /**
      * `/health` が応答するまで待機する。
      * ※サーバー起動直後はリッスンが完了していないことがあるため、短時間だけポーリングする。
-     *
-     * @return void
      */
     private static function waitUntilServerIsReady(): void {
 

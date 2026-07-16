@@ -6,7 +6,7 @@ namespace Ennacx\SimpleCurl\Enum;
 /**
  * cURL proxy authentication modes.
  */
-enum ProxyAuth implements ToCurlConst {
+enum ProxyAuth implements ToCurlConstInterface {
 
     /** No authentication. */
     case NONE;
