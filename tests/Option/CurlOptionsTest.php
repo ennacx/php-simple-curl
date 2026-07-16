@@ -8,6 +8,7 @@ use Ennacx\SimpleCurl\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -93,6 +94,39 @@ final class CurlOptionsTest extends TestCase {
         self::assertTrue($options->has(TimeoutConfig::class));
         self::assertFalse($removed->has(TimeoutConfig::class));
         self::assertTrue($removed->has(RedirectConfig::class));
+    }
+
+    /**
+     * get()は必須Config取得、find()は任意Config取得として扱えることを検証する。
+     */
+    public function testGetThrowsAndFindReturnsNullForMissingConfig(): void {
+
+        $options = CurlOptions::create()
+            ->timeout(10);
+
+        self::assertInstanceOf(TimeoutConfig::class, $options->get(TimeoutConfig::class));
+        self::assertNull($options->find(RedirectConfig::class));
+
+        $this->expectException(InvalidConfigurationException::class);
+
+        $options->get(RedirectConfig::class);
+    }
+
+    /**
+     * raw()でRawCurlOptionsを追加でき、通常Config一覧からは除外されることを検証する。
+     */
+    public function testRawAddsRawCurlOptionsAndExcludesItFromNormalConfigList(): void {
+
+        $options = CurlOptions::create()
+            ->timeout(10)
+            ->raw([
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
+            ]);
+
+        self::assertTrue($options->has(RawCurlOptions::class));
+        self::assertInstanceOf(RawCurlOptions::class, $options->get(RawCurlOptions::class));
+        self::assertSame(CURL_HTTP_VERSION_2TLS, $options->get(RawCurlOptions::class)->get(CURLOPT_HTTP_VERSION));
+        self::assertContainsOnlyInstancesOf(TimeoutConfig::class, $options->getConfig());
     }
 
     /**

@@ -399,6 +399,7 @@ use Ennacx\SimpleCurl\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Config\SslConfig;
 use Ennacx\SimpleCurl\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Option\RawCurlOptions;
 
 $options = CurlOptions::create(
     AuthConfig::bearer('token'),
@@ -406,6 +407,9 @@ $options = CurlOptions::create(
     ProxyConfig::http('proxy.example.com', port: 3128),
     TimeoutConfig::seconds(timeoutSec: 15, connectTimeoutSec: 5),
     RedirectConfig::enabled(maxRedirects: 5),
+    RawCurlOptions::create([
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
+    ]),
 );
 ```
 
@@ -427,6 +431,33 @@ Because options are immutable, this does not change the original instance:
 $baseOptions     = CurlOptions::create()->timeout(10);
 $redirectOptions = $baseOptions->followRedirects();
 ```
+
+### Raw cURL Options
+
+Use `RawCurlOptions` when you need a `CURLOPT_*` setting that is not covered by a dedicated config object yet.
+
+```php
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Option\RawCurlOptions;
+
+$options = CurlOptions::create(
+    RawCurlOptions::create([
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
+        CURLOPT_ACCEPT_ENCODING => '',
+    ]),
+);
+```
+
+The fluent shortcut is also available:
+
+```php
+$options = CurlOptions::create()
+    ->raw([
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_2TLS,
+    ]);
+```
+
+Raw options are applied after generated options and config objects. By default, they can overwrite existing cURL options. Pass `overwrite: false` to keep generated values and only add missing options.
 
 ## Sending Requests
 

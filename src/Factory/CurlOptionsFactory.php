@@ -9,6 +9,7 @@ use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
 use LogicException;
@@ -79,6 +80,13 @@ final class CurlOptionsFactory {
         // オプションにヘッダー情報付与
         if($headers !== []){
             $options[CURLOPT_HTTPHEADER] = $this->formatHeaders($headers);
+        }
+
+        // RawCurlOptions が設定されている場合はこの内容を最優先とし、最後に付与
+        if($curlOptions->has(RawCurlOptions::class)){
+            $rawCurlOptions = $curlOptions->get(RawCurlOptions::class);
+
+            $rawCurlOptions->applyToCurlOptions($options, $headers);
         }
 
         return $options;
