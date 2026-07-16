@@ -33,8 +33,6 @@ final readonly class AuthConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a config without authentication.
-     *
-     * @return self
      */
     public static function none(): self {
         return new self(CurlAuth::NONE);
@@ -43,9 +41,8 @@ final readonly class AuthConfig implements CurlOptionsApplierInterface {
     /**
      * Creates a Basic authentication config.
      *
-     * @param  string $user     Authentication user.
-     * @param  string $password Authentication password.
-     * @return self
+     * @param string $user     Authentication user.
+     * @param string $password Authentication password.
      */
     public static function basic(string $user, string $password): self {
         return new self(CurlAuth::BASIC, $user, $password);
@@ -55,7 +52,6 @@ final readonly class AuthConfig implements CurlOptionsApplierInterface {
      * Creates a Bearer token authentication config.
      *
      * @param  string $token Bearer token.
-     * @return self
      * @throws InvalidConfigurationException
      */
     public static function bearer(string $token): self {

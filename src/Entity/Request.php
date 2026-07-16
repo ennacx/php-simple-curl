@@ -99,7 +99,6 @@ final class Request {
      *
      * @param  string $method Called static method name.
      * @param  array  $args   Constructor arguments. The first argument must be the URL.
-     * @return self
      * @throws InvalidRequestException
      */
     public static function __callStatic(string $method, array $args): self {
@@ -130,7 +129,6 @@ final class Request {
     /**
      * Returns the request ID.
      *
-     * @return string
      */
     public function getId(): string {
         return $this->id;
@@ -139,7 +137,6 @@ final class Request {
     /**
      * Returns the base request URL.
      *
-     * @return string
      */
     public function getUrl(): string {
         return $this->url;
@@ -148,7 +145,6 @@ final class Request {
     /**
      * Returns the HTTP method.
      *
-     * @return CurlMethod
      */
     public function getMethod(): CurlMethod {
         return $this->method;
@@ -166,7 +162,6 @@ final class Request {
     /**
      * cURLオプション生成用にリクエストボディ情報を返す。
      *
-     * @return RequestBody|null
      * @internal
      */
     public function getRequestBody(): ?RequestBody {
@@ -186,7 +181,6 @@ final class Request {
     /**
      * cURLオプション生成用にリクエストボディのContent-Typeを返す。
      *
-     * @return ContentType|null
      * @internal
      */
     public function getContentType(): ?ContentType {
@@ -215,7 +209,6 @@ final class Request {
     /**
      * Returns the URL fragment.
      *
-     * @return string|null
      */
     public function getFragment(): ?string {
         return $this->fragment;
@@ -225,7 +218,6 @@ final class Request {
      * Returns a new request with the given headers.
      *
      * @param  array<string, mixed> $headers Header names and values.
-     * @return self
      * @throws InvalidRequestException
      */
     public function headers(array $headers): self {
@@ -243,7 +235,6 @@ final class Request {
      * exists, the current request is returned unchanged.
      *
      * @param  AcceptValueInterface|string $acceptValue Accept header value.
-     * @return self
      * @throws InvalidRequestException
      */
     public function accept(AcceptValueInterface|string $acceptValue): self {
@@ -272,7 +263,6 @@ final class Request {
      * Returns a new request with multiple Accept header values.
      *
      * @param  AcceptValueInterface|string ...$acceptValues Accept header values.
-     * @return self
      * @throws InvalidRequestException
      */
     public function accepts(AcceptValueInterface|string ...$acceptValues): self {
@@ -295,7 +285,6 @@ final class Request {
      * @param  string  $key       Query parameter key.
      * @param  mixed   $value     Query parameter value.
      * @param  boolean $overwrite Whether an existing key should be overwritten.
-     * @return self
      * @throws InvalidRequestException
      */
     public function param(string $key, mixed $value, bool $overwrite = true): self {
@@ -333,7 +322,6 @@ final class Request {
      *
      * @param  array<string, mixed> $params    Query parameters.
      * @param  boolean              $overwrite Whether existing keys should be overwritten.
-     * @return self
      * @throws InvalidRequestException
      */
     public function params(array $params, bool $overwrite = true): self {
@@ -359,7 +347,6 @@ final class Request {
      * @param  array|string $body        Request body.
      * @param  ContentType  $contentType Content type used to encode the body.
      * @param  array        $options     Body encoding options.
-     * @return self
      * @throws RequestBodyException
      */
     public function body(array|string $body, ContentType $contentType = ContentType::PlainText, array $options = []): self {
@@ -386,7 +373,6 @@ final class Request {
      *
      * @param  string      $path        Local file path.
      * @param  ContentType $contentType Body content type.
-     * @return self
      * @throws RequestBodyException
      */
     public function bodyFromFile(string $path, ContentType $contentType = ContentType::PlainText): self {
@@ -417,7 +403,6 @@ final class Request {
      * @param  array<string|int, mixed>|string $input     Array to encode or JSON string.
      * @param  int                             $jsonFlags Flags passed to json_encode().
      * @param  boolean                         $throw     Whether JSON failures should throw an exception.
-     * @return self
      * @throws RequestBodyException
      */
     public function json(array|string $input, int $jsonFlags = JSON_UNESCAPED_SLASHES, bool $throw = true): self {
@@ -454,7 +439,6 @@ final class Request {
      * Returns a new request with an application/x-www-form-urlencoded body.
      *
      * @param  array<string|int, mixed> $input Form fields.
-     * @return self
      */
     public function form(array $input): self {
 
@@ -471,7 +455,6 @@ final class Request {
      *
      * @param  RequestAttachment $attachment     File attachment.
      * @param  boolean           $allowOverwrite Whether this attachment may overwrite a field with the same name.
-     * @return self
      * @throws RequestBodyException
      */
     public function attach(RequestAttachment $attachment, bool $allowOverwrite = true): self {
@@ -536,7 +519,6 @@ final class Request {
      * @param  string  $name           Multipart field name.
      * @param  string  $path           Local file path.
      * @param  boolean $allowOverwrite Whether this attachment may overwrite a field with the same name.
-     * @return self
      * @throws RequestBodyException
      */
     public function attachFile(string $name, string $path, bool $allowOverwrite = true): self {
@@ -547,7 +529,6 @@ final class Request {
      * Prepares the request with optional cURL execution options.
      *
      * @param  CurlOptions|null $options Execution options.
-     * @return PreparedRequest
      */
     public function prepare(?CurlOptions $options = null): PreparedRequest {
         return PreparedRequest::create($this, $options);
@@ -557,7 +538,6 @@ final class Request {
      * URLとして利用できる最小限の形式か検証する。
      *
      * @param  string $url
-     * @return string
      * @throws InvalidRequestException
      */
     private static function validateUrl(string $url): string {
@@ -610,7 +590,6 @@ final class Request {
      * メソッド名からCurlMethodを取得する。
      *
      * @param  string $method
-     * @return CurlMethod|null
      */
     private static function findCurlMethod(string $method): ?CurlMethod {
 
@@ -628,7 +607,6 @@ final class Request {
      * Acceptヘッダー値から重複判定用のメディアタイプを取り出す。
      *
      * @param  string $acceptValue
-     * @return string
      */
     private static function normalizeAcceptKey(string $acceptValue): string {
         return strtolower(trim(explode(';', $acceptValue, 2)[0]));

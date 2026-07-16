@@ -47,8 +47,6 @@ final readonly class SslConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a verified SSL/TLS config.
-     *
-     * @return self
      */
     public static function verified(): self {
         return new self();
@@ -56,8 +54,6 @@ final readonly class SslConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates an SSL/TLS config with verification disabled.
-     *
-     * @return self
      */
     public static function insecure(): self {
         return new self(false, false);

@@ -23,7 +23,6 @@ final class ResponseFactory {
      * @param  bool|string     $raw             Result from curl_exec() or curl_multi_getcontent().
      * @param  PreparedRequest $preparedRequest Request and options used for execution.
      * @param  int|null        $resultCode      cURL result code from curl_multi_info_read().
-     * @return Response
      * @throws CurlExecutionException
      * @throws InvalidResponseException
      */

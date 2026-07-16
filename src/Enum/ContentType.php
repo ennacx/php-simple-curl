@@ -50,8 +50,7 @@ enum ContentType : string implements AcceptValueInterface {
     /**
      * Returns this media type with an Accept quality value.
      *
-     * @param  float $quality Quality value between 0.0 and 1.0.
-     * @return QualifiedAcceptValue
+     * @param float $quality Quality value between 0.0 and 1.0.
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
         return new QualifiedAcceptValue($this, $quality);

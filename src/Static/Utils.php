@@ -16,8 +16,7 @@ final class Utils {
     /**
      * キャメルケース `CamelCaseString` をスネークケース `snake_case_string` に変換する。
      *
-     * @param  string|null $str Target string
-     * @return string|null
+     * @param string|null $str Target string
      */
     public static function snakize(?string $str): ?string {
 
@@ -33,9 +32,8 @@ final class Utils {
     /**
      * スネークケース `snake_case_string` をキャメルケース `CamelCaseString (camelCaseString)` に変換する。
      *
-     * @param  string|null $str     Target string
-     * @param  boolean     $toLower True: lowerCamel / False: UpperCamel
-     * @return string|null
+     * @param string|null $str     Target string
+     * @param boolean     $toLower True: lowerCamel / False: UpperCamel
      */
     public static function camelize(?string $str, bool $toLower = true): ?string {
 
@@ -53,7 +51,6 @@ final class Utils {
      *
      * @param  string  $v              Target string
      * @param  boolean $spaceAllRemove True: Remove all spaces / False: Remove both ends spaces
-     * @return string
      */
     public static function trimLower(string $v, bool $spaceAllRemove = false): string {
 
@@ -65,8 +62,7 @@ final class Utils {
     /**
      * 与えられた引数を文字列に変換する。
      *
-     * @param  mixed             $value
-     * @return string|null|false        与えられた引数が`null`の場合は`null`を返し、文字列に変換できない場合は`false`を返す
+     * @return string|null|false 与えられた引数が`null`の場合は`null`を返し、文字列に変換できない場合は`false`を返す
      */
     public static function toString(mixed $value): string|null|false {
 
@@ -84,9 +80,8 @@ final class Utils {
     /**
      * ファイルが存在し、読み取り可能な通常ファイルであることを検証する。
      *
-     * @param  string                   $path 対象ファイルパス
-     * @return void
-     * @throws RequestBodyException           ファイルが存在しない・読取不可・通常ファイルではない場合
+     * @param  string               $path 対象ファイルパス
+     * @throws RequestBodyException       ファイルが存在しない・読取不可・通常ファイルではない場合
      */
     public static function fileCheck(string $path): void {
 

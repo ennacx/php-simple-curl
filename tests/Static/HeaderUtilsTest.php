@@ -13,8 +13,6 @@ final class HeaderUtilsTest extends TestCase {
 
     /**
      * ヘッダー名の大文字小文字を無視して存在確認できることを検証する。
-     *
-     * @return void
      */
     public function testHasDetectsHeaderCaseInsensitively(): void {
 
@@ -25,8 +23,6 @@ final class HeaderUtilsTest extends TestCase {
 
     /**
      * 連想配列形式とヘッダー行形式の両方から指定ヘッダーを削除できることを検証する。
-     *
-     * @return void
      */
     public function testRemoveDeletesMatchingHeadersCaseInsensitively(): void {
 

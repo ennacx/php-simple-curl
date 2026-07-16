@@ -17,8 +17,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * get(), find(), has(), all(), and count() expose keyed responses.
-     *
-     * @return void
      */
     public function testReadsResponsesByRequestId(): void {
 
@@ -43,8 +41,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * Responses can be read with array access.
-     *
-     * @return void
      */
     public function testArrayAccessReadsResponses(): void {
 
@@ -59,8 +55,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * get() throws when the response is missing.
-     *
-     * @return void
      */
     public function testGetThrowsExceptionForMissingResponse(): void {
 
@@ -72,8 +66,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * Array access throws when the response is missing.
-     *
-     * @return void
      */
     public function testOffsetGetThrowsExceptionForMissingResponse(): void {
 
@@ -85,8 +77,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * Array access keys must be strings.
-     *
-     * @return void
      */
     public function testOffsetGetThrowsExceptionForInvalidKey(): void {
 
@@ -97,8 +87,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * The collection is iterable by request ID.
-     *
-     * @return void
      */
     public function testIteratorReturnsResponsesByRequestId(): void {
 
@@ -117,8 +105,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * Array write operations are rejected.
-     *
-     * @return void
      */
     public function testArrayWriteOperationsThrowException(): void {
 
@@ -131,8 +117,6 @@ final class ResponsesTest extends TestCase {
 
     /**
      * Array unset operations are rejected.
-     *
-     * @return void
      */
     public function testArrayUnsetOperationsThrowException(): void {
 
@@ -144,10 +128,7 @@ final class ResponsesTest extends TestCase {
     }
 
     /**
-     * Creates a minimal response for collection tests.
-     *
-     * @param  int $statusCode
-     * @return Response
+     * 最小のサンプルResponseクラスを作成
      */
     private static function response(int $statusCode): Response {
         return new Response(

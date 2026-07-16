@@ -71,7 +71,6 @@ final readonly class ProxyConfig implements CurlOptionsApplierInterface {
      *
      * @param  string $method Called static method name.
      * @param  array  $args   ProxyConfig constructor arguments.
-     * @return self
      * @throws InvalidConfigurationException
      */
     public static function __callStatic(string $method, array $args): self {
@@ -100,8 +99,7 @@ final readonly class ProxyConfig implements CurlOptionsApplierInterface {
     /**
      * メソッド名からProxyProtocolを取得する。
      *
-     * @param  string $method
-     * @return ProxyProtocol|null
+     * @param string $method 'http' や 'socks5'
      */
     private static function findProtocol(string $method): ?ProxyProtocol {
 

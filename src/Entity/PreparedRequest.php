@@ -20,9 +20,8 @@ final readonly class PreparedRequest {
     /**
      * Creates a prepared request instance.
      *
-     * @param  Request          $request Request to send.
-     * @param  CurlOptions|null $options Execution options.
-     * @return self
+     * @param Request          $request Request to send.
+     * @param CurlOptions|null $options Execution options.
      */
     public static function create(Request $request, ?CurlOptions $options = null): self {
         return new self($request, $options);
@@ -30,8 +29,6 @@ final readonly class PreparedRequest {
 
     /**
      * Returns the request.
-     *
-     * @return Request
      */
     public function getRequest(): Request {
         return $this->request;
@@ -39,8 +36,6 @@ final readonly class PreparedRequest {
 
     /**
      * Returns execution options.
-     *
-     * @return CurlOptions|null
      */
     public function getOptions(): ?CurlOptions {
         return $this->options;

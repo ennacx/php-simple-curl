@@ -29,7 +29,6 @@ final readonly class Responses implements ArrayAccess, Countable, IteratorAggreg
      * Returns a response by request ID.
      *
      * @param  string $id Request ID.
-     * @return Response
      * @throws ResponseNotFoundException
      */
     public function get(string $id): Response {
@@ -41,8 +40,7 @@ final readonly class Responses implements ArrayAccess, Countable, IteratorAggreg
     /**
      * Finds a response by request ID.
      *
-     * @param  string $id Request ID.
-     * @return Response|null
+     * @param string $id Request ID.
      */
     public function find(string $id): ?Response {
 
@@ -56,8 +54,7 @@ final readonly class Responses implements ArrayAccess, Countable, IteratorAggreg
     /**
      * Checks whether a response exists for the request ID.
      *
-     * @param  string $id Request ID.
-     * @return boolean
+     * @param string $id Request ID.
      */
     public function has(string $id): bool {
         return array_key_exists($id, $this->items);

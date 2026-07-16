@@ -22,8 +22,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * デフォルト設定のPreparedRequestから基本cURLオプションを生成できることを検証する。
-     *
-     * @return void
      */
     public function testBuildsDefaultOptionsFromPreparedRequest(): void {
 
@@ -42,8 +40,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * URL作成時点のクエリと追加クエリがCURLOPT_URLへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsUrlWithQueryParameters(): void {
 
@@ -66,8 +62,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * フラグメント付きURLでもクエリがフラグメントより前に付与されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsUrlWithQueryParametersBeforeFragment(): void {
 
@@ -94,8 +88,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * ボディとヘッダーの取得が不要な場合にCURLOPT_RETURNTRANSFERが無効になることを検証する。
-     *
-     * @return void
      */
     public function testDisablesReturnTransferWhenBodyAndHeadersAreNotCaptured(): void {
 
@@ -114,8 +106,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * Timeout、Redirect、Bearer認証がcURLオプションと送信ヘッダーへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testAppliesTimeoutRedirectAndAuthHeaders(): void {
 
@@ -142,8 +132,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * User-AgentとRefererが送信ヘッダーへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testAppliesClientHeaders(): void {
 
@@ -164,8 +152,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * Requestで明示されたUser-AgentとRefererはClientConfigで上書きしないことを検証する。
-     *
-     * @return void
      */
     public function testKeepsUserDefinedClientHeaders(): void {
 
@@ -190,8 +176,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * Requestのaccept()で指定したメディアタイプがAcceptヘッダーへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsAcceptHeaderFromRequestAcceptTypes(): void {
 
@@ -208,8 +192,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * Quality Value付きAccept値がAcceptヘッダーへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsAcceptHeaderWithQualityValues(): void {
 
@@ -230,8 +212,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * Requestで明示されたAcceptヘッダーはaccept()で上書きしないことを検証する。
-     *
-     * @return void
      */
     public function testKeepsUserDefinedAcceptHeader(): void {
 
@@ -249,8 +229,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * プレーンテキストのリクエストボディがcURLオプションへ反映されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsPlainTextRequestBodyOptions(): void {
 
@@ -266,8 +244,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * ファイル内容をリクエストボディとしてcURLオプションへ反映できることを検証する。
-     *
-     * @return void
      */
     public function testBuildsRequestBodyOptionsFromFile(): void {
 
@@ -292,8 +268,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * `0` のようなempty判定される文字列でもリクエストボディとして扱えることを検証する。
-     *
-     * @return void
      */
     public function testBuildsZeroStringRequestBodyOptions(): void {
 
@@ -309,8 +283,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * JSONリクエストボディがJSON文字列とContent-Typeへ変換されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsJsonRequestBodyOptions(): void {
 
@@ -329,8 +301,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * JSON文字列をそのままJSONリクエストボディとして扱えることを検証する。
-     *
-     * @return void
      */
     public function testBuildsJsonRequestBodyOptionsFromJsonString(): void {
 
@@ -347,8 +317,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * フォームリクエストボディがURLエンコード済み文字列とContent-Typeへ変換されることを検証する。
-     *
-     * @return void
      */
     public function testBuildsFormRequestBodyOptions(): void {
 
@@ -367,8 +335,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * ユーザーが指定したContent-Typeはリクエストボディの既定値で上書きしないことを検証する。
-     *
-     * @return void
      */
     public function testKeepsUserDefinedContentTypeForRequestBody(): void {
 
@@ -385,8 +351,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * `X-Content-Type-Options` はContent-Type指定とは扱わないことを検証する。
-     *
-     * @return void
      */
     public function testAddsDefaultContentTypeWhenOnlyContentTypeOptionsHeaderExists(): void {
 
@@ -406,8 +370,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * 添付ファイルをmultipart/form-data用のPOSTFIELDSへ変換できることを検証する。
-     *
-     * @return void
      */
     public function testBuildsMultipartPostFieldsFromAttachment(): void {
 
@@ -434,8 +396,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * 添付ファイルがある場合、ユーザー指定のContent-Typeを削除してcURLにboundary生成を任せることを検証する。
-     *
-     * @return void
      */
     public function testRemovesUserDefinedContentTypeForMultipartRequest(): void {
 
@@ -462,8 +422,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * フォーム項目と添付ファイルをmultipart/form-data用のPOSTFIELDSへ統合できることを検証する。
-     *
-     * @return void
      */
     public function testBuildsMultipartPostFieldsWithFormFields(): void {
 
@@ -489,8 +447,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * 添付ファイル設定後に追加したフォーム項目もmultipart/form-data用のPOSTFIELDSへ統合できることを検証する。
-     *
-     * @return void
      */
     public function testBuildsMultipartPostFieldsWhenFormIsAddedAfterAttachment(): void {
 
@@ -516,8 +472,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * 添付ファイル名とフォーム項目名が重複した場合は、添付ファイル側のoverwrite設定で上書きできることを検証する。
-     *
-     * @return void
      */
     public function testCanOverwriteFormFieldWhenAttachmentNameDuplicates(): void {
 
@@ -541,8 +495,6 @@ final class CurlOptionsFactoryTest extends TestCase {
 
     /**
      * 添付ファイルとJSONボディは同時に送信できないことを検証する。
-     *
-     * @return void
      */
     public function testMultipartRejectsJsonBody(): void {
 

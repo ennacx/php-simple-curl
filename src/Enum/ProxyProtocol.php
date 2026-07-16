@@ -26,8 +26,6 @@ enum ProxyProtocol implements ToCurlConstInterface {
 
     /**
      * Returns the default port for the protocol.
-     *
-     * @return int
      */
     public function defaultPort(): int {
         return match($this){

@@ -14,8 +14,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * HTTPステータス別のhelper判定が期待通り分類されることを検証する。
-     *
-     * @return void
      */
     public function testStatusHelpersClassifyResponses(): void {
 
@@ -44,8 +42,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * レスポンスヘッダーを小文字キーで参照でき、重複ヘッダーは配列化されることを検証する。
-     *
-     * @return void
      */
     public function testHeaderHelpersParseCaseInsensitiveHeaders(): void {
 
@@ -79,8 +75,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * JSON文字列のレスポンスボディを配列へデコードできることを検証する。
-     *
-     * @return void
      */
     public function testJsonDecodesBody(): void {
 
@@ -91,8 +85,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * 空ボディでもthrowを無効にするとnullを返すことを検証する。
-     *
-     * @return void
      */
     public function testJsonReturnsNullForEmptyBodyWhenThrowIsDisabled(): void {
 
@@ -103,8 +95,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * 空ボディをJSONとして読む場合、デフォルトでは例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testJsonThrowsForEmptyBodyByDefault(): void {
 
@@ -118,8 +108,6 @@ final class ResponseTest extends TestCase {
 
     /**
      * 不正なJSONのデコード失敗をInvalidResponseExceptionへ包むことを検証する。
-     *
-     * @return void
      */
     public function testJsonWrapsDecodeFailure(): void {
 

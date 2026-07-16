@@ -41,7 +41,6 @@ final readonly class MultiClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest ...$preparedRequests Requests to send.
-     * @return Responses
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
      */
@@ -136,8 +135,7 @@ final readonly class MultiClient {
     /**
      * CurlHandleを配列キーとして扱うための一意な整数値を生成する。
      *
-     * @param  CurlHandle $ch
-     * @return int
+     * @param CurlHandle $ch
      */
     private function generateKey(CurlHandle $ch): int {
         return spl_object_id($ch);
@@ -170,7 +168,6 @@ final readonly class MultiClient {
      * @param  CurlMultiHandle                                                         $cmh
      * @param  array<int, array{handle: CurlHandle, preparedRequest: PreparedRequest}> $handles
      * @param  array<string, Response>                                                 $responses
-     * @return void
      */
     private function drainCompleted(CurlMultiHandle $cmh, array &$handles, array &$responses): void {
 

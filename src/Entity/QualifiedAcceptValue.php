@@ -37,8 +37,6 @@ final readonly class QualifiedAcceptValue implements AcceptValueInterface {
 
     /**
      * Converts the value into an Accept header segment.
-     *
-     * @return string
      */
     public function toHeaderValue(): string {
         $value = ($this->value instanceof AcceptValueInterface) ? $this->value->toHeaderValue() : trim($this->value);
@@ -48,9 +46,6 @@ final readonly class QualifiedAcceptValue implements AcceptValueInterface {
 
     /**
      * q値は最大3桁まで出力し、不要な末尾の0を落とす
-     *
-     * @param  float $quality
-     * @return string
      */
     private static function formatQuality(float $quality): string {
         return rtrim(rtrim(number_format($quality, 3, '.', ''), '0'), '.');

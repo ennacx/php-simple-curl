@@ -22,8 +22,6 @@ final class RequestTest extends TestCase {
 
     /**
      * HTTPメソッド名の静的FactoryからRequestを生成できることを検証する。
-     *
-     * @return void
      */
     public function testStaticFactoryCreatesRequestWithHttpMethod(): void {
 
@@ -36,8 +34,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 送信ヘッダーの値が文字列へ正規化されることを検証する。
-     *
-     * @return void
      */
     public function testHeadersAreNormalized(): void {
 
@@ -55,8 +51,6 @@ final class RequestTest extends TestCase {
 
     /**
      * accept()でAcceptヘッダー用のメディアタイプを追加でき、元のRequestを変更しないことを検証する。
-     *
-     * @return void
      */
     public function testAcceptAddsAcceptedContentTypeAndKeepsOriginalRequest(): void {
 
@@ -74,8 +68,6 @@ final class RequestTest extends TestCase {
 
     /**
      * accepts()で複数のメディアタイプを追加でき、重複した値は追加しないことを検証する。
-     *
-     * @return void
      */
     public function testAcceptsAddsMultipleTypesAndSkipsDuplicates(): void {
 
@@ -95,8 +87,6 @@ final class RequestTest extends TestCase {
 
     /**
      * accept()でMediaRangeやQuality Value付きAccept値を追加できることを検証する。
-     *
-     * @return void
      */
     public function testAcceptAddsMediaRangeAndQualifiedValue(): void {
 
@@ -114,8 +104,6 @@ final class RequestTest extends TestCase {
 
     /**
      * Quality ValueがAcceptヘッダー用の文字列へ整形されることを検証する。
-     *
-     * @return void
      */
     public function testAcceptFormatsQualityValue(): void {
 
@@ -131,8 +119,6 @@ final class RequestTest extends TestCase {
 
     /**
      * Quality Valueに0を明示できることを検証する。
-     *
-     * @return void
      */
     public function testAcceptAllowsZeroQualityValue(): void {
 
@@ -144,8 +130,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 同じメディアタイプを異なるQuality Valueで追加した場合、先に追加した値を維持することを検証する。
-     *
-     * @return void
      */
     public function testAcceptSkipsDuplicateMediaRangeWithDifferentQualityValue(): void {
 
@@ -161,8 +145,6 @@ final class RequestTest extends TestCase {
 
     /**
      * Quality Valueが1を超える場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAcceptThrowsExceptionForInvalidQualityValue(): void {
 
@@ -173,8 +155,6 @@ final class RequestTest extends TestCase {
 
     /**
      * Quality Valueが0未満の場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAcceptThrowsExceptionForNegativeQualityValue(): void {
 
@@ -185,8 +165,6 @@ final class RequestTest extends TestCase {
 
     /**
      * すでにQuality Value付きのAccept値を再度ラップした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAcceptThrowsExceptionForQualifiedAcceptValueWrapping(): void {
 
@@ -197,8 +175,6 @@ final class RequestTest extends TestCase {
 
     /**
      * q値を含むAccept文字列を再度ラップした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAcceptThrowsExceptionForQualifiedStringWrapping(): void {
 
@@ -209,8 +185,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 空のメディアタイプをAcceptヘッダーに追加しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAcceptThrowsExceptionForEmptyType(): void {
 
@@ -222,8 +196,6 @@ final class RequestTest extends TestCase {
 
     /**
      * URLに含まれる既存クエリがRequest生成時にqueryParamsへ分離されることを検証する。
-     *
-     * @return void
      */
     public function testExistingQueryStringIsParsedOnCreate(): void {
 
@@ -238,8 +210,6 @@ final class RequestTest extends TestCase {
 
     /**
      * param()でクエリの追加・上書き・削除ができ、元のRequestは変更されないことを検証する。
-     *
-     * @return void
      */
     public function testParamAddsOverwritesAndRemovesQueryParameter(): void {
 
@@ -261,8 +231,6 @@ final class RequestTest extends TestCase {
 
     /**
      * params()で複数クエリを追加でき、overwrite=falseでは既存値を維持することを検証する。
-     *
-     * @return void
      */
     public function testParamsAddsQueryParametersAndCanKeepExistingValues(): void {
 
@@ -282,8 +250,6 @@ final class RequestTest extends TestCase {
 
     /**
      * スキームのないURLを不正として扱うことを検証する。
-     *
-     * @return void
      */
     public function testInvalidUrlThrowsException(): void {
 
@@ -294,8 +260,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 空のヘッダー名を不正として扱うことを検証する。
-     *
-     * @return void
      */
     public function testInvalidHeaderNameThrowsException(): void {
 
@@ -306,8 +270,6 @@ final class RequestTest extends TestCase {
 
     /**
      * ファイル内容をリクエストボディーとして設定でき、元のRequestを変更しないことを検証する。
-     *
-     * @return void
      */
     public function testBodyFromFileCreatesRequestBodyFromReadableFile(): void {
 
@@ -333,8 +295,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 存在しないファイルをリクエストボディーに指定した場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testBodyFromFileThrowsExceptionForMissingFile(): void {
 
@@ -346,8 +306,6 @@ final class RequestTest extends TestCase {
 
     /**
      * attach()で添付ファイルを追加でき、元のRequestを変更しないことを検証する。
-     *
-     * @return void
      */
     public function testAttachAddsAttachmentAndKeepsOriginalRequest(): void {
 
@@ -373,8 +331,6 @@ final class RequestTest extends TestCase {
 
     /**
      * attachFile()で簡易的に添付ファイルを追加できることを検証する。
-     *
-     * @return void
      */
     public function testAttachFileAddsAttachmentFromPath(): void {
 
@@ -397,8 +353,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 存在しないファイルを添付しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAttachThrowsExceptionForMissingFile(): void {
 
@@ -410,8 +364,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 空のフィールド名で添付しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAttachThrowsExceptionForEmptyName(): void {
 
@@ -431,8 +383,6 @@ final class RequestTest extends TestCase {
 
     /**
      * overwrite=falseで同名添付ファイルを追加しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAttachThrowsExceptionForDuplicateAttachmentNameWhenOverwriteDisabled(): void {
 
@@ -453,8 +403,6 @@ final class RequestTest extends TestCase {
 
     /**
      * overwrite=falseでフォーム項目と同名の添付ファイルを追加しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testAttachThrowsExceptionForDuplicateFormFieldWhenOverwriteDisabled(): void {
 
@@ -475,8 +423,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 添付ファイル設定後に通常ボディを設定しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testBodyThrowsExceptionWhenAttachmentAlreadySet(): void {
 
@@ -497,8 +443,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 添付ファイル設定後にJSONボディを設定しようとした場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testJsonThrowsExceptionWhenAttachmentAlreadySet(): void {
 
@@ -519,8 +463,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 不正なJSON文字列はthrow=trueの場合に例外を投げることを検証する。
-     *
-     * @return void
      */
     public function testJsonThrowsExceptionForInvalidJsonString(): void {
 
@@ -532,8 +474,6 @@ final class RequestTest extends TestCase {
 
     /**
      * 不正なJSON文字列でもthrow=falseの場合は元のRequestを返すことを検証する。
-     *
-     * @return void
      */
     public function testJsonReturnsOriginalRequestForInvalidJsonStringWhenThrowDisabled(): void {
 
@@ -547,8 +487,6 @@ final class RequestTest extends TestCase {
 
     /**
      * CurlOptions付きのPreparedRequestを生成できることを検証する。
-     *
-     * @return void
      */
     public function testPrepareCreatesPreparedRequestWithOptions(): void {
 
@@ -563,8 +501,6 @@ final class RequestTest extends TestCase {
 
     /**
      * CurlOptionsなしのPreparedRequestを生成できることを検証する。
-     *
-     * @return void
      */
     public function testPrepareCreatesPreparedRequestWithDefaultOptions(): void {
 

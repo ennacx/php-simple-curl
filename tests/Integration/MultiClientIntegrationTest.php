@@ -14,8 +14,6 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
     /**
      * 複数レスポンスが各Request IDをキーにして返却されることを検証する。
-     *
-     * @return void
      */
     public function testSendAllReturnsResponsesKeyedByRequestId(): void {
 
@@ -48,8 +46,6 @@ final class MultiClientIntegrationTest extends LocalHttpServerTestCase {
 
     /**
      * Requestを直接渡した場合に、各Requestが内部でPreparedRequestへ変換されて並列実行できることを検証する。
-     *
-     * @return void
      */
     public function testSendAllAcceptsRequestsAndPreparesThemInternally(): void {
 

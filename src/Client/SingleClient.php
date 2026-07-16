@@ -37,7 +37,6 @@ final readonly class SingleClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest $preparedRequest Request to send.
-     * @return Response
      * @throws InvalidConfigurationException
      * @throws CurlExecutionException
      */

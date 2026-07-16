@@ -10,8 +10,6 @@ interface ToCurlConstInterface {
 
     /**
      * Returns the cURL constant value for the enum case.
-     *
-     * @return int
      */
     public function toCurlConst(): int;
 }

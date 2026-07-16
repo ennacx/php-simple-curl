@@ -16,7 +16,6 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
     /**
      * JSONレスポンスを取得し、ステータス・ヘッダー・JSON helperが連動することを検証する。
      *
-     * @return void
      * @throws Throwable
      */
     public function testSendReturnsJsonResponseFromLocalServer(): void {
@@ -45,7 +44,6 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
     /**
      * Requestを直接渡した場合に、内部でPreparedRequestへ変換されて実行できることを検証する。
      *
-     * @return void
      * @throws Throwable
      */
     public function testSendAcceptsRequestAndPreparesItInternally(): void {
@@ -67,7 +65,6 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
     /**
      * followRedirects()を有効にした場合にリダイレクト先のレスポンスを取得できることを検証する。
      *
-     * @return void
      * @throws Throwable
      */
     public function testSendFollowsRedirectWhenEnabled(): void {
@@ -90,7 +87,6 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
     /**
      * ボディを取得せず、レスポンスヘッダーだけを保持できることを検証する。
      *
-     * @return void
      * @throws Throwable
      */
     public function testSendCanCaptureHeadersWithoutBody(): void {
@@ -115,7 +111,6 @@ final class SingleClientIntegrationTest extends LocalHttpServerTestCase {
     /**
      * HTTP 4xxがcURLエラーではなくResponse上のHTTPエラーとして扱われることを検証する。
      *
-     * @return void
      * @throws Throwable
      */
     public function testSendReturnsHttpErrorResponse(): void {

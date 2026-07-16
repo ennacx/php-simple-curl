@@ -11,9 +11,8 @@ interface CurlOptionsApplierInterface {
     /**
      * Applies config values to cURL options and headers.
      *
-     * @param  array<int, mixed>     $options cURL options for curl_setopt_array().
-     * @param  array<string, string> $headers Request headers.
-     * @return void
+     * @param array<int, mixed>     $options cURL options for curl_setopt_array().
+     * @param array<string, string> $headers Request headers.
      */
     public function applyToCurlOptions(array &$options, array &$headers): void;
 }

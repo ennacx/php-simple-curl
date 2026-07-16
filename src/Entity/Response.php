@@ -42,8 +42,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response status is 1xx.
-     *
-     * @return boolean
      */
     public function isInformational(): bool {
         return ($this->statusCode >= 100 && $this->statusCode < 200);
@@ -51,8 +49,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response is HTTP 200 OK and has no cURL error.
-     *
-     * @return boolean
      */
     public function isOk(): bool {
         return ($this->error === null && $this->statusCode === 200);
@@ -60,8 +56,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response is 2xx and has no cURL error.
-     *
-     * @return boolean
      */
     public function isSuccessful(): bool {
         return ($this->error === null && $this->statusCode >= 200 && $this->statusCode < 300);
@@ -69,8 +63,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response status is 3xx.
-     *
-     * @return boolean
      */
     public function isRedirect(): bool {
         return ($this->statusCode >= 300 && $this->statusCode < 400);
@@ -78,8 +70,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response status is 4xx.
-     *
-     * @return boolean
      */
     public function isClientError(): bool {
         return ($this->statusCode >= 400 && $this->statusCode < 500);
@@ -87,8 +77,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response status is 5xx.
-     *
-     * @return boolean
      */
     public function isServerError(): bool {
         return ($this->statusCode >= 500 && $this->statusCode < 600);
@@ -96,8 +84,6 @@ final readonly class Response {
 
     /**
      * Checks whether the response has a cURL error or a 4xx/5xx status.
-     *
-     * @return boolean
      */
     public function isError(): bool {
         return ($this->error !== null || $this->isClientError() || $this->isServerError());
@@ -108,8 +94,7 @@ final readonly class Response {
      *
      * Header names are case-insensitive.
      *
-     * @param  string $key Header name.
-     * @return boolean
+     * @param string $key Header name.
      */
     public function hasHeader(string $key): bool {
         return array_key_exists(strtolower($key), $this->parsedHeaders);
@@ -150,7 +135,6 @@ final readonly class Response {
      *
      * @param  boolean $associative Whether objects should be decoded as associative arrays.
      * @param  boolean $throw       Whether JSON decode failures should throw InvalidResponseException.
-     * @return mixed
      * @throws InvalidResponseException
      */
     public function json(bool $associative = true, bool $throw = true): mixed {

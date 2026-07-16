@@ -17,8 +17,6 @@ final class CurlOptionsTest extends TestCase {
 
     /**
      * fluent helperが元インスタンスを変更せず、新しいインスタンスを返すことを検証する。
-     *
-     * @return void
      */
     public function testFluentHelpersReturnNewInstances(): void {
 
@@ -68,8 +66,6 @@ final class CurlOptionsTest extends TestCase {
 
     /**
      * followRedirect()がfollowRedirects()のデフォルト設定と同じ結果になることを検証する。
-     *
-     * @return void
      */
     public function testFollowRedirectAliasMatchesDefaultFollowRedirects(): void {
 
@@ -84,8 +80,6 @@ final class CurlOptionsTest extends TestCase {
 
     /**
      * remove()が元インスタンスを変更せず、指定Configを除外した新しいインスタンスを返すことを検証する。
-     *
-     * @return void
      */
     public function testRemoveReturnsNewInstanceWithoutSpecifiedConfig(): void {
 
@@ -103,8 +97,6 @@ final class CurlOptionsTest extends TestCase {
 
     /**
      * 空のUser-Agentを不正として扱うことを検証する。
-     *
-     * @return void
      */
     public function testUserAgentRejectsEmptyValue(): void {
 
@@ -115,8 +107,6 @@ final class CurlOptionsTest extends TestCase {
 
     /**
      * 空のRefererを不正として扱うことを検証する。
-     *
-     * @return void
      */
     public function testRefererRejectsEmptyValue(): void {
 

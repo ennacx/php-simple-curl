@@ -11,9 +11,8 @@ final class HeaderUtils {
     /**
      * 既にヘッダー配列に登録されているかをチェックする。
      *
-     * @param  array  $headers ヘッダー配列
-     * @param  string $name    チェック対象
-     * @return boolean
+     * @param array<string, string> $headers ヘッダー配列
+     * @param string                $name    チェック対象
      */
     public static function has(array $headers, string $name): bool {
 
@@ -35,9 +34,8 @@ final class HeaderUtils {
     /**
      * ヘッダー配列に登録されている要素を削除する。
      *
-     * @param  array  $headers ヘッダー配列
-     * @param  string $name    削除対象
-     * @return void
+     * @param array  $headers ヘッダー配列
+     * @param string $name    削除対象
      */
     public static function remove(array &$headers, string $name): void {
 

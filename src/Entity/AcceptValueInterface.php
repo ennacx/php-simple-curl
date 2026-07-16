@@ -10,8 +10,6 @@ interface AcceptValueInterface {
 
     /**
      * Converts the value into an Accept header segment.
-     *
-     * @return string
      */
     public function toHeaderValue(): string;
 }
