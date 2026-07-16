@@ -21,8 +21,8 @@ final readonly class RequestBody {
      */
     public function __construct(
         public array|string|null $body,
-        public ContentType $contentType,
-        public array $options = [],
+        public ContentType       $contentType,
+        public array             $options     = [],
     ){
     }
 }
