@@ -7,6 +7,7 @@ use Ennacx\SimpleCurl\Config\ClientConfig;
 use Ennacx\SimpleCurl\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 
 /**
  * Immutable cURL execution options.
@@ -78,15 +79,24 @@ final readonly class CurlOptions {
      *
      * @template T of CurlOptionsApplierInterface
      * @param  class-string<T> $class Config class name.
+     * @return T
+     * @throws InvalidConfigurationException
+     */
+    public function get(string $class): CurlOptionsApplierInterface {
+
+        return $this->find($class) ??
+            throw new InvalidConfigurationException(sprintf('Config class "%s" is not set in CurlOptions.', $class));
+    }
+
+    /**
+     * Finds a config object by class name.
+     *
+     * @template T of CurlOptionsApplierInterface
+     * @param  class-string<T> $class Config class name.
      * @return T|null
      */
-    public function get(string $class): ?CurlOptionsApplierInterface {
-
-        if(!$this->has($class)){
-            return null;
-        }
-
-        return $this->config[$class];
+    public function find(string $class): ?CurlOptionsApplierInterface {
+        return $this->config[$class] ?? null;
     }
 
     /**
@@ -219,12 +229,35 @@ final readonly class CurlOptions {
     }
 
     /**
+     * Returns a new option set with raw CURLOPT_* options.
+     *
+     * Raw cURL options are applied after generated options and config objects.
+     *
+     * @param  array<int, mixed> $options   Raw cURL options.
+     * @param  boolean           $overwrite Whether existing cURL options should be overwritten.
+     * @throws InvalidConfigurationException
+     */
+    public function raw(array $options, bool $overwrite = true): self {
+        return $this->with(
+            RawCurlOptions::create($options, $overwrite),
+        );
+    }
+
+    /**
      * Returns all configured config objects.
      *
      * @template T of CurlOptionsApplierInterface
      * @return list<T>
      */
     public function getConfig(): array {
-        return array_values($this->config);
+
+        $configs = $this->config;
+
+        // 最後に適用させたい RawCurlOptions は取得させない
+        if(array_key_exists(RawCurlOptions::class, $configs)){
+            unset($configs[RawCurlOptions::class]);
+        }
+
+        return array_values($configs);
     }
 }

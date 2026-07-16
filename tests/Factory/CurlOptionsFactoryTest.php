@@ -7,6 +7,7 @@ use Ennacx\SimpleCurl\Config\AuthConfig;
 use Ennacx\SimpleCurl\Config\RedirectConfig;
 use Ennacx\SimpleCurl\Config\TimeoutConfig;
 use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
@@ -512,6 +513,45 @@ final class CurlOptionsFactoryTest extends TestCase {
         } finally{
             unlink($path);
         }
+    }
+
+    /**
+     * RawCurlOptionsはFactoryが組み立てたcURLオプションを最後に上書きできることを検証する。
+     */
+    public function testRawCurlOptionsCanOverrideGeneratedOptions(): void {
+
+        $preparedRequest = Request::get('https://example.com')
+            ->headers(['Accept' => 'application/json'])
+            ->prepare(CurlOptions::create(
+                RawCurlOptions::create([
+                    CURLOPT_HTTPHEADER => ['X-Raw: yes'],
+                    CURLOPT_TIMEOUT    => 99,
+                ]),
+            ));
+
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+        self::assertSame(['X-Raw: yes'], $options[CURLOPT_HTTPHEADER]);
+        self::assertSame(99, $options[CURLOPT_TIMEOUT]);
+    }
+
+    /**
+     * overwrite=falseのRawCurlOptionsは既存オプションを保持し、未設定オプションだけ追加することを検証する。
+     */
+    public function testRawCurlOptionsWithoutOverwriteKeepsExistingOptionsAndAddsMissingOptions(): void {
+
+        $preparedRequest = Request::get('https://example.com')
+            ->prepare(CurlOptions::create(
+                RawCurlOptions::create([
+                    CURLOPT_RETURNTRANSFER => false,
+                    CURLOPT_TIMEOUT        => 7,
+                ], overwrite: false),
+            ));
+
+        $options = (new CurlOptionsFactory())->fromPreparedRequest($preparedRequest);
+
+        self::assertTrue($options[CURLOPT_RETURNTRANSFER]);
+        self::assertSame(7, $options[CURLOPT_TIMEOUT]);
     }
 
     /**
