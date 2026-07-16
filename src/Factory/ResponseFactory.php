@@ -4,12 +4,12 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CurlHandle;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Response;
+use Ennacx\SimpleCurl\Option\CurlOptions;
 use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidResponseException;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Response\Response;
 
 /**
  * Builds Response objects from cURL execution results.

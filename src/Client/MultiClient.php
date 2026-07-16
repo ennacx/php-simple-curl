@@ -5,15 +5,15 @@ namespace Ennacx\SimpleCurl\Client;
 
 use CurlHandle;
 use CurlMultiHandle;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Entity\Response;
-use Ennacx\SimpleCurl\Entity\Responses;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Request\Request;
+use Ennacx\SimpleCurl\Response\Response;
+use Ennacx\SimpleCurl\Response\Responses;
 
 /**
  * Sends multiple HTTP requests through cURL multi.

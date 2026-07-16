@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Integration;
 
 use Ennacx\SimpleCurl\Client\SingleClient;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\Request;
 use Throwable;
 
 /**

@@ -3,16 +3,16 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Test\Factory;
 
-use Ennacx\SimpleCurl\Entity\Config\AuthConfig;
-use Ennacx\SimpleCurl\Entity\Config\RedirectConfig;
-use Ennacx\SimpleCurl\Entity\Config\TimeoutConfig;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
-use Ennacx\SimpleCurl\Entity\RequestAttachment;
+use Ennacx\SimpleCurl\Config\AuthConfig;
+use Ennacx\SimpleCurl\Config\RedirectConfig;
+use Ennacx\SimpleCurl\Config\TimeoutConfig;
+use Ennacx\SimpleCurl\Option\CurlOptions;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
+use Ennacx\SimpleCurl\Request\Request;
+use Ennacx\SimpleCurl\Request\RequestAttachment;
 use PHPUnit\Framework\TestCase;
 
 /**

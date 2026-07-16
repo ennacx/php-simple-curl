@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
-use Ennacx\SimpleCurl\Entity\AcceptValueInterface;
-use Ennacx\SimpleCurl\Entity\QualifiedAcceptValue;
+use Ennacx\SimpleCurl\Request\AcceptValueInterface;
+use Ennacx\SimpleCurl\Request\QualifiedAcceptValue;
 
 /**
  * Common Accept header media ranges.

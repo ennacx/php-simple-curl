@@ -4,13 +4,13 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CURLFile;
-use Ennacx\SimpleCurl\Entity\Config\CurlOptionsApplierInterface;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\PreparedRequest;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
-use Ennacx\SimpleCurl\Static\HeaderUtils;
+use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\PreparedRequest;
+use Ennacx\SimpleCurl\Request\Request;
 use LogicException;
 
 /**

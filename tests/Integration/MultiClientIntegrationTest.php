@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Test\Integration;
 
 use Ennacx\SimpleCurl\Client\MultiClient;
-use Ennacx\SimpleCurl\Entity\CurlOptions;
-use Ennacx\SimpleCurl\Entity\Request;
+use Ennacx\SimpleCurl\Option\CurlOptions;
+use Ennacx\SimpleCurl\Request\Request;
 
 /**
  * MultiClientが複数のローカルHTTPリクエストを並列実行できることを検証する。
