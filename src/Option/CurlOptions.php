@@ -65,6 +65,28 @@ final readonly class CurlOptions {
     }
 
     /**
+     * Returns a new option set without the given config class.
+     *
+     * @template T of CurlOptionsApplierInterface
+     * @param class-string<T> $class Config class name.
+     */
+    public function without(string $class): self {
+
+        if(!$this->has($class)){
+            return $this;
+        }
+
+        $config = $this->config;
+        unset($config[$class]);
+
+        return new self(
+            captureHeaders: $this->captureHeaders,
+            captureBody:    $this->captureBody,
+            config:         $config,
+        );
+    }
+
+    /**
      * Checks whether a config class is set.
      *
      * @template T of CurlOptionsApplierInterface
@@ -100,27 +122,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Returns a new option set without the given config class.
-     *
-     * @template T of CurlOptionsApplierInterface
-     * @param  class-string<T> $class Config class name.
-     */
-    public function remove(string $class): self {
-
-        $config = $this->config;
-        unset($config[$class]);
-
-        return new self(
-            captureHeaders: $this->captureHeaders,
-            captureBody:    $this->captureBody,
-            config:         $config,
-        );
-    }
-
-    /**
      * Returns a new option set with response header capture enabled or disabled.
      *
-     * @param  boolean $capture Whether response headers should be captured.
+     * @param boolean $capture Whether response headers should be captured.
      */
     public function captureHeaders(bool $capture = true): self {
 
@@ -134,7 +138,7 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with response body capture enabled or disabled.
      *
-     * @param  boolean $capture Whether response body should be captured.
+     * @param boolean $capture Whether response body should be captured.
      */
     public function captureBody(bool $capture = true): self {
 
@@ -147,7 +151,6 @@ final readonly class CurlOptions {
 
     /**
      * Checks whether response headers should be captured.
-     *
      */
     public function isCapturingHeaders(): bool {
         return $this->captureHeaders;
@@ -155,7 +158,6 @@ final readonly class CurlOptions {
 
     /**
      * Checks whether response body should be captured.
-     *
      */
     public function isCapturingBody(): bool {
         return $this->captureBody;
@@ -166,7 +168,7 @@ final readonly class CurlOptions {
      *
      * The connection timeout is set to the same value.
      *
-     * @param  int $timeoutSec Timeout in seconds.
+     * @param int $timeoutSec Timeout in seconds.
      */
     public function timeout(int $timeoutSec): self {
 
@@ -178,8 +180,17 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with redirect following enabled.
      *
-     * @param  int     $maxRedirects Maximum number of redirects.
-     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
+     * Alias of `followRedirects()`.
+     */
+    public function followRedirect(): self {
+        return $this->followRedirects();
+    }
+
+    /**
+     * Returns a new option set with redirect following enabled.
+     *
+     * @param int     $maxRedirects Maximum number of redirects.
+     * @param boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
      */
     public function followRedirects(int $maxRedirects = 10, bool $autoReferer = true): self {
 
@@ -189,19 +200,9 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Returns a new option set with redirect following enabled.
-     *
-     * Alias of followRedirects().
-     *
-     */
-    public function followRedirect(): self {
-        return $this->followRedirects();
-    }
-
-    /**
      * Returns a new option set with a User-Agent header.
      *
-     * @param  string $userAgent User-Agent value.
+     * @param string $userAgent User-Agent value.
      */
     public function userAgent(string $userAgent): self {
 
@@ -216,7 +217,7 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with a Referer header.
      *
-     * @param  string $referer Referer value.
+     * @param string $referer Referer value.
      */
     public function referer(string $referer): self {
 
