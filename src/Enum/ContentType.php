@@ -41,7 +41,7 @@ enum ContentType : string implements AcceptValueInterface {
      * @param  boolean $returnArray Whether to return an associative header array.
      * @return array{'Content-Type': string}|string
      */
-    public function getContentTypeHeader(bool $returnArray = true): array|string {
+    public function toContentTypeHeader(bool $returnArray = true): array|string {
         return ($returnArray) ?
             ['Content-Type' => $this->value] :
             sprintf('Content-Type: %s', $this->value);
@@ -53,7 +53,7 @@ enum ContentType : string implements AcceptValueInterface {
      * @param float $quality Quality value between 0.0 and 1.0.
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
-        return new QualifiedAcceptValue($this, $quality);
+        return QualifiedAcceptValue::create($this, $quality);
     }
 
     /**

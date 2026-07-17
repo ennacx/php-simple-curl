@@ -93,7 +93,7 @@ final class RequestTest extends TestCase {
         $request = Request::get('https://example.com')
             ->accept(MediaRange::Any)
             ->accept(ContentType::Json->withQuality(0.9))
-            ->accept(new QualifiedAcceptValue('application/vnd.api+json', 0.75));
+            ->accept(QualifiedAcceptValue::create('application/vnd.api+json', 0.75));
 
         self::assertSame([
             '*/*',
@@ -170,7 +170,7 @@ final class RequestTest extends TestCase {
 
         $this->expectException(InvalidRequestException::class);
 
-        new QualifiedAcceptValue(ContentType::Json->withQuality(0.8), 0.5);
+        QualifiedAcceptValue::create(ContentType::Json->withQuality(0.8), 0.5);
     }
 
     /**
@@ -180,7 +180,7 @@ final class RequestTest extends TestCase {
 
         $this->expectException(InvalidRequestException::class);
 
-        new QualifiedAcceptValue('application/json;q=0.8', 0.5);
+        QualifiedAcceptValue::create('application/json;q=0.8', 0.5);
     }
 
     /**

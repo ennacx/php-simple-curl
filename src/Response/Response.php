@@ -9,6 +9,10 @@ use JsonException;
 
 /**
  * HTTP response returned after cURL execution.
+ *
+ * Raw execution results are exposed as readonly properties. Derived or
+ * normalized views, such as parsed headers and cURL error enums, are provided
+ * through helper methods.
  */
 final readonly class Response {
 
@@ -21,20 +25,20 @@ final readonly class Response {
     /**
      * Creates a response object.
      *
-     * @param int            $statusCode   HTTP status code.
-     * @param string[]       $headers      Raw response header lines.
-     * @param string|null    $body         Response body.
-     * @param array          $info         curl_getinfo() result.
-     * @param CurlError|null $error        cURL error. Null on successful transfer.
-     * @param string         $errorMessage cURL error message.
+     * @param int                  $statusCode   HTTP status code.
+     * @param string[]             $headers      Raw response header lines.
+     * @param string|null          $body         Raw response body.
+     * @param array<string, mixed> $info         Raw curl_getinfo() result.
+     * @param int|null             $error        Raw cURL error code. Null on successful transfer.
+     * @param string               $errorMessage Raw cURL error message.
      */
     public function __construct(
-        public int        $statusCode,
-        private array     $headers,
-        public ?string    $body,
-        public array      $info,
-        public ?CurlError $error        = null,
-        public string     $errorMessage = '',
+        public  int     $statusCode,
+        private array   $headers,
+        public  ?string $body,
+        public  array   $info,
+        public  ?int    $error        = null,
+        public  string  $errorMessage = '',
     ){
         $this->rawHeaders    = $headers;
         $this->parsedHeaders = self::parseHeaders($headers);
@@ -156,6 +160,20 @@ final readonly class Response {
         } catch(JsonException $e){
             throw new InvalidResponseException('Failed to decode JSON.', previous: $e);
         }
+    }
+
+    /**
+     * Returns the cURL error code as a CurlError enum.
+     *
+     * Unknown error codes are mapped to CurlError::OTHER.
+     */
+    public function toCurlError(): ?CurlError {
+
+        if($this->error === null){
+            return null;
+        }
+
+        return CurlError::tryFrom($this->error) ?? CurlError::OTHER;
     }
 
     /**

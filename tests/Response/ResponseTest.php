@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Test\Response;
 
+use Ennacx\SimpleCurl\Enum\CurlError;
 use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use Ennacx\SimpleCurl\Response\Response;
 use PHPUnit\Framework\TestCase;
@@ -45,17 +46,19 @@ final class ResponseTest extends TestCase {
      */
     public function testHeaderHelpersParseCaseInsensitiveHeaders(): void {
 
+        $responseHeader = [
+            'HTTP/1.1 200 OK',
+            'Content-Type: application/json',
+            'Set-Cookie: a=1',
+            'Set-Cookie: b=2',
+        ];
+
         $response = new Response(
-            statusCode: 200,
-            headers: [
-                'HTTP/1.1 200 OK',
-                'Content-Type: application/json',
-                'Set-Cookie: a=1',
-                'Set-Cookie: b=2',
-            ],
-            body: null,
-            info: [],
-            error: null,
+            statusCode:   200,
+            headers:      $responseHeader,
+            body:         null,
+            info:         [],
+            error:        null,
             errorMessage: '',
         );
 
@@ -117,5 +120,50 @@ final class ResponseTest extends TestCase {
         $this->expectExceptionMessage('Failed to decode JSON.');
 
         $response->json();
+    }
+
+    /**
+     * cURLの生エラーコードをCurlError enumへ変換できることを検証する。
+     */
+    public function testCurlErrorConvertsRawErrorCodeToEnum(): void {
+
+        $response = new Response(
+            statusCode:   0,
+            headers:      [],
+            body:         null,
+            info:         [],
+            error:        CURLE_COULDNT_CONNECT,
+            errorMessage: 'connection failed',
+        );
+
+        self::assertSame(CURLE_COULDNT_CONNECT, $response->error);
+        self::assertSame(CurlError::COULDNT_CONNECT, $response->toCurlError());
+    }
+
+    /**
+     * 未知のcURLエラーコードはOTHERへ変換されることを検証する。
+     */
+    public function testCurlErrorReturnsOtherForUnknownErrorCode(): void {
+
+        $response = new Response(
+            statusCode:   0,
+            headers:      [],
+            body:         null,
+            info:         [],
+            error:        99999,
+            errorMessage: 'unknown error',
+        );
+
+        self::assertSame(CurlError::OTHER, $response->toCurlError());
+    }
+
+    /**
+     * cURLエラーが無い場合はenum変換もnullになることを検証する。
+     */
+    public function testCurlErrorReturnsNullWhenRawErrorCodeIsNull(): void {
+
+        $response = new Response(200, [], null, [], null, '');
+
+        self::assertNull($response->toCurlError());
     }
 }

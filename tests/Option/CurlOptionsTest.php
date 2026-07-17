@@ -80,20 +80,34 @@ final class CurlOptionsTest extends TestCase {
     }
 
     /**
-     * remove()が元インスタンスを変更せず、指定Configを除外した新しいインスタンスを返すことを検証する。
+     * without()が元インスタンスを変更せず、指定Configを除外した新しいインスタンスを返すことを検証する。
      */
-    public function testRemoveReturnsNewInstanceWithoutSpecifiedConfig(): void {
+    public function testWithoutReturnsNewInstanceWithoutSpecifiedConfig(): void {
 
         $options = CurlOptions::create()
             ->timeout(10)
             ->followRedirects();
 
-        $removed = $options->remove(TimeoutConfig::class);
+        $removed = $options->without(TimeoutConfig::class);
 
         self::assertNotSame($options, $removed);
         self::assertTrue($options->has(TimeoutConfig::class));
         self::assertFalse($removed->has(TimeoutConfig::class));
         self::assertTrue($removed->has(RedirectConfig::class));
+    }
+
+    /**
+     * 存在しないConfigを除外しようとした場合は、同じインスタンスを返すことを検証する。
+     */
+    public function testWithoutReturnsSameInstanceWhenConfigIsMissing(): void {
+
+        $options = CurlOptions::create()
+            ->timeout(10);
+
+        $same = $options->without(RedirectConfig::class);
+
+        self::assertSame($options, $same);
+        self::assertTrue($same->has(TimeoutConfig::class));
     }
 
     /**

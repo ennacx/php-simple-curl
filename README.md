@@ -75,7 +75,7 @@ $response = $client->send($request);
 echo $response->statusCode;
 echo $response->body;
 
-foreach($response->headers as $headerLine){
+foreach($response->rawHeaders() as $headerLine){
     echo $headerLine . PHP_EOL;
 }
 
@@ -84,8 +84,9 @@ if($response->isSuccessful()){
 }
 
 if($response->error !== null){
-    echo $response->error->name;
+    echo $response->error;
     echo $response->errorMessage;
+    echo $response->toCurlError()?->name;
 }
 ```
 
@@ -570,7 +571,7 @@ Both clients return `Response` objects.
 ```php
 echo $response->statusCode;      // int
 echo $response->body;            // string|null
-print_r($response->headers);     // raw response header lines
+print_r($response->rawHeaders()); // raw response header lines
 print_r($response->headers());   // parsed response headers
 print_r($response->info);        // curl_getinfo() result
 
@@ -597,8 +598,9 @@ if($response->hasHeader('content-type')){
 $json = $response->json();
 
 if($response->error !== null){
-    echo $response->error->name;
+    echo $response->error;
     echo $response->errorMessage;
+    echo $response->toCurlError()?->name;
 }
 ```
 
@@ -614,7 +616,7 @@ Response status helpers:
 
 Header helpers:
 
-- `$response->headers` contains raw header lines.
+- `$response->rawHeaders()` returns raw header lines.
 - `$response->headers()` returns parsed headers keyed by lower-case header name.
 - `$response->header('content-type')` returns a header value, an array of values, or `null`.
 - `$response->hasHeader('content-type')` checks whether the header exists.
@@ -628,7 +630,7 @@ JSON helper:
 
 PHP Simple cURL throws library-specific exceptions for invalid API usage and execution setup failures.
 
-Network-level cURL errors such as connection failures or timeouts are returned as `Response::$error` and `Response::$errorMessage` when a response object can be created. They are not thrown by default.
+Network-level cURL errors such as connection failures or timeouts are returned as `Response::$error` and `Response::$errorMessage` when a response object can be created. They are not thrown by default. Use `Response::toCurlError()` when you want the raw cURL error code as a `CurlError` enum.
 
 ```php
 <?php
@@ -658,6 +660,7 @@ Exception classes:
 - `captureHeaders` controls whether response header lines are available through `Response::rawHeaders()` and `Response::headers()`.
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
 - `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::getId()`.
+- API naming follows a small convention: immutable value objects use `with()` / `without()`, in-place helpers use `add()` / `remove()`, required lookups use `get()`, optional lookups use `find()`, existence checks use `has()`, full list access uses `all()`, and conversions use `toXxx()`.
 
 ## License
 

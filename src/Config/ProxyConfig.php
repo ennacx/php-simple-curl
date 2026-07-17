@@ -44,27 +44,6 @@ final readonly class ProxyConfig implements CurlOptionsApplierInterface {
     }
 
     /**
-     * @inheritDoc
-     */
-    public function applyToCurlOptions(array &$options, array &$headers): void {
-
-        $options[CURLOPT_PROXY]     = $this->address;
-        $options[CURLOPT_PROXYPORT] = $this->port;
-        $options[CURLOPT_PROXYTYPE] = $this->protocol->toCurlConst();
-
-        if($this->httpTunnel !== null){
-            $options[CURLOPT_HTTPPROXYTUNNEL] = $this->httpTunnel;
-        }
-
-        if($this->authMethod !== ProxyAuth::NONE){
-            $options[CURLOPT_PROXYAUTH] = $this->authMethod->toCurlConst();
-            if($this->user !== null && $this->password !== null){
-                $options[CURLOPT_PROXYUSERPWD] = sprintf('%s:%s', $this->user, $this->password);
-            }
-        }
-    }
-
-    /**
      * Creates a proxy config from a ProxyProtocol case name.
      *
      * Example: ProxyConfig::http('proxy.example.com').
@@ -86,14 +65,35 @@ final readonly class ProxyConfig implements CurlOptionsApplierInterface {
         }
 
         return new self(
-            address: trim($address),
-            port: $args['port'] ?? $args[1] ?? $protocol->defaultPort(),
-            protocol: $protocol,
+            address:    trim($address),
+            port:       $args['port'] ?? $args[1] ?? $protocol->defaultPort(),
+            protocol:   $protocol,
             httpTunnel: $args['httpTunnel'] ?? $args[2] ?? null,
             authMethod: $args['authMethod'] ?? $args[3] ?? ProxyAuth::NONE,
-            user: $args['user'] ?? $args[4] ?? null,
-            password: $args['password'] ?? $args[5] ?? null,
+            user:       $args['user'] ?? $args[4] ?? null,
+            password:   $args['password'] ?? $args[5] ?? null,
         );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function applyToCurlOptions(array &$options, array &$headers): void {
+
+        $options[CURLOPT_PROXY]     = $this->address;
+        $options[CURLOPT_PROXYPORT] = $this->port;
+        $options[CURLOPT_PROXYTYPE] = $this->protocol->toCurlConst();
+
+        if($this->httpTunnel !== null){
+            $options[CURLOPT_HTTPPROXYTUNNEL] = $this->httpTunnel;
+        }
+
+        if($this->authMethod !== ProxyAuth::NONE){
+            $options[CURLOPT_PROXYAUTH] = $this->authMethod->toCurlConst();
+            if($this->user !== null && $this->password !== null){
+                $options[CURLOPT_PROXYUSERPWD] = sprintf('%s:%s', $this->user, $this->password);
+            }
+        }
     }
 
     /**
