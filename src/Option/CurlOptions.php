@@ -249,6 +249,8 @@ final readonly class CurlOptions {
      *
      * @template T of CurlOptionsApplierInterface
      * @return list<T>
+     *
+     * @internal
      */
     public function getConfig(): array {
 

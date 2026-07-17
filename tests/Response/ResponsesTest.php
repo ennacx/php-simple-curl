@@ -136,7 +136,7 @@ final class ResponsesTest extends TestCase {
             headers:      [],
             body:         null,
             info:         [],
-            curlError:    null,
+            error:        null,
             errorMessage: '',
         );
     }
