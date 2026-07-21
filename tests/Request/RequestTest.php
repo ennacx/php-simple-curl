@@ -340,12 +340,33 @@ final class RequestTest extends TestCase {
 
         try{
             $request = Request::post('https://example.com/upload')
-                ->attachFile('file', $path, allowOverwrite: false);
+                ->attachFile($path, name: 'file', allowOverwrite: false);
 
             self::assertCount(1, $request->getAttachmentEntries());
             self::assertSame('file', $request->getAttachmentEntries()[0]->attachment->name);
             self::assertSame($path, $request->getAttachmentEntries()[0]->attachment->path);
             self::assertFalse($request->getAttachmentEntries()[0]->allowOverwrite);
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * attachFile()でnameを省略した場合はファイル名からフィールド名を補完することを検証する。
+     */
+    public function testAttachFileUsesFilenameAsDefaultFieldName(): void {
+
+        $path = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'simple-curl-avatar.txt';
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $request = Request::post('https://example.com/upload')
+                ->attachFile($path);
+
+            self::assertCount(1, $request->getAttachmentEntries());
+            self::assertSame('simple-curl-avatar', $request->getAttachmentEntries()[0]->attachment->name);
+            self::assertSame($path, $request->getAttachmentEntries()[0]->attachment->path);
+            self::assertTrue($request->getAttachmentEntries()[0]->allowOverwrite);
         } finally{
             unlink($path);
         }

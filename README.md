@@ -374,7 +374,14 @@ Use `attachFile()` when the default filename and MIME handling are enough:
 
 ```php
 $request = Request::post('https://api.example.com/upload')
-    ->attachFile('file', __DIR__ . '/avatar.png');
+    ->attachFile(__DIR__ . '/avatar.png');
+```
+
+The multipart field name defaults to the local filename without extension. Pass `name` when the API expects a specific field name:
+
+```php
+$request = Request::post('https://api.example.com/upload')
+    ->attachFile(__DIR__ . '/avatar.png', name: 'file');
 ```
 
 Attachments can be combined with `form()` fields only. JSON or raw body payloads cannot be mixed with file attachments.

@@ -519,12 +519,15 @@ final class Request {
     /**
      * Returns a new request with a multipart/form-data file attachment.
      *
-     * @param  string  $name           Multipart field name.
-     * @param  string  $path           Local file path.
-     * @param  boolean $allowOverwrite Whether this attachment may overwrite a field with the same name.
+     * @param  string      $path           Local file path.
+     * @param  string|null $name           Multipart field name.
+     * @param  boolean     $allowOverwrite Whether this attachment may overwrite a field with the same name.
      * @throws RequestBodyException
      */
-    public function attachFile(string $name, string $path, bool $allowOverwrite = true): self {
+    public function attachFile(string $path, ?string $name = null, bool $allowOverwrite = true): self {
+
+        $name ??= pathinfo($path, PATHINFO_FILENAME);
+
         return $this->attach(new RequestAttachment($name, $path), $allowOverwrite);
     }
 
@@ -540,7 +543,6 @@ final class Request {
     /**
      * URLとして利用できる最小限の形式か検証する。
      *
-     * @param  string $url
      * @throws InvalidRequestException
      */
     private static function validateUrl(string $url): string {
@@ -591,8 +593,6 @@ final class Request {
 
     /**
      * メソッド名からCurlMethodを取得する。
-     *
-     * @param  string $method
      */
     private static function findCurlMethod(string $method): ?CurlMethod {
 
@@ -608,8 +608,6 @@ final class Request {
 
     /**
      * Acceptヘッダー値から重複判定用のメディアタイプを取り出す。
-     *
-     * @param  string $acceptValue
      */
     private static function normalizeAcceptKey(string $acceptValue): string {
         return strtolower(trim(explode(';', $acceptValue, 2)[0]));
