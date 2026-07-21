@@ -34,7 +34,7 @@ The library favors small value objects, immutable options, and predictable respo
 ## Installation
 
 ```bash
-composer require ennacx/php-simple-curl:^2.0@beta
+composer require ennacx/php-simple-curl:^2.0@rc
 ```
 
 ## Core Flow
