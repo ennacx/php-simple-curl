@@ -521,6 +521,7 @@ Config objects own their own cURL option mapping. The client passes them through
 ### Client
 
 Use client settings to add `User-Agent` and `Referer` headers through `CurlOptions`.
+Pass only the header value, not a full header line.
 
 ```php
 $options = CurlOptions::create()
@@ -566,6 +567,8 @@ use Ennacx\SimpleCurl\Config\AuthConfig;
 $basic  = AuthConfig::basic('user', 'password');
 $bearer = AuthConfig::bearer('token');
 ```
+
+`AuthConfig::bearer()` expects the token only. Do not include `Authorization:` or the `Bearer` scheme.
 
 ### Timeout
 
