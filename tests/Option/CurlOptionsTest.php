@@ -154,6 +154,16 @@ final class CurlOptionsTest extends TestCase {
     }
 
     /**
+     * User-Agentヘッダー行そのものを値として渡した場合に不正として扱うことを検証する。
+     */
+    public function testUserAgentRejectsHeaderLine(): void {
+
+        $this->expectException(InvalidConfigurationException::class);
+
+        CurlOptions::create()->userAgent('User-Agent: php-simple-curl-test/1.0');
+    }
+
+    /**
      * 空のRefererを不正として扱うことを検証する。
      */
     public function testRefererRejectsEmptyValue(): void {
@@ -161,5 +171,15 @@ final class CurlOptionsTest extends TestCase {
         $this->expectException(InvalidConfigurationException::class);
 
         CurlOptions::create()->referer(' ');
+    }
+
+    /**
+     * Refererヘッダー行そのものを値として渡した場合に不正として扱うことを検証する。
+     */
+    public function testRefererRejectsHeaderLine(): void {
+
+        $this->expectException(InvalidConfigurationException::class);
+
+        CurlOptions::create()->referer('Referer : https://example.com/from');
     }
 }

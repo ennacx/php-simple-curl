@@ -22,12 +22,12 @@ final readonly class ClientConfig implements CurlOptionsApplierInterface {
         public ?string $userAgent = null,
         public ?string $referer   = null,
     ){
-        if($this->userAgent !== null && trim($this->userAgent) === ''){
-            throw new InvalidConfigurationException('User-Agent must not be empty.');
+        if($this->userAgent !== null){
+            HeaderUtils::assertHeaderValue('User-Agent', $this->userAgent);
         }
 
-        if($this->referer !== null && trim($this->referer) === ''){
-            throw new InvalidConfigurationException('Referer must not be empty.');
+        if($this->referer !== null){
+            HeaderUtils::assertHeaderValue('Referer', $this->referer);
         }
     }
 

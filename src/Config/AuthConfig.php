@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl\Config;
 
 use Ennacx\SimpleCurl\Enum\CurlAuth;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 
 /**
  * HTTP authentication configuration.
@@ -59,6 +60,12 @@ final readonly class AuthConfig implements CurlOptionsApplierInterface {
         $token = trim($token);
         if($token === ''){
             throw new InvalidConfigurationException('Bearer token must not be empty.');
+        }
+
+        HeaderUtils::assertHeaderValue('Authorization', $token);
+
+        if(preg_match('/^Bearer\s+/i', $token) === 1){
+            throw new InvalidConfigurationException('Bearer token must not include the authorization scheme.');
         }
 
         return new self(CurlAuth::NONE, bearerToken: $token);
