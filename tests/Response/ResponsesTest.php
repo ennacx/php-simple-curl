@@ -104,6 +104,36 @@ final class ResponsesTest extends TestCase {
     }
 
     /**
+     * filter()は条件に一致するResponseだけを保持した新しいコレクションを返すことを検証する。
+     */
+    public function testFilterReturnsNewCollectionWithMatchingResponses(): void {
+
+        $ok = self::response(200);
+        $notFound = self::response(404);
+        $serverError = self::response(500);
+        $responses = new Responses([
+            'request-ok' => $ok,
+            'request-not-found' => $notFound,
+            'request-server-error' => $serverError,
+        ]);
+
+        $errors = $responses->filter(
+            static fn(Response $response, string $requestId): bool => str_starts_with($requestId, 'request-') && $response->isError(),
+        );
+
+        self::assertNotSame($responses, $errors);
+        self::assertSame([
+            'request-not-found' => $notFound,
+            'request-server-error' => $serverError,
+        ], $errors->all());
+        self::assertSame([
+            'request-ok' => $ok,
+            'request-not-found' => $notFound,
+            'request-server-error' => $serverError,
+        ], $responses->all());
+    }
+
+    /**
      * Array write operations are rejected.
      */
     public function testArrayWriteOperationsThrowException(): void {

@@ -70,6 +70,17 @@ final readonly class Responses implements ArrayAccess, Countable, IteratorAggreg
     }
 
     /**
+     * Returns a new collection containing only responses accepted by the callback.
+     *
+     * The callback receives the response and its request ID.
+     *
+     * @param callable(Response, string): bool $callback Filter callback.
+     */
+    public function filter(callable $callback): self {
+        return new self(array_filter($this->items, $callback, ARRAY_FILTER_USE_BOTH));
+    }
+
+    /**
      * @inheritDoc
      */
     public function offsetExists(mixed $offset): bool {

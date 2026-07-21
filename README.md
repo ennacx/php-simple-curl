@@ -8,6 +8,7 @@
 
 A small PHP 8.2+ cURL wrapper that builds typed request objects, executes them through single or multi clients, and returns response objects.
 
+
 ## Philosophy
 
 PHP's cURL extension is powerful, but its option-based API can become hard to read as requests grow.
@@ -21,12 +22,14 @@ PHP Simple cURL keeps the core pieces explicit:
 
 The library favors small value objects, immutable options, and predictable response helpers over a large fluent client with hidden state.
 
+
 ## Requirements
 
 - PHP 8.2 or later
 - `ext-curl`
 - `ext-openssl`
 - Composer 2.x
+
 
 ## Installation
 
@@ -42,6 +45,7 @@ composer require ennacx/php-simple-curl:^2.0@beta
 4. Read the returned `Response` object.
 
 You may pass either a plain `Request` or the object returned by `Request::prepare()` to client `send*()` methods. When a plain `Request` is passed, the client prepares it internally with default `CurlOptions`.
+
 
 ## Single Request
 
@@ -90,6 +94,7 @@ if($response->error !== null){
 }
 ```
 
+
 ## Multiple Requests
 
 `MultiClient::sendAll()` executes multiple requests with cURL multi and returns a `Responses` collection keyed by each request ID.
@@ -132,6 +137,7 @@ foreach($responses as $requestId => $response){
     echo $requestId . ': ' . $response->statusCode . PHP_EOL;
 }
 ```
+
 
 ## Request
 
@@ -385,6 +391,7 @@ Supported request factory methods:
 - `Request::head()`
 - `Request::options()`
 
+
 ## Curl Options
 
 `CurlOptions` describes how cURL should execute the request. It owns timeout, SSL, proxy, auth, redirect, and response capture settings.
@@ -460,6 +467,7 @@ $options = CurlOptions::create()
 
 Raw options are applied after generated options and config objects. By default, they can overwrite existing cURL options. Pass `overwrite: false` to keep generated values and only add missing options.
 
+
 ## Sending Requests
 
 Clients accept either `Request` or `PreparedRequest`.
@@ -481,17 +489,23 @@ $responses = $multiClient->sendAll($requestA, $requestB);
 
 `Responses` implements `ArrayAccess`, so you can also read responses with `$responses[$request->getId()]`.
 The collection is read-only; write and unset operations throw `ImmutableCollectionException`.
+Use `filter()` when you want a new `Responses` collection containing only matching responses.
 
 ```php
-$response = $responses->get($requestA->getId());
+$response     = $responses->get($requestA->getId());
 $sameResponse = $responses[$requestA->getId()]; // array-style
 
 $maybeResponse = $responses->find($requestB->getId());
+
+$errors = $responses->filter(
+    static fn($response, string $requestId): bool => $response->isError() && $requestId !== '',
+);
 
 foreach($responses as $requestId => $response){
     echo $response->statusCode;
 }
 ```
+
 
 ## Config Objects
 
@@ -564,16 +578,17 @@ $redirect   = RedirectConfig::enabled(maxRedirects: 10, autoReferer: true);
 $noRedirect = RedirectConfig::disabled();
 ```
 
+
 ## Response
 
 Both clients return `Response` objects.
 
 ```php
-echo $response->statusCode;      // int
-echo $response->body;            // string|null
+echo $response->statusCode;       // int
+echo $response->body;             // string|null
 print_r($response->rawHeaders()); // raw response header lines
-print_r($response->headers());   // parsed response headers
-print_r($response->info);        // curl_getinfo() result
+print_r($response->headers());    // parsed response headers
+print_r($response->info);         // curl_getinfo() result
 
 if($response->isOk()){
     // HTTP 200 and no cURL error.
@@ -604,7 +619,7 @@ if($response->error !== null){
 }
 ```
 
-Response status helpers:
+### Response status helpers
 
 - `isInformational()` returns true for HTTP `1xx`.
 - `isOk()` returns true for HTTP `200` with no cURL error.
@@ -614,17 +629,18 @@ Response status helpers:
 - `isServerError()` returns true for HTTP `5xx`.
 - `isError()` returns true for a cURL error, HTTP `4xx`, or HTTP `5xx`.
 
-Header helpers:
+### Header helpers
 
 - `$response->rawHeaders()` returns raw header lines.
 - `$response->headers()` returns parsed headers keyed by lower-case header name.
 - `$response->header('content-type')` returns a header value, an array of values, or `null`.
 - `$response->hasHeader('content-type')` checks whether the header exists.
 
-JSON helper:
+### JSON helper
 
 - `$response->json()` decodes `Response::$body` as JSON.
 - `$response->json(throw: false)` returns `null` when the body is empty.
+
 
 ## Exceptions
 
@@ -644,7 +660,7 @@ try{
 }
 ```
 
-Exception classes:
+### Exception classes
 
 - `InvalidRequestException` is thrown when the request itself is invalid, such as an invalid URL, header, query parameter, or `Accept` value.
 - `RequestBodyException` is thrown when the request body cannot be built, such as invalid JSON, unreadable body files, invalid attachments, or unsupported body and attachment combinations.
@@ -654,6 +670,7 @@ Exception classes:
 - `ResponseNotFoundException` is thrown when a response is not found in a `Responses` collection.
 - `ImmutableCollectionException` is thrown when an immutable collection is modified.
 
+
 ## Notes
 
 - `captureBody` controls whether the response body is stored in `Response::$body`.
@@ -661,6 +678,7 @@ Exception classes:
 - Internally, `CURLOPT_RETURNTRANSFER` is enabled when either body or headers need to be captured.
 - `MultiClient::sendAll()` returns a `Responses` collection, keyed by `Request::getId()`.
 - API naming follows a small convention: immutable value objects use `with()` / `without()`, in-place helpers use `add()` / `remove()`, required lookups use `get()`, optional lookups use `find()`, existence checks use `has()`, full list access uses `all()`, and conversions use `toXxx()`.
+
 
 ## License
 
