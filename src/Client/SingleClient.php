@@ -50,7 +50,7 @@ final readonly class SingleClient {
 
         // Requestの変換
         if($preparedRequest instanceof Request){
-            $preparedRequest = $preparedRequest->prepare(options: null);
+            $preparedRequest = $preparedRequest->prepare();
         }
 
         // `CURLOPT_*` の設定

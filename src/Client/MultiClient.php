@@ -48,7 +48,7 @@ final readonly class MultiClient {
 
         // Requestの変換
         $preparedRequests = array_map(function(Request|PreparedRequest $preparedRequest): PreparedRequest {
-            return ($preparedRequest instanceof Request) ? $preparedRequest->prepare(options: null) : $preparedRequest;
+            return ($preparedRequest instanceof Request) ? $preparedRequest->prepare() : $preparedRequest;
         }, $preparedRequests);
 
         $cmh = curl_multi_init();

@@ -6,17 +6,17 @@ namespace Ennacx\SimpleCurl\Request;
 use Ennacx\SimpleCurl\Option\CurlOptions;
 
 /**
- * A request prepared with optional cURL execution options.
+ * A request prepared with cURL execution options.
  */
 final readonly class PreparedRequest {
 
     /**
      * コンストラクタ。
      *
-     * @param Request          $request 送信するHTTPリクエスト
-     * @param CurlOptions|null $options 実行オプション。nullの場合はデフォルト設定で実行する
+     * @param Request     $request 送信するHTTPリクエスト
+     * @param CurlOptions $options 実行オプション
      */
-    private function __construct(private Request $request, private ?CurlOptions $options = null){
+    private function __construct(private Request $request, private CurlOptions $options){
     }
 
     /**
@@ -26,7 +26,7 @@ final readonly class PreparedRequest {
      * @param CurlOptions|null $options Execution options.
      */
     public static function create(Request $request, ?CurlOptions $options = null): self {
-        return new self($request, $options);
+        return new self($request, $options ?? CurlOptions::create());
     }
 
     /**
@@ -39,7 +39,7 @@ final readonly class PreparedRequest {
     /**
      * Returns execution options.
      */
-    public function getOptions(): ?CurlOptions {
+    public function getOptions(): CurlOptions {
         return $this->options;
     }
 }

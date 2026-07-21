@@ -529,6 +529,6 @@ final class RequestTest extends TestCase {
         $preparedRequest = $request->prepare();
 
         self::assertSame($request, $preparedRequest->getRequest());
-        self::assertNull($preparedRequest->getOptions());
+        self::assertInstanceOf(CurlOptions::class, $preparedRequest->getOptions());
     }
 }

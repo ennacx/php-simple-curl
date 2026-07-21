@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Ennacx\SimpleCurl\Factory;
 
 use CurlHandle;
-use Ennacx\SimpleCurl\Option\CurlOptions;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
@@ -32,7 +31,7 @@ final class ResponseFactory {
             throw new CurlExecutionException('Invalid curl info');
         }
 
-        $options = $preparedRequest->getOptions() ?? CurlOptions::create();
+        $options = $preparedRequest->getOptions();
         $errno   = $resultCode ?? curl_errno($ch);
 
         // ヘッダーとボディを分割してそれぞれ格納

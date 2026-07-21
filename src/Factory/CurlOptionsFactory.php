@@ -8,7 +8,6 @@ use Ennacx\SimpleCurl\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
-use Ennacx\SimpleCurl\Option\CurlOptions;
 use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
@@ -29,7 +28,7 @@ final class CurlOptionsFactory {
     public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
         $request     = $preparedRequest->getRequest();
-        $curlOptions = $preparedRequest->getOptions() ?? CurlOptions::create();
+        $curlOptions = $preparedRequest->getOptions();
 
         // 基本設定
         $options = [
