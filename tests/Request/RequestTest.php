@@ -195,6 +195,28 @@ final class RequestTest extends TestCase {
     }
 
     /**
+     * Acceptヘッダー値に改行が含まれる場合に例外を投げることを検証する。
+     */
+    public function testAcceptThrowsExceptionForLineBreaks(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')
+            ->accept("application/json\r\nX-Injected: yes");
+    }
+
+    /**
+     * accepts()経由のAcceptヘッダー値に改行が含まれる場合に例外を投げることを検証する。
+     */
+    public function testAcceptsThrowsExceptionForLineBreaks(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')
+            ->accepts('application/json', "text/html\nX-Injected: yes");
+    }
+
+    /**
      * URLに含まれる既存クエリがRequest生成時にqueryParamsへ分離されることを検証する。
      */
     public function testExistingQueryStringIsParsedOnCreate(): void {
@@ -266,6 +288,46 @@ final class RequestTest extends TestCase {
         $this->expectException(InvalidRequestException::class);
 
         Request::get('https://example.com')->headers(['' => 'value']);
+    }
+
+    /**
+     * ヘッダー名に改行が含まれる場合に例外を投げることを検証する。
+     */
+    public function testHeaderNameWithLineBreakThrowsException(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')->headers(["X-Test\nInjected" => 'value']);
+    }
+
+    /**
+     * ヘッダー名にコロンが含まれる場合に例外を投げることを検証する。
+     */
+    public function testHeaderNameWithColonThrowsException(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')->headers(['X-Test: Injected' => 'value']);
+    }
+
+    /**
+     * ヘッダー値に改行が含まれる場合に例外を投げることを検証する。
+     */
+    public function testHeaderValueWithLineBreakThrowsException(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')->headers(['X-Test' => "value\r\nInjected: yes"]);
+    }
+
+    /**
+     * nullのヘッダー値を不正として扱うことを検証する。
+     */
+    public function testNullHeaderValueThrowsException(): void {
+
+        $this->expectException(InvalidRequestException::class);
+
+        Request::get('https://example.com')->headers(['X-Test' => null]);
     }
 
     /**

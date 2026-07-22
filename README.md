@@ -231,6 +231,8 @@ $request = Request::get('https://api.example.com/users')
 
 An explicitly provided `Accept` header is kept and is not overwritten by `accept()` or `accepts()`.
 
+Header names, header values, and `Accept` values must not contain line breaks. Invalid header or `Accept` input throws `InvalidRequestException`.
+
 ### Query Parameters
 
 `Request` can manage GET query parameters separately from the base URL.
@@ -489,6 +491,8 @@ $options = CurlOptions::create()
 
 Raw options are applied after generated options and config objects. By default, they can overwrite existing cURL options. Pass `overwrite: false` to keep generated values and only add missing options.
 
+Raw options are a low-level escape hatch. Pass only trusted values, especially when setting security-sensitive options such as SSL verification, redirects, protocols, or custom headers.
+
 
 ## Sending Requests
 
@@ -694,6 +698,15 @@ try{
 - `InvalidResponseException` is thrown when response data cannot be interpreted, such as JSON decode failure from `Response::json()`.
 - `ResponseNotFoundException` is thrown when a response is not found in a `Responses` collection.
 - `ImmutableCollectionException` is thrown when an immutable collection is modified.
+
+
+## Security Notes
+
+PHP Simple cURL is designed primarily for HTTP and HTTPS requests, but `Request` does not currently restrict URL schemes to `http` and `https`.
+
+If request URLs are built from external input, validate allowed schemes, hosts, ports, and network ranges in your application before creating a `Request`. This is especially important to avoid SSRF-style issues or unintended access to local/internal resources.
+
+`RawCurlOptions` is a low-level escape hatch. Options passed through `raw()` are applied directly to cURL and may override generated options, including headers, SSL verification, redirects, protocols, and other security-sensitive behavior. Pass only trusted values.
 
 
 ## Notes

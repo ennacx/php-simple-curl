@@ -246,6 +246,8 @@ final class Request {
 
         if($acceptValue === ''){
             throw new InvalidRequestException('Accept type must not be empty.');
+        } else if(self::containsLineBreaks($acceptValue)){
+            throw new InvalidRequestException('Accept type must not contain line breaks.');
         }
 
         $acceptKey = self::normalizeAcceptKey($acceptValue);
@@ -561,6 +563,13 @@ final class Request {
     }
 
     /**
+     * 引数内に改行コードを含んでいるか検証する。
+     */
+    private static function containsLineBreaks(string $value): bool {
+        return (preg_match('/\r\n|\r|\n/', $value) === 1);
+    }
+
+    /**
      * 送信ヘッダーを検証し、文字列値の連想配列へ正規化する。
      *
      * @param  array<string, mixed> $headers
@@ -576,13 +585,19 @@ final class Request {
             }
 
             $headerValue = Utils::toString($value);
-            if($headerValue === false){
+            if($headerValue === false || $headerValue === null){
                 throw new InvalidRequestException(sprintf('Request header "%s" has an invalid value.', $name));
+            } else if($headerValue === ''){
+                throw new InvalidRequestException(sprintf('Request header "%s" must not be empty.', $name));
+            } else if(self::containsLineBreaks($headerValue)){
+                throw new InvalidRequestException(sprintf('Request header "%s" must not contain line breaks.', $name));
             }
 
             $headerName = trim($name);
-            if($headerValue === ''){
-                throw new InvalidRequestException(sprintf('Request header "%s" must not be empty.', $headerName));
+            if(self::containsLineBreaks($headerName)){
+                throw new InvalidRequestException(sprintf('Request header "%s" must not contain line breaks.', $headerName));
+            } else if(str_contains($headerName, ':')){
+                throw new InvalidRequestException(sprintf('Request header "%s" must not contain ":".', $headerName));
             }
 
             $ret[$headerName] = $headerValue;
