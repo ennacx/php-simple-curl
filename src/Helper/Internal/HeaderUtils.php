@@ -72,13 +72,20 @@ final class HeaderUtils {
             throw new InvalidConfigurationException(sprintf('%s header value must not be empty.', $name));
         }
 
-        if(str_contains($value, "\r") || str_contains($value, "\n")){
+        if(self::containsLineBreaks($value)){
             throw new InvalidConfigurationException(sprintf('%s header value must not contain line breaks.', $name));
         }
 
         if(self::startsWithHeaderName($trimmedValue, $name)){
             throw new InvalidConfigurationException(sprintf('%s header value must not include the header name.', $name));
         }
+    }
+
+    /**
+     * 引数内に改行コードを含んでいるか検証する。
+     */
+    public static function containsLineBreaks(string $value): bool {
+        return (preg_match('/\r\n|\r|\n/', $value) === 1);
     }
 
     /**
