@@ -37,6 +37,21 @@ The library favors small value objects, immutable options, and predictable respo
 composer require ennacx/php-simple-curl:^2.0@rc
 ```
 
+## Release Candidate Policy
+
+Release Candidate versions are considered API complete.
+
+During the RC phase:
+
+- No breaking changes.
+- No additions to the public API.
+- No changes to public method signatures or return types.
+- Only bug fixes, documentation improvements, tests, and internal implementation refinements are allowed.
+
+This policy helps ensure that the stable release is a true continuation of the RC series.
+
+> 💡 **Refine, don't redefine.**
+
 ## Core Flow
 
 1. Create a `Request` with the HTTP method, URL, and request headers.
