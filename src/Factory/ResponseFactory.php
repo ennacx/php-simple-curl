@@ -47,7 +47,7 @@ final class ResponseFactory {
                 }
 
                 // ヘッダーとボディを分割・格納
-                $headers = $this->parseHeaders(substr($raw, 0, $headerSize));
+                $headers = $this->parseRawHeaders(substr($raw, 0, $headerSize));
                 if($options->isCapturingBody()){
                     $body = substr($raw, $headerSize);
                 }
@@ -76,7 +76,7 @@ final class ResponseFactory {
      * @param  string $rawHeaders cURLが返したレスポンスヘッダー文字列
      * @return string[]
      */
-    private function parseHeaders(string $rawHeaders): array {
+    private function parseRawHeaders(string $rawHeaders): array {
 
         $headers = [];
         foreach(preg_split('/\r\n|\r|\n/', trim($rawHeaders)) ?: [] as $line){

@@ -38,7 +38,7 @@ final readonly class CurlOptions {
      * @param CurlOptionsApplierInterface ...$config Config objects to apply.
      */
     public static function create(CurlOptionsApplierInterface ...$config): self {
-        return (new self())->with(...$config);
+        return (new self)->with(...$config);
     }
 
     /**

@@ -20,9 +20,29 @@ use Traversable;
 final readonly class Responses implements ArrayAccess, Countable, IteratorAggregate {
 
     /**
-     * @param array<string, Response> $items
+     * @var array<string, Response> $items
      */
-    public function __construct(private array $items){
+    private array $items;
+
+    /**
+     * Creates a responses collection.
+     *
+     * @param  array<string, Response> $items Responses keyed by request ID.
+     * @throws InvalidResponseException
+     */
+    public function __construct(array $items){
+
+        foreach($items as $id => $response){
+            if(!is_string($id)){
+                throw new InvalidResponseException('Response collection keys must be strings.');
+            }
+
+            if(!($response instanceof Response)){
+                throw new InvalidResponseException('Response collection values must be Response instances.');
+            }
+        }
+
+        $this->items = $items;
     }
 
     /**

@@ -127,4 +127,25 @@ final class Utils {
             throw new SimpleCurlException('UUIDv4 generation failed.', previous: $e);
         }
     }
+
+    /**
+     * UUIDを簡易的に検証する。
+     *
+     * @param  string   $uuid    UUID
+     * @param  int|null $version 1~9, nullは指定無し扱い
+     */
+    public static function isUuid(string $uuid, ?int $version = null): bool {
+
+        if($version !== null && ($version <= 0 || $version >= 10)){
+            $version = null;
+        }
+
+        $pattern = sprintf(
+            '/^[0-9a-f]{8}-[0-9a-f]{4}-%s[0-9a-f]{%d}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
+            $version ?? '',
+            ($version !== null) ? 3 : 4
+        );
+
+        return (preg_match($pattern, $uuid) === 1);
+    }
 }

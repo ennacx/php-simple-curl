@@ -104,6 +104,30 @@ final class ResponsesTest extends TestCase {
     }
 
     /**
+     * コレクションのキーが文字列でない場合に例外を投げることを検証する。
+     */
+    public function testConstructorThrowsExceptionForNonStringKey(): void {
+
+        $this->expectException(InvalidResponseException::class);
+
+        new Responses([
+            self::response(200),
+        ]);
+    }
+
+    /**
+     * コレクションの値がResponseでない場合に例外を投げることを検証する。
+     */
+    public function testConstructorThrowsExceptionForNonResponseValue(): void {
+
+        $this->expectException(InvalidResponseException::class);
+
+        new Responses([
+            'request-a' => 'not response',
+        ]);
+    }
+
+    /**
      * filter()は条件に一致するResponseだけを保持した新しいコレクションを返すことを検証する。
      */
     public function testFilterReturnsNewCollectionWithMatchingResponses(): void {
@@ -131,6 +155,23 @@ final class ResponsesTest extends TestCase {
             'request-not-found' => $notFound,
             'request-server-error' => $serverError,
         ], $responses->all());
+    }
+
+    /**
+     * filter()の結果が空でもコレクションとして返ることを検証する。
+     */
+    public function testFilterAllowsEmptyCollection(): void {
+
+        $responses = new Responses([
+            'request-ok' => self::response(200),
+        ]);
+
+        $filtered = $responses->filter(
+            static fn(Response $response): bool => $response->isError(),
+        );
+
+        self::assertSame([], $filtered->all());
+        self::assertCount(0, $filtered);
     }
 
     /**

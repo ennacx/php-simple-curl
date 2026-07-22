@@ -58,8 +58,7 @@ final class CurlOptionsFactory {
         // ユーザーがContent-Typeを指定していない場合は既定値を付与する
         else if(!in_array($request->getContentType(), [null, ContentType::MultipartFormData], true)){
             if(!HeaderUtils::has($headers, 'Content-Type')){
-                $headers['Content-Type'] =
-                    $request->getContentType()?->value ??
+                $headers['Content-Type'] = $request->getContentType()?->value ??
                     throw new InvalidRequestException('Invalid Content-Type');
             }
         }

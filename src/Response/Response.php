@@ -34,14 +34,14 @@ final readonly class Response {
      */
     public function __construct(
         public  int     $statusCode,
-        private array   $headers,
+                array   $headers,
         public  ?string $body,
         public  array   $info,
         public  ?int    $error        = null,
         public  string  $errorMessage = '',
     ){
         $this->rawHeaders    = $headers;
-        $this->parsedHeaders = self::parseHeaders($headers);
+        $this->parsedHeaders = self::parseRawHeaders(rawHeaders: $headers);
     }
 
     /**
@@ -182,7 +182,7 @@ final readonly class Response {
      * @param  string[] $rawHeaders
      * @return array<string, string|string[]>
      */
-    private static function parseHeaders(array $rawHeaders): array {
+    private static function parseRawHeaders(array $rawHeaders): array {
 
         $parsedHeaders = [];
         foreach($rawHeaders as $rawHeader){
