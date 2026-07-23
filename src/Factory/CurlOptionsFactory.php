@@ -12,6 +12,7 @@ use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
+use JsonException;
 
 /**
  * Builds cURL options from a prepared request.
@@ -134,10 +135,10 @@ final class CurlOptionsFactory {
 
         // リクエスト時のContent-Typeからbodyの変換方法を決定する
         return match($requestBody->contentType){
-            ContentType::Json => json_encode(
-                $requestBody->body,
-                $requestBody->options['flags'] ?? JSON_UNESCAPED_SLASHES,
-            ) ?: null,
+            ContentType::Json => $this->encodeJsonBody(
+                body:  $requestBody->body,
+                flags: $requestBody->options['flags'] ?? JSON_UNESCAPED_SLASHES,
+            ),
 
             ContentType::FormUrlEncoded => http_build_query(
                 $requestBody->body,
@@ -147,6 +148,22 @@ final class CurlOptionsFactory {
                 throw new RequestBodyException('Array body requires an encodable content type.') :
                 $requestBody->body,
         };
+    }
+
+    /**
+     * JSONボディを `CURLOPT_POSTFIELDS` 用の文字列に変換する。
+     *
+     * @throws RequestBodyException
+     */
+    private function encodeJsonBody(mixed $body, int $flags): ?string {
+
+        try{
+            $encoded = json_encode($body, $flags);
+        } catch(JsonException $e){
+            throw new RequestBodyException('JSON encode error.', previous: $e);
+        }
+
+        return ($encoded === false) ? null : $encoded;
     }
 
     /**

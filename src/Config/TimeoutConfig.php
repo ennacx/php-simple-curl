@@ -41,8 +41,9 @@ final readonly class TimeoutConfig implements CurlOptionsApplierInterface {
     /**
      * Creates a second-based timeout config.
      *
-     * @param int $timeoutSec        Total timeout in seconds.
-     * @param int $connectTimeoutSec Connection timeout in seconds.
+     * @param  int $timeoutSec        Total timeout in seconds.
+     * @param  int $connectTimeoutSec Connection timeout in seconds.
+     * @throws InvalidConfigurationException
      */
     public static function seconds(int $timeoutSec, int $connectTimeoutSec = 10): self {
         return new self($timeoutSec, $connectTimeoutSec);
@@ -51,8 +52,9 @@ final readonly class TimeoutConfig implements CurlOptionsApplierInterface {
     /**
      * Creates a millisecond-based timeout config.
      *
-     * @param int $timeoutMs        Total timeout in milliseconds.
-     * @param int $connectTimeoutMs Connection timeout in milliseconds.
+     * @param  int $timeoutMs        Total timeout in milliseconds.
+     * @param  int $connectTimeoutMs Connection timeout in milliseconds.
+     * @throws InvalidConfigurationException
      */
     public static function milliseconds(int $timeoutMs, int $connectTimeoutMs = 10000): self {
         return new self(timeoutMilliseconds: $timeoutMs, connectTimeoutMilliseconds: $connectTimeoutMs);

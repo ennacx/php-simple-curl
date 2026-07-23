@@ -7,6 +7,7 @@ use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
+use Ennacx\SimpleCurl\Exception\SimpleCurlException;
 use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 use Ennacx\SimpleCurl\Helper\Internal\Utils;
 use Ennacx\SimpleCurl\Option\CurlOptions;
@@ -73,7 +74,11 @@ final class Request {
     public function __construct(string $url, CurlMethod $method = CurlMethod::GET){
 
         // ID付与
-        $this->id = Utils::uuid_v4();
+        try{
+            $this->id = Utils::uuid_v4();
+        } catch(SimpleCurlException $e){
+            throw new InvalidRequestException('Request ID generation failed.', previous: $e);
+        }
 
         // URLバリデーション
         $tempUrl = self::validateUrl($url);
@@ -367,6 +372,7 @@ final class Request {
      * Returns a new request with an application/x-www-form-urlencoded body.
      *
      * @param  array<string|int, mixed> $input Form fields.
+     * @throws RequestBodyException
      */
     public function form(array $input): self {
 

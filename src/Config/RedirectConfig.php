@@ -31,8 +31,9 @@ final readonly class RedirectConfig implements CurlOptionsApplierInterface {
     /**
      * Creates an enabled redirect config.
      *
-     * @param int     $maxRedirects Maximum redirects.
-     * @param boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
+     * @param  int     $maxRedirects Maximum redirects.
+     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
+     * @throws InvalidConfigurationException
      */
     public static function enabled(int $maxRedirects = 10, bool $autoReferer = true): self {
         return new self(follow: true, maxRedirects: $maxRedirects, autoReferer: $autoReferer);

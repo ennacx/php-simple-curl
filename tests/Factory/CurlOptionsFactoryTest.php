@@ -517,6 +517,19 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * JSONエンコード失敗時にJsonExceptionを漏らさずRequestBodyExceptionへ変換することを検証する。
+     */
+    public function testThrowsRequestBodyExceptionWhenJsonBodyEncodingFails(): void {
+
+        $request = Request::post('https://example.com')
+            ->json(['invalid' => "\xB1\x31"]);
+
+        $this->expectException(RequestBodyException::class);
+
+        (new CurlOptionsFactory())->fromPreparedRequest($request->prepare());
+    }
+
+    /**
      * RawCurlOptionsはFactoryが組み立てたcURLオプションを最後に上書きできることを検証する。
      */
     public function testRawCurlOptionsCanOverrideGeneratedOptions(): void {
@@ -555,12 +568,6 @@ final class CurlOptionsFactoryTest extends TestCase {
         self::assertSame(7, $options[CURLOPT_TIMEOUT]);
     }
 
-    /**
-     * URLをパースし、クエリ文字列を連想配列へ正規化する。
-     *
-     * @param  string $url
-     * @return array{scheme: string, host: string, path: string, query: array<string, mixed>, fragment?: string}
-     */
     /**
      * Factory内部でリクエストボディを変換できない場合にRequestBodyExceptionへ変換されることを検証する。
      */
@@ -624,6 +631,12 @@ final class CurlOptionsFactoryTest extends TestCase {
         }
     }
 
+    /**
+     * URLをパースし、クエリ文字列を連想配列へ正規化する。
+     *
+     * @param  string $url
+     * @return array{scheme: string, host: string, path: string, query: array<string, mixed>, fragment?: string}
+     */
     private static function parseUrlWithQuery(string $url): array {
 
         $parts = parse_url($url);

@@ -8,7 +8,9 @@ use CurlMultiHandle;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Exception\InvalidResponseException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
@@ -44,7 +46,9 @@ final readonly class MultiClient {
      * @param  Request|PreparedRequest ...$preparedRequests Requests to send.
      * @throws CurlExecutionException
      * @throws InvalidConfigurationException
+     * @throws InvalidRequestException
      * @throws InvalidResponseException
+     * @throws RequestBodyException
      */
     public function sendAll(Request|PreparedRequest ...$preparedRequests): Responses {
 
