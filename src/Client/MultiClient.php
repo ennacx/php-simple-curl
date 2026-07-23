@@ -13,6 +13,7 @@ use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
+use Ennacx\SimpleCurl\Helper\Internal\CurlEnvironment;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
 use Ennacx\SimpleCurl\Response\Response;
@@ -29,13 +30,16 @@ final readonly class MultiClient {
     /**
      * Creates a multi-request client.
      *
-     * @param CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
-     * @param ResponseFactory    $responseFactory Factory used to create response objects.
+     * @param  CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
+     * @param  ResponseFactory    $responseFactory Factory used to create response objects.
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         private CurlOptionsFactory $optionsFactory  = new CurlOptionsFactory(),
         private ResponseFactory    $responseFactory = new ResponseFactory(),
     ){
+        // cURL拡張の使用可能チェック
+        CurlEnvironment::assertAvailable();
     }
 
     /**
