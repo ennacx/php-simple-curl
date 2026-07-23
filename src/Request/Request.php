@@ -131,91 +131,12 @@ final class Request {
     }
 
     /**
-     * Returns the request ID.
+     * Prepares the request with optional cURL execution options.
      *
+     * @param  CurlOptions|null $options Execution options.
      */
-    public function getId(): string {
-        return $this->id;
-    }
-
-    /**
-     * Returns the base request URL.
-     *
-     */
-    public function getUrl(): string {
-        return $this->url;
-    }
-
-    /**
-     * Returns the HTTP method.
-     *
-     */
-    public function getMethod(): CurlMethod {
-        return $this->method;
-    }
-
-    /**
-     * Returns request headers.
-     *
-     * @return array<string, string>
-     */
-    public function getHeaders(): array {
-        return $this->headers;
-    }
-
-    /**
-     * cURLオプション生成用にリクエストボディ情報を返す。
-     *
-     * @internal
-     */
-    public function getRequestBody(): ?RequestBody {
-        return $this->body;
-    }
-
-    /**
-     * cURLオプション生成用に添付ファイル情報を返す。
-     *
-     * @return list<RequestAttachmentEntry>
-     * @internal
-     */
-    public function getAttachmentEntries(): array {
-        return $this->attachmentEntries;
-    }
-
-    /**
-     * cURLオプション生成用にリクエストボディのContent-Typeを返す。
-     *
-     * @internal
-     */
-    public function getContentType(): ?ContentType {
-        return $this->contentType;
-    }
-
-    /**
-     * cURLオプション生成用にAcceptヘッダー値を返す。
-     *
-     * @return string[]
-     * @internal
-     */
-    public function getAcceptHeaders(): array {
-        return $this->acceptHeaders;
-    }
-
-    /**
-     * Returns query parameters.
-     *
-     * @return array<string, mixed>
-     */
-    public function getQueryParams(): array {
-        return $this->queryParams;
-    }
-
-    /**
-     * Returns the URL fragment.
-     *
-     */
-    public function getFragment(): ?string {
-        return $this->fragment;
+    public function prepare(?CurlOptions $options = null): PreparedRequest {
+        return PreparedRequest::create($this, $options);
     }
 
     /**
@@ -536,12 +457,85 @@ final class Request {
     }
 
     /**
-     * Prepares the request with optional cURL execution options.
-     *
-     * @param  CurlOptions|null $options Execution options.
+     * Returns the request ID.
      */
-    public function prepare(?CurlOptions $options = null): PreparedRequest {
-        return PreparedRequest::create($this, $options);
+    public function getId(): string {
+        return $this->id;
+    }
+
+    /**
+     * Returns the base request URL.
+     */
+    public function getUrl(): string {
+        return $this->url;
+    }
+
+    /**
+     * Returns the HTTP method.
+     */
+    public function getMethod(): CurlMethod {
+        return $this->method;
+    }
+
+    /**
+     * Returns request headers.
+     *
+     * @return array<string, string>
+     */
+    public function getHeaders(): array {
+        return $this->headers;
+    }
+
+    /**
+     * Returns query parameters.
+     *
+     * @return array<string, mixed>
+     */
+    public function getQueryParams(): array {
+        return $this->queryParams;
+    }
+
+    /**
+     * Returns the URL fragment.
+     */
+    public function getFragment(): ?string {
+        return $this->fragment;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にリクエストボディ情報を返す。
+     */
+    public function getRequestBody(): ?RequestBody {
+        return $this->body;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用に添付ファイル情報を返す。
+     *
+     * @return list<RequestAttachmentEntry>
+     */
+    public function getAttachmentEntries(): array {
+        return $this->attachmentEntries;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にリクエストボディのContent-Typeを返す。
+     */
+    public function getContentType(): ?ContentType {
+        return $this->contentType;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にAcceptヘッダー値を返す。
+     *
+     * @return string[]
+     */
+    public function getAcceptHeaders(): array {
+        return $this->acceptHeaders;
     }
 
     /**

@@ -245,12 +245,11 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Returns all configured config objects.
+     * @internal
+     * 設定済みの `CurlOptionsApplierInterface` リストを取得する。
      *
      * @template T of CurlOptionsApplierInterface
      * @return list<T>
-     *
-     * @internal
      */
     public function getConfig(): array {
 
