@@ -7,11 +7,11 @@ use CURLFile;
 use Ennacx\SimpleCurl\Config\CurlOptionsApplierInterface;
 use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 use Ennacx\SimpleCurl\Option\RawCurlOptions;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
-use LogicException;
 
 /**
  * Builds cURL options from a prepared request.
@@ -24,6 +24,7 @@ final class CurlOptionsFactory {
      * @param  PreparedRequest $preparedRequest Prepared request.
      * @return array<int, mixed>
      * @throws InvalidRequestException
+     * @throws RequestBodyException
      */
     public function fromPreparedRequest(PreparedRequest $preparedRequest): array {
 
@@ -96,9 +97,9 @@ final class CurlOptionsFactory {
     private function buildUrl(PreparedRequest $preparedRequest): string {
 
         $request = $preparedRequest->getRequest();
+        $url     = $request->getUrl();
 
         // GETクエリ付与
-        $url = $request->getUrl();
         if(!empty($request->getQueryParams())){
             $url .= '?' . http_build_query($request->getQueryParams());
         }
@@ -116,6 +117,8 @@ final class CurlOptionsFactory {
      *
      * 添付ファイルがある場合はmultipart/form-data用の配列を生成し、
      * 添付ファイルがない場合はContent-Typeに応じて文字列ボディを生成する。
+     *
+     * @throws RequestBodyException
      */
     private function buildPostFields(Request $request): string|array|null {
 
@@ -141,7 +144,7 @@ final class CurlOptionsFactory {
             ),
 
             default => (is_array($requestBody->body)) ?
-                throw new LogicException('Array body requires an encodable content type.') :
+                throw new RequestBodyException('Array body requires an encodable content type.') :
                 $requestBody->body,
         };
     }
@@ -153,6 +156,7 @@ final class CurlOptionsFactory {
      * 呼び出し元ではユーザー指定のContent-Typeヘッダーを削除する。
      *
      * @return array<string, mixed>
+     * @throws RequestBodyException
      */
     private function buildMultipart(Request $request): array {
 
@@ -164,11 +168,11 @@ final class CurlOptionsFactory {
         if($requestBody !== null){
             // ボディーは配列であることが必須
             if(!is_array($requestBody->body)){
-                throw new LogicException('Multipart form fields must be an array.');
+                throw new RequestBodyException('Multipart form fields must be an array.');
             }
             // フォームのContent-Typeであること
             if($requestBody->contentType !== ContentType::FormUrlEncoded){
-                throw new LogicException('Attachments can only be combined with form fields.');
+                throw new RequestBodyException('Attachments can only be combined with form fields.');
             }
 
             // 配列の本文を設定

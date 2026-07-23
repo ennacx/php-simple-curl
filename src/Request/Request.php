@@ -394,7 +394,7 @@ final class Request {
 
         // リクエストボディが設定済みの場合、フォーム形式でなければエラー
         if($this->body !== null && $this->body->contentType !== ContentType::FormUrlEncoded){
-            throw new RequestBodyException("The attachment cannot be added when the request body is specified.");
+            throw new RequestBodyException('The attachment cannot be added when the request body is specified.');
         }
 
         // ファイルチェック

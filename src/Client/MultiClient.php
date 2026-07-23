@@ -8,6 +8,7 @@ use CurlMultiHandle;
 use Ennacx\SimpleCurl\Enum\MultiCurlError;
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
@@ -41,8 +42,9 @@ final readonly class MultiClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest ...$preparedRequests Requests to send.
-     * @throws InvalidConfigurationException
      * @throws CurlExecutionException
+     * @throws InvalidConfigurationException
+     * @throws InvalidResponseException
      */
     public function sendAll(Request|PreparedRequest ...$preparedRequests): Responses {
 
@@ -134,8 +136,6 @@ final readonly class MultiClient {
 
     /**
      * CurlHandleを配列キーとして扱うための一意な整数値を生成する。
-     *
-     * @param CurlHandle $ch
      */
     private function generateKey(CurlHandle $ch): int {
         return spl_object_id($ch);
@@ -168,6 +168,8 @@ final readonly class MultiClient {
      * @param  CurlMultiHandle                                                         $cmh
      * @param  array<int, array{handle: CurlHandle, preparedRequest: PreparedRequest}> $handles
      * @param  array<string, Response>                                                 $responses
+     * @throws CurlExecutionException
+     * @throws InvalidResponseException
      */
     private function drainCompleted(CurlMultiHandle $cmh, array &$handles, array &$responses): void {
 

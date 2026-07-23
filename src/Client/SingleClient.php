@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl\Client;
 
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
@@ -37,8 +38,9 @@ final readonly class SingleClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest $preparedRequest Request to send.
-     * @throws InvalidConfigurationException
      * @throws CurlExecutionException
+     * @throws InvalidConfigurationException
+     * @throws InvalidResponseException
      */
     public function send(Request|PreparedRequest $preparedRequest): Response {
 
