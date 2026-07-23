@@ -708,6 +708,7 @@ If request URLs are built from external input, validate allowed schemes, hosts, 
 
 `RawCurlOptions` is a low-level escape hatch. Options passed through `raw()` are applied directly to cURL and may override generated options, including headers, SSL verification, redirects, protocols, and other security-sensitive behavior. Pass only trusted values.
 
+For vulnerability reporting and supported versions, see [Security Policy](.github/SECURITY.md).
 
 ## Notes
 
