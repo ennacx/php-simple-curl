@@ -362,13 +362,14 @@ final class Request {
             return $this;
         }
 
-        // 既に添付ファイルが存在する場合はmultipart以外のボディを設定できない
+        // 既に添付ファイルが存在する場合はmultipart以外のボディを設定させない
         if($this->attachmentEntries !== [] && $contentType !== ContentType::FormUrlEncoded){
             throw new RequestBodyException('Only form fields can be combined with attachments.');
         }
 
         $clone = clone $this;
-        $clone->body = new RequestBody($body, $contentType, $options);
+
+        $clone->body        = new RequestBody($body, $contentType, $options);
         $clone->contentType = $contentType;
 
         return $clone;
@@ -482,7 +483,7 @@ final class Request {
         if(!$allowOverwrite){
             $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
             if(in_array($attachment->name, $attachNames, true)){
-                throw new RequestBodyException("The attachment name is already used in attachment.");
+                throw new RequestBodyException('The multipart field name is already used by another attachment.');
             }
 
             unset($attachNames);
@@ -490,7 +491,7 @@ final class Request {
             $body = $this->body?->body ?? null;
             if(is_array($body) && $body !== []){
                 if(array_key_exists($attachment->name, $body)){
-                    throw new RequestBodyException("The attachment name is already used in body.");
+                    throw new RequestBodyException('The multipart field name is already used by form body.');
                 }
             }
 
