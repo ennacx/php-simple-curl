@@ -7,6 +7,7 @@ use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\CurlMethod;
 use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
+use Ennacx\SimpleCurl\Exception\SimpleCurlException;
 use Ennacx\SimpleCurl\Helper\Internal\HeaderUtils;
 use Ennacx\SimpleCurl\Helper\Internal\Utils;
 use Ennacx\SimpleCurl\Option\CurlOptions;
@@ -73,7 +74,11 @@ final class Request {
     public function __construct(string $url, CurlMethod $method = CurlMethod::GET){
 
         // ID付与
-        $this->id = Utils::uuid_v4();
+        try{
+            $this->id = Utils::uuid_v4();
+        } catch(SimpleCurlException $e){
+            throw new InvalidRequestException('Request ID generation failed.', previous: $e);
+        }
 
         // URLバリデーション
         $tempUrl = self::validateUrl($url);
@@ -131,91 +136,12 @@ final class Request {
     }
 
     /**
-     * Returns the request ID.
+     * Prepares the request with optional cURL execution options.
      *
+     * @param  CurlOptions|null $options Execution options.
      */
-    public function getId(): string {
-        return $this->id;
-    }
-
-    /**
-     * Returns the base request URL.
-     *
-     */
-    public function getUrl(): string {
-        return $this->url;
-    }
-
-    /**
-     * Returns the HTTP method.
-     *
-     */
-    public function getMethod(): CurlMethod {
-        return $this->method;
-    }
-
-    /**
-     * Returns request headers.
-     *
-     * @return array<string, string>
-     */
-    public function getHeaders(): array {
-        return $this->headers;
-    }
-
-    /**
-     * cURLオプション生成用にリクエストボディ情報を返す。
-     *
-     * @internal
-     */
-    public function getRequestBody(): ?RequestBody {
-        return $this->body;
-    }
-
-    /**
-     * cURLオプション生成用に添付ファイル情報を返す。
-     *
-     * @return list<RequestAttachmentEntry>
-     * @internal
-     */
-    public function getAttachmentEntries(): array {
-        return $this->attachmentEntries;
-    }
-
-    /**
-     * cURLオプション生成用にリクエストボディのContent-Typeを返す。
-     *
-     * @internal
-     */
-    public function getContentType(): ?ContentType {
-        return $this->contentType;
-    }
-
-    /**
-     * cURLオプション生成用にAcceptヘッダー値を返す。
-     *
-     * @return string[]
-     * @internal
-     */
-    public function getAcceptHeaders(): array {
-        return $this->acceptHeaders;
-    }
-
-    /**
-     * Returns query parameters.
-     *
-     * @return array<string, mixed>
-     */
-    public function getQueryParams(): array {
-        return $this->queryParams;
-    }
-
-    /**
-     * Returns the URL fragment.
-     *
-     */
-    public function getFragment(): ?string {
-        return $this->fragment;
+    public function prepare(?CurlOptions $options = null): PreparedRequest {
+        return PreparedRequest::create($this, $options);
     }
 
     /**
@@ -362,13 +288,14 @@ final class Request {
             return $this;
         }
 
-        // 既に添付ファイルが存在する場合はmultipart以外のボディを設定できない
+        // 既に添付ファイルが存在する場合はmultipart以外のボディを設定させない
         if($this->attachmentEntries !== [] && $contentType !== ContentType::FormUrlEncoded){
             throw new RequestBodyException('Only form fields can be combined with attachments.');
         }
 
         $clone = clone $this;
-        $clone->body = new RequestBody($body, $contentType, $options);
+
+        $clone->body        = new RequestBody($body, $contentType, $options);
         $clone->contentType = $contentType;
 
         return $clone;
@@ -445,6 +372,7 @@ final class Request {
      * Returns a new request with an application/x-www-form-urlencoded body.
      *
      * @param  array<string|int, mixed> $input Form fields.
+     * @throws RequestBodyException
      */
     public function form(array $input): self {
 
@@ -472,7 +400,7 @@ final class Request {
 
         // リクエストボディが設定済みの場合、フォーム形式でなければエラー
         if($this->body !== null && $this->body->contentType !== ContentType::FormUrlEncoded){
-            throw new RequestBodyException("The attachment cannot be added when the request body is specified.");
+            throw new RequestBodyException('The attachment cannot be added when the request body is specified.');
         }
 
         // ファイルチェック
@@ -482,7 +410,7 @@ final class Request {
         if(!$allowOverwrite){
             $attachNames = array_map(fn(RequestAttachmentEntry $attach): string => $attach->attachment->name, $this->attachmentEntries);
             if(in_array($attachment->name, $attachNames, true)){
-                throw new RequestBodyException("The attachment name is already used in attachment.");
+                throw new RequestBodyException('The multipart field name is already used by another attachment.');
             }
 
             unset($attachNames);
@@ -490,7 +418,7 @@ final class Request {
             $body = $this->body?->body ?? null;
             if(is_array($body) && $body !== []){
                 if(array_key_exists($attachment->name, $body)){
-                    throw new RequestBodyException("The attachment name is already used in body.");
+                    throw new RequestBodyException('The multipart field name is already used by form body.');
                 }
             }
 
@@ -535,12 +463,85 @@ final class Request {
     }
 
     /**
-     * Prepares the request with optional cURL execution options.
-     *
-     * @param  CurlOptions|null $options Execution options.
+     * Returns the request ID.
      */
-    public function prepare(?CurlOptions $options = null): PreparedRequest {
-        return PreparedRequest::create($this, $options);
+    public function getId(): string {
+        return $this->id;
+    }
+
+    /**
+     * Returns the base request URL.
+     */
+    public function getUrl(): string {
+        return $this->url;
+    }
+
+    /**
+     * Returns the HTTP method.
+     */
+    public function getMethod(): CurlMethod {
+        return $this->method;
+    }
+
+    /**
+     * Returns request headers.
+     *
+     * @return array<string, string>
+     */
+    public function getHeaders(): array {
+        return $this->headers;
+    }
+
+    /**
+     * Returns query parameters.
+     *
+     * @return array<string, mixed>
+     */
+    public function getQueryParams(): array {
+        return $this->queryParams;
+    }
+
+    /**
+     * Returns the URL fragment.
+     */
+    public function getFragment(): ?string {
+        return $this->fragment;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にリクエストボディ情報を返す。
+     */
+    public function getRequestBody(): ?RequestBody {
+        return $this->body;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用に添付ファイル情報を返す。
+     *
+     * @return list<RequestAttachmentEntry>
+     */
+    public function getAttachmentEntries(): array {
+        return $this->attachmentEntries;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にリクエストボディのContent-Typeを返す。
+     */
+    public function getContentType(): ?ContentType {
+        return $this->contentType;
+    }
+
+    /**
+     * @internal
+     * cURLオプション生成用にAcceptヘッダー値を返す。
+     *
+     * @return string[]
+     */
+    public function getAcceptHeaders(): array {
+        return $this->acceptHeaders;
     }
 
     /**

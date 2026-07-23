@@ -12,6 +12,7 @@ use Ennacx\SimpleCurl\Enum\ContentType;
 use Ennacx\SimpleCurl\Enum\MediaRange;
 use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
+use Ennacx\SimpleCurl\Request\Internal\RequestBody;
 use Ennacx\SimpleCurl\Request\Request;
 use Ennacx\SimpleCurl\Request\RequestAttachment;
 use PHPUnit\Framework\TestCase;
@@ -516,6 +517,19 @@ final class CurlOptionsFactoryTest extends TestCase {
     }
 
     /**
+     * JSONエンコード失敗時にJsonExceptionを漏らさずRequestBodyExceptionへ変換することを検証する。
+     */
+    public function testThrowsRequestBodyExceptionWhenJsonBodyEncodingFails(): void {
+
+        $request = Request::post('https://example.com')
+            ->json(['invalid' => "\xB1\x31"]);
+
+        $this->expectException(RequestBodyException::class);
+
+        (new CurlOptionsFactory())->fromPreparedRequest($request->prepare());
+    }
+
+    /**
      * RawCurlOptionsはFactoryが組み立てたcURLオプションを最後に上書きできることを検証する。
      */
     public function testRawCurlOptionsCanOverrideGeneratedOptions(): void {
@@ -552,6 +566,69 @@ final class CurlOptionsFactoryTest extends TestCase {
 
         self::assertTrue($options[CURLOPT_RETURNTRANSFER]);
         self::assertSame(7, $options[CURLOPT_TIMEOUT]);
+    }
+
+    /**
+     * Factory内部でリクエストボディを変換できない場合にRequestBodyExceptionへ変換されることを検証する。
+     */
+    public function testThrowsRequestBodyExceptionWhenArrayBodyUsesUnsupportedContentType(): void {
+
+        $request = Request::post('https://example.com')
+            ->body(['name' => 'Taro'], ContentType::PlainText);
+
+        $this->expectException(RequestBodyException::class);
+
+        (new CurlOptionsFactory())->fromPreparedRequest($request->prepare());
+    }
+
+    /**
+     * multipart変換時にフォーム配列以外のボディがある場合にRequestBodyExceptionを投げることを検証する。
+     */
+    public function testThrowsRequestBodyExceptionWhenMultipartBodyIsNotArray(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $request = Request::post('https://example.com')
+                ->form(['name' => 'Taro'])
+                ->attach(new RequestAttachment('file', $path));
+
+            $bodyProperty = new \ReflectionProperty($request, 'body');
+            $bodyProperty->setValue($request, new RequestBody('invalid body', ContentType::FormUrlEncoded));
+
+            $this->expectException(RequestBodyException::class);
+
+            (new CurlOptionsFactory())->fromPreparedRequest($request->prepare());
+        } finally{
+            unlink($path);
+        }
+    }
+
+    /**
+     * multipart変換時にフォーム以外のContent-Typeがある場合にRequestBodyExceptionを投げることを検証する。
+     */
+    public function testThrowsRequestBodyExceptionWhenMultipartBodyIsNotFormUrlEncoded(): void {
+
+        $path = tempnam(sys_get_temp_dir(), 'simple-curl-attach-');
+        self::assertIsString($path);
+        file_put_contents($path, 'attachment body');
+
+        try{
+            $request = Request::post('https://example.com')
+                ->form(['name' => 'Taro'])
+                ->attach(new RequestAttachment('file', $path));
+
+            $bodyProperty = new \ReflectionProperty($request, 'body');
+            $bodyProperty->setValue($request, new RequestBody(['name' => 'Taro'], ContentType::Json));
+
+            $this->expectException(RequestBodyException::class);
+
+            (new CurlOptionsFactory())->fromPreparedRequest($request->prepare());
+        } finally{
+            unlink($path);
+        }
     }
 
     /**

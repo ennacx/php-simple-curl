@@ -5,8 +5,12 @@ namespace Ennacx\SimpleCurl\Client;
 
 use Ennacx\SimpleCurl\Exception\CurlExecutionException;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
+use Ennacx\SimpleCurl\Exception\InvalidResponseException;
+use Ennacx\SimpleCurl\Exception\RequestBodyException;
 use Ennacx\SimpleCurl\Factory\CurlOptionsFactory;
 use Ennacx\SimpleCurl\Factory\ResponseFactory;
+use Ennacx\SimpleCurl\Helper\Internal\CurlEnvironment;
 use Ennacx\SimpleCurl\Request\PreparedRequest;
 use Ennacx\SimpleCurl\Request\Request;
 use Ennacx\SimpleCurl\Response\Response;
@@ -22,13 +26,16 @@ final readonly class SingleClient {
     /**
      * Creates a single-request client.
      *
-     * @param CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
-     * @param ResponseFactory    $responseFactory Factory used to create response objects.
+     * @param  CurlOptionsFactory $optionsFactory  Factory used to build cURL options.
+     * @param  ResponseFactory    $responseFactory Factory used to create response objects.
+     * @throws InvalidConfigurationException
      */
     public function __construct(
         private CurlOptionsFactory $optionsFactory  = new CurlOptionsFactory(),
         private ResponseFactory    $responseFactory = new ResponseFactory(),
     ){
+        // cURL拡張の使用可能チェック
+        CurlEnvironment::assertAvailable();
     }
 
     /**
@@ -37,8 +44,11 @@ final readonly class SingleClient {
      * Plain Request instances are prepared internally with default options.
      *
      * @param  Request|PreparedRequest $preparedRequest Request to send.
-     * @throws InvalidConfigurationException
      * @throws CurlExecutionException
+     * @throws InvalidConfigurationException
+     * @throws InvalidRequestException
+     * @throws InvalidResponseException
+     * @throws RequestBodyException
      */
     public function send(Request|PreparedRequest $preparedRequest): Response {
 

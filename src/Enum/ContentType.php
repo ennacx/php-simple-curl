@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Ennacx\SimpleCurl\Enum;
 
+use Ennacx\SimpleCurl\Exception\InvalidRequestException;
 use Ennacx\SimpleCurl\Request\AcceptValueInterface;
 use Ennacx\SimpleCurl\Request\QualifiedAcceptValue;
 
@@ -50,7 +51,8 @@ enum ContentType : string implements AcceptValueInterface {
     /**
      * Returns this media type with an Accept quality value.
      *
-     * @param float $quality Quality value between 0.0 and 1.0.
+     * @param  float $quality Quality value between 0.0 and 1.0.
+     * @throws InvalidRequestException
      */
     public function withQuality(float $quality): QualifiedAcceptValue {
         return QualifiedAcceptValue::create($this, $quality);

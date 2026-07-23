@@ -92,7 +92,6 @@ final class HeaderUtils {
      * ヘッダー行が指定したヘッダー名から始まるか検証する。
      */
     private static function startsWithHeaderName(string $value, string $name): bool {
-
         return (preg_match(sprintf('/^%s\s*:/i', preg_quote($name, '/')), $value) === 1);
     }
 }

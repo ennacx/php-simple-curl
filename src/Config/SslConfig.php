@@ -5,6 +5,7 @@ namespace Ennacx\SimpleCurl\Config;
 
 use Ennacx\SimpleCurl\Enum\SSLVersion;
 use Ennacx\SimpleCurl\Exception\InvalidConfigurationException;
+use Ennacx\SimpleCurl\Helper\Internal\SslEnvironment;
 
 /**
  * SSL/TLS verification configuration.
@@ -32,6 +33,9 @@ final readonly class SslConfig implements CurlOptionsApplierInterface {
         public bool        $verifyStatus    = false,
         public ?string     $pinnedPublicKey = null,
     ){
+        // OpenSSL拡張が実行可能な状態か確認
+        SslEnvironment::assertAvailable();
+
         if($this->caInfo !== null && !is_file($this->caInfo)){
             throw new InvalidConfigurationException('CA info file not found.');
         }
@@ -47,6 +51,8 @@ final readonly class SslConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates a verified SSL/TLS config.
+     *
+     * @throws InvalidConfigurationException
      */
     public static function verified(): self {
         return new self;
@@ -54,6 +60,8 @@ final readonly class SslConfig implements CurlOptionsApplierInterface {
 
     /**
      * Creates an SSL/TLS config with verification disabled.
+     *
+     * @throws InvalidConfigurationException
      */
     public static function insecure(): self {
         return new self(false, false);

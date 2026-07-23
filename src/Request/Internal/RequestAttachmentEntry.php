@@ -9,9 +9,8 @@ namespace Ennacx\SimpleCurl\Request\Internal;
 use Ennacx\SimpleCurl\Request\RequestAttachment;
 
 /**
- * 添付ファイルと同名フィールド上書き設定をまとめる値オブジェクト。
- *
  * @internal
+ * 添付ファイルと同名フィールド上書き設定をまとめる値オブジェクト。
  */
 final readonly class RequestAttachmentEntry {
 

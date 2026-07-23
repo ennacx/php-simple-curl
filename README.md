@@ -379,7 +379,7 @@ $request = Request::post('https://api.example.com/upload')
 
 When attachments are present, `Content-Type` is managed by cURL. Any user-defined `Content-Type` header is removed so cURL can generate the required multipart boundary.
 
-If an attachment name conflicts with a form field name or another attachment, the attachment overwrites the existing field by default. Pass `allowOverwrite: false` to `attach()` to reject duplicate names instead:
+If a multipart field name conflicts with a form field name or another attachment, the attachment overwrites the existing field by default. Pass `allowOverwrite: false` to `attach()` to reject duplicate names instead:
 
 ```php
 $request = Request::post('https://api.example.com/upload')

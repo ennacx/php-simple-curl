@@ -168,7 +168,8 @@ final readonly class CurlOptions {
      *
      * The connection timeout is set to the same value.
      *
-     * @param int $timeoutSec Timeout in seconds.
+     * @param  int $timeoutSec Timeout in seconds.
+     * @throws InvalidConfigurationException
      */
     public function timeout(int $timeoutSec): self {
 
@@ -189,8 +190,9 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with redirect following enabled.
      *
-     * @param int     $maxRedirects Maximum number of redirects.
-     * @param boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
+     * @param  int     $maxRedirects Maximum number of redirects.
+     * @param  boolean $autoReferer  Whether cURL should automatically set Referer on redirects.
+     * @throws InvalidConfigurationException
      */
     public function followRedirects(int $maxRedirects = 10, bool $autoReferer = true): self {
 
@@ -202,7 +204,8 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with a User-Agent header.
      *
-     * @param string $userAgent User-Agent value.
+     * @param  string $userAgent User-Agent value.
+     * @throws InvalidConfigurationException
      */
     public function userAgent(string $userAgent): self {
 
@@ -217,7 +220,8 @@ final readonly class CurlOptions {
     /**
      * Returns a new option set with a Referer header.
      *
-     * @param string $referer Referer value.
+     * @param  string $referer Referer value.
+     * @throws InvalidConfigurationException
      */
     public function referer(string $referer): self {
 
@@ -245,12 +249,11 @@ final readonly class CurlOptions {
     }
 
     /**
-     * Returns all configured config objects.
+     * @internal
+     * 設定済みの `CurlOptionsApplierInterface` リストを取得する。
      *
      * @template T of CurlOptionsApplierInterface
      * @return list<T>
-     *
-     * @internal
      */
     public function getConfig(): array {
 
